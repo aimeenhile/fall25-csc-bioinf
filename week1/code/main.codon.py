@@ -1,10 +1,8 @@
-# code/main.codon.py
-from dbg import DBG
+from dbg_kmer_as_key import DBG
 from utils import read_data
 from typing import List, Optional, Dict
 import sys
 import time
-from datetime import datetime
 
 def compute_N50_from_lengths(lengths: List[int]) -> str:
     """Compute N50 from a list of contig lengths (memory-only)."""
@@ -18,6 +16,19 @@ def compute_N50_from_lengths(lengths: List[int]) -> str:
         if cum_len >= total_len // 2:
             return str(l)
     return "NA"
+
+def format_hms(seconds: float) -> str:
+    """Convert seconds to h:mm:ss format."""
+    seconds = int(seconds)
+    hh = seconds // 3600
+    mm = (seconds % 3600) // 60
+    ss = seconds % 60
+    return f"{hh}:{mm:02}:{ss:02}"
+
+def current_timestamp() -> str:
+    """Return a Codon-safe timestamp string."""
+    t = time.localtime()
+    return f"{t.tm_year}/{t.tm_mon:02}/{t.tm_mday:02} {t.tm_hour:02}:{t.tm_min:02}:{t.tm_sec:02}"
 
 def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
     """Process a dataset entirely in memory and return metrics."""
@@ -41,7 +52,7 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         metrics: Dict[str, str] = {
             "Dataset": dataset_name,
             "Rank": "NA",
-            "Submission_Time": datetime.now().strftime("%Y/%m/%d %I:%M:%S%p"),
+            "Submission_Time": current_timestamp(),
             "Submission_Count": "NA",
             "Genome_Fraction(%)": "NA",
             "Duplication ratio": "NA",
@@ -54,7 +65,7 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         metrics = {
             "Dataset": dataset_name,
             "Rank": "NA",
-            "Submission_Time": datetime.now().strftime("%Y/%m/%d %I:%M:%S%p"),
+            "Submission_Time": current_timestamp(),
             "Submission_Count": "NA",
             "Genome_Fraction(%)": "NA",
             "Duplication ratio": "NA",
@@ -64,7 +75,12 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         }
 
     end_time = time.time()
-    metrics["Runtime_sec"] = str(int(end_time - start_time))
+    runtime_hms = format_hms(end_time - start_time)
+    metrics["Runtime"] = runtime_hms
+
+    # Print per-dataset runtime immediately
+    print(f"{dataset_name} completed in {runtime_hms}")
+
     return metrics
 
 def main() -> None:
@@ -73,7 +89,7 @@ def main() -> None:
         return
 
     data_root: str = sys.argv[1]
-    datasets: List[str] = sorted([d for d in ["data1", "data2", "data3", "data4"] if d])
+    datasets: List[str] = sorted(["data1", "data2", "data3", "data4"])
     results: List[Dict[str, str]] = []
 
     for dataset in datasets:
@@ -90,7 +106,7 @@ def main() -> None:
     header: List[str] = [
         "Rank", "Dataset", "Submission_Time", "Submission_Count",
         "Genome_Fraction(%)", "Duplication ratio", "N50",
-        "Misassemblies", "Mismatches per 100kbp", "Runtime_sec"
+        "Misassemblies", "Mismatches per 100kbp", "Runtime"
     ]
     print("| " + " | ".join(header) + " |")
     print("|" + "|".join(["---"]*len(header)) + "|")
@@ -98,7 +114,7 @@ def main() -> None:
         print(
             f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | {res['Submission_Count']} | "
             f"{res['Genome_Fraction(%)']} | {res['Duplication ratio']} | {res['N50']} | "
-            f"{res['Misassemblies']} | {res['Mismatches per 100kbp']} | {res['Runtime_sec']} |"
+            f"{res['Misassemblies']} | {res['Mismatches per 100kbp']} | {res['Runtime']} |"
         )
 
 if __name__ == "__main__":

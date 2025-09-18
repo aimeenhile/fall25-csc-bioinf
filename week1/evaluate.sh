@@ -36,15 +36,9 @@ run_and_capture_n50() {
         N50=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$7); print $7}')
         [[ -z "$N50" ]] && N50="NA"
 
-        # Extract runtime in seconds (last column)
-        runtime_sec=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$NF); print $NF}')
-        [[ -z "$runtime_sec" ]] && runtime_sec=0
-
-        # Format runtime as h:mm:ss
-        hh=$((runtime_sec/3600))
-        mm=$(( (runtime_sec%3600)/60 ))
-        ss=$((runtime_sec%60))
-        runtime_str=$(printf "%d:%02d:%02d" $hh $mm $ss)
+        # Extract runtime (last column)
+        runtime_str=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$NF); print $NF}')
+        [[ -z "$runtime_str" ]] && runtime_str="NA"
     fi
 
 
@@ -55,10 +49,15 @@ run_and_capture_n50() {
 # Loop over datasets
 for dataset in $(ls "$DATA_DIR" | sort); do
     if [ -d "$DATA_DIR/$dataset" ]; then
-        # Run Python version
-        run_and_capture_n50 "python" "python3 $CODE_DIR/main.py" "$dataset"
+        # Run Python and Codon in parallel
+        run_and_capture_n50 "python" "python $CODE_DIR/main.py" "$dataset" &
+        pid_python=$!
 
-        # Run Codon version
-        run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset"
+        run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset" &
+        pid_codon=$!
+
+        # Wait for both to finish
+        wait $pid_python
+        wait $pid_codon
     fi
 done

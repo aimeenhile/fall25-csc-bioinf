@@ -1,10 +1,7 @@
-from dbg import DBG
+from dbg_kmer_as_key import DBG
 from utils import read_data
 import sys
-import os
-import traceback
 from typing import List, Dict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from datetime import datetime
 
@@ -23,8 +20,16 @@ def compute_N50_from_lengths(lengths: List[int]) -> str:
             return str(l)
     return "NA"
 
+def format_hms(seconds: float) -> str:
+    """Convert seconds to h:mm:ss format."""
+    seconds = int(seconds)
+    hh = seconds // 3600
+    mm = (seconds % 3600) // 60
+    ss = seconds % 60
+    return f"{hh}:{mm:02}:{ss:02}"
+
 def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
-    """Process one dataset: build DBG, generate contigs in memory, compute N50, and measure runtime."""
+    """Process a dataset entirely in memory and return metrics."""
     start_time = time.time()
     try:
         print(f"Processing {dataset_name}...")
@@ -45,13 +50,6 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         contig_lengths = [len(c) for c in contigs]
         N50 = compute_N50_from_lengths(contig_lengths)
 
-        end_time = time.time()
-        runtime_sec = int(end_time - start_time)
-        runtime_str = f"{runtime_sec // 3600}:{(runtime_sec % 3600) // 60:02d}:{runtime_sec % 60:02d}"
-
-        # Print runtime immediately
-        print(f"Processed {dataset_name} in {runtime_str}, N50={N50}")
-
         metrics: Dict[str, str] = {
             "Dataset": dataset_name,
             "Rank": "NA",  
@@ -62,12 +60,10 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
             "N50": N50,
             "Misassemblies": "NA",
             "Mismatches per 100kbp": "NA",
-            "Runtime_sec": str(runtime_sec)
         }
 
-    except Exception:
-        print(f"Error processing {dataset_name}")
-        traceback.print_exc()
+    except Exception as e:
+        print(f"Error processing {dataset_name}: {e}")
         metrics = {
             "Dataset": dataset_name,
             "Rank": "NA",
@@ -78,8 +74,13 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
             "N50": "NA",
             "Misassemblies": "NA",
             "Mismatches per 100kbp": "NA",
-            "Runtime_sec": "0"
         }
+    end_time = time.time()
+    runtime_hms = format_hms(end_time - start_time)
+    metrics["Runtime"] = runtime_hms
+
+    # Print per-dataset runtime immediately
+    print(f"{dataset_name} completed in {runtime_hms}")
 
     return metrics
 
@@ -89,55 +90,38 @@ def main() -> None:
         return
 
     data_root: str = sys.argv[1]
+    datasets: List[str] = sorted(["data1", "data2", "data3", "data4"])
     results: List[Dict[str, str]] = []
 
-    # List all datasets
-    datasets: List[str] = sorted(
-        [d for d in os.listdir(data_root) if os.path.isdir(os.path.join(data_root, d))]
-    )
+    for dataset in datasets:
+        dataset_path: str = f"{data_root}/{dataset}"
+        metrics = process_dataset(dataset_path, dataset)
+        results.append(metrics)
 
-    # Parallel processing
-    max_threads = 1
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        future_to_dataset = {
-            executor.submit(process_dataset, os.path.join(data_root, d), d): d for d in datasets
-        }
-
-        for future in as_completed(future_to_dataset):
-            try:
-                metrics = future.result()
-                results.append(metrics)
-            except Exception:
-                dataset_name = future_to_dataset[future]
-                print(f"Unhandled error processing {dataset_name}")
-                traceback.print_exc()
-
-    # Rank by N50 descending (NA treated as 0)
+    ## Rank by N50 descending (NA treated as 0)
     results.sort(key=lambda x: int(x["N50"]) if x["N50"] != "NA" else 0, reverse=True)
     for rank, res in enumerate(results, 1):
         res["Rank"] = str(rank)
 
-    # Print Markdown table (compatible with evaluate.sh)
-    header = [
-        "Rank",
-        "Dataset",
-        "Submission_Time",
-        "Submission_Count",
-        "Genome_Fraction(%)",
-        "Duplication ratio",
-        "N50",
-        "Misassemblies",
-        "Mismatches per 100kbp",
-        "Runtime_sec", 
+    # Print table 
+    header: List[str] = [
+        "Rank", "Dataset", "Submission_Time", "Submission_Count",
+        "Genome_Fraction(%)", "Duplication ratio", "N50",
+        "Misassemblies", "Mismatches per 100kbp", "Runtime"
     ]
+    print("\nMarkdown table output:")
     print("| " + " | ".join(header) + " |")
-    print("|" + "|".join(["---"] * len(header)) + "|")
+    print("|" + "|".join(["---"]*len(header)) + "|")
     for res in results:
+        runtime_sec = int(res["Runtime_sec"])
+        hh = runtime_sec // 3600
+        mm = (runtime_sec % 3600) // 60
+        ss = runtime_sec % 60
+        runtime_str = f"{hh}:{mm:02d}:{ss:02d}"
         print(
-            f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | "
-            f"{res['Submission_Count']} | {res['Genome_Fraction(%)']} | "
-            f"{res['Duplication ratio']} | {res['N50']} | {res['Misassemblies']} | "
-            f"{res['Mismatches per 100kbp']} | {res['Runtime_sec']} |"
+            f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | {res['Submission_Count']} | "
+            f"{res['Genome_Fraction(%)']} | {res['Duplication ratio']} | {res['N50']} | "
+            f"{res['Misassemblies']} | {res['Mismatches per 100kbp']} | {res['Runtime']} |"
         )
 
 if __name__ == "__main__":
