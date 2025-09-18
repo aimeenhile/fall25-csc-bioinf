@@ -11,63 +11,79 @@ COL_LANG=10
 COL_RUNTIME=10
 COL_N50=8
 
-# Detect CPU cores and cap between 2-4
-CPU_CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu)
-if [[ -z "$CPU_CORES" ]]; then CPU_CORES=2; fi
-if (( CPU_CORES < 2 )); then MAX_JOBS=2
-elif (( CPU_CORES > 4 )); then MAX_JOBS=4
-else MAX_JOBS=$CPU_CORES
-fi
+# CPU detection
+CPU_CORES=$(nproc)
+MAX_JOBS=$(( CPU_CORES > 4 ? 4 : CPU_CORES < 2 ? 2 : CPU_CORES ))
 
-job_count=0
+# Temporary directory for outputs
+TMPDIR=$(mktemp -d)
+declare -A JOB_FILES
 
-# Output header
-printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "Dataset" "Language" "Runtime" "N50"
-printf "%s\n" "-------------------------------------------------------------------------------------------------------"
-
-# Helper function to run a command and capture N50 
-run_and_capture_n50() {
-    local lang=$1
-    local cmd=$2
-    local dataset=$3
-
-    # Run the script and capture Markdown table output
-    output=$($cmd "$DATA_DIR")
-
-    # Extract the line corresponding to the dataset
-    dataset_line=$(echo "$output" | grep -E "^\| .* $dataset .* \|")
-
-    if [[ -z "$dataset_line" ]]; then
-        echo "Error: Dataset $dataset not found in output"
-        N50="NA"
-        runtime_str="NA"
-    else
-        # Extract N50 (7th column)
-        N50=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$7); print $7}')
-        [[ -z "$N50" ]] && N50="NA"
-
-        # Extract runtime (last column)
-        runtime_str=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$NF); print $NF}')
-        [[ -z "$runtime_str" ]] && runtime_str="NA"
-    fi
-
-    # Print nicely aligned table
-    printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime_str" "$N50"
-}
-
-# Queue jobs
+# Start all jobs
 for dataset in $(ls "$DATA_DIR" | sort); do
     if [ -d "$DATA_DIR/$dataset" ]; then
-        run_and_capture_n50 "python" "python $CODE_DIR/main.py" "$dataset" &
-        ((job_count+=1))
-        run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset" &
-        ((job_count+=1))
+        # Python
+        py_out="$TMPDIR/$dataset.python.out"
+        python "$CODE_DIR/main.py" "$DATA_DIR" > "$py_out" 2>&1 &
+        JOB_FILES["$dataset:python"]=$py_out
 
-        if (( job_count >= MAX_JOBS )); then
-            wait
-            job_count=0
-        fi
+        # Codon
+        codon_out="$TMPDIR/$dataset.codon.out"
+        codon run -release "$CODE_DIR/main.codon.py" "$DATA_DIR" > "$codon_out" 2>&1 &
+        JOB_FILES["$dataset:codon"]=$codon_out
+
+        # Throttle parallel jobs
+        while [[ $(jobs -rp | wc -l) -ge $MAX_JOBS ]]; do
+            sleep 1
+        done
     fi
 done
 
+# Wait for all background jobs to finish
 wait
+
+# --- Helper to extract N50 and runtime ---
+extract_metrics() {
+    local file="$1"
+    local dataset="$2"
+    # Grab the first Markdown table line matching the dataset
+    local line
+    line=$(grep -E "^\| .* $dataset .* \|" "$file" | head -n1)
+    if [[ -z "$line" ]]; then
+        echo "NA NA"
+    else
+        # Column 7=N50, Column 10=Runtime
+        local N50 runtime
+        N50=$(echo "$line" | awk -F'|' '{gsub(/ /,"",$7); print $7}')
+        runtime=$(echo "$line" | awk -F'|' '{gsub(/ /,"",$10); print $10}')
+        [[ -z "$N50" ]] && N50="NA"
+        [[ -z "$runtime" ]] && runtime="NA"
+        echo "$N50 $runtime"
+    fi
+}
+
+# --- Print Full Markdown table from all outputs ---
+echo "=== Full Markdown Table ==="
+for dataset in $(ls "$DATA_DIR" | sort); do
+    for lang in python codon; do
+        out_file="${JOB_FILES[$dataset:$lang]}"
+        cat "$out_file" | grep -E "^\|"
+    done
+done
+
+# --- Print Summary Table ---
+echo ""
+echo "=== Summary Table (Dataset Language Runtime N50) ==="
+printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "Dataset" "Language" "Runtime" "N50"
+printf "%s\n" "--------------------------------------------------------"
+
+for dataset in $(ls "$DATA_DIR" | sort); do
+    for lang in python codon; do
+        out_file="${JOB_FILES[$dataset:$lang]}"
+        read N50 runtime <<< $(extract_metrics "$out_file" "$dataset")
+        printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime" "$N50"
+    done
+done
+
+# Cleanup
+rm -rf "$TMPDIR"
