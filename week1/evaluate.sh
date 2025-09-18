@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 # Root directories
 CODE_DIR="./code"
 DATA_DIR="./data"
 
-# Column widths 
+# Column widths
 COL_DATASET=12
 COL_LANG=10
 COL_RUNTIME=10
@@ -19,17 +19,17 @@ MAX_JOBS=$(( CPU_CORES > 4 ? 4 : CPU_CORES < 2 ? 2 : CPU_CORES ))
 TMPDIR=$(mktemp -d)
 declare -A JOB_FILES
 
-# Start all jobs
+# Start all jobs (each dataset separately)
 for dataset in $(ls "$DATA_DIR" | sort); do
     if [ -d "$DATA_DIR/$dataset" ]; then
         # Python
         py_out="$TMPDIR/$dataset.python.out"
-        python "$CODE_DIR/main.py" "$DATA_DIR" > "$py_out" 2>&1 &
+        python "$CODE_DIR/main.py" "$DATA_DIR/$dataset" > "$py_out" 2>&1 &
         JOB_FILES["$dataset:python"]=$py_out
 
         # Codon
         codon_out="$TMPDIR/$dataset.codon.out"
-        codon run -release "$CODE_DIR/main.codon.py" "$DATA_DIR" > "$codon_out" 2>&1 &
+        codon run -release "$CODE_DIR/main.codon.py" "$DATA_DIR/$dataset" > "$codon_out" 2>&1 &
         JOB_FILES["$dataset:codon"]=$codon_out
 
         # Throttle parallel jobs
@@ -67,7 +67,7 @@ echo "=== Full Markdown Table ==="
 for dataset in $(ls "$DATA_DIR" | sort); do
     for lang in python codon; do
         out_file="${JOB_FILES[$dataset:$lang]}"
-        cat "$out_file" | grep -E "^\|"
+        grep -E "^\|" "$out_file" || true
     done
 done
 
