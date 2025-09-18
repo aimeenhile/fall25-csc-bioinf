@@ -29,7 +29,7 @@ run_and_capture_n50() {
     end=$(date +%s)
     runtime=$((end - start))
 
-    # Extract N50 from Markdown table (line containing dataset name)
+    # Extract N50 from Markdown table 
     N50=$(echo "$output" | grep -E "^\|.*$dataset.*\|" | awk -F'|' '{gsub(/ /,"",$5); print $5}')
     [[ -z "$N50" ]] && N50="NA"
 

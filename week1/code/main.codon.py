@@ -1,8 +1,7 @@
 from dbg import DBG
 from utils import read_data
-from typing import List, Optional
+from typing import List, Optional, Dict
 import sys
-import fs
 
 def compute_N50(contig_file: str) -> str:
     lengths: List[int] = []
@@ -41,21 +40,17 @@ def main() -> None:
         return
 
     data_root: str = sys.argv[1]
+    datasets: List[str] = ["data1", "data2", "data3", "data4"]
     results: List[Dict[str, str]] = []
 
-    datasets: List[str] = fs.listdir(data_root)  
-    datasets.sort()
-
     for dataset in datasets:
-        dataset_path: str = fs.joinpath(data_root, dataset)
-        if not fs.isdir(dataset_path):
-            continue
+        dataset_path: str = f"{data_root}/{dataset}"
 
         print(f"Processing {dataset}...")
         short1, short2, long1 = read_data(dataset_path)
         dbg = DBG(k=25, data_list=[short1, short2, long1])
 
-        contig_file: str = fs.joinpath(dataset_path, "contig.fasta")
+        contig_file: str = f"{dataset_path}/contig.fasta"
         with open(contig_file, "w") as f:
             for i in range(20):
                 c: Optional[str] = dbg.get_longest_contig()
@@ -65,22 +60,27 @@ def main() -> None:
 
         N50: str = compute_N50(contig_file)
 
-        results.append({
+        metrics: Dict[str, str] = {
             "Dataset": dataset,
             "Genome_Fraction(%)": "NA",
             "Duplication ratio": "NA",
             "N50": N50,
             "Misassemblies": "NA",
             "Mismatches per 100kbp": "NA"
-        })
+        }
+        results.append(metrics)
 
     # Rank by N50 descending (NA treated as 0)
     results.sort(key=lambda x: int(x["N50"]) if x["N50"] != "NA" else 0, reverse=True)
     for rank, res in enumerate(results, 1):
-        res["Rank"] = rank
+        res["Rank"] = str(rank)
 
     # Print Markdown table
-    header: List[str] = ["Rank", "Dataset", "Genome_Fraction(%)", "Duplication ratio", "N50", "Misassemblies", "Mismatches per 100kbp"]
+    header: List[str] = [
+        "Rank", "Dataset", "Genome_Fraction(%)",
+        "Duplication ratio", "N50", "Misassemblies",
+        "Mismatches per 100kbp"
+    ]
     print("| " + " | ".join(header) + " |")
     print("|" + "|".join(["---"]*len(header)) + "|")
     for res in results:

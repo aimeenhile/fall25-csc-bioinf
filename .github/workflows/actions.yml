@@ -1,4 +1,4 @@
-name: Week 1 Genome Assembly CI
+name: Week 1 Deliverable
 on: [push]
 
 jobs:
@@ -28,10 +28,14 @@ jobs:
           echo "CODON_PYTHON=$(find_libpython)" >> $GITHUB_ENV
           echo "Found Python at: $(find_libpython)"
 
-      # 5. Ensure evaluate.sh is executable
+       # 5. Increase stack size for large datasets
+      - name: Increase stack size
+        run: ulimit -s 8192000
+        
+      # 6. Ensure evaluate.sh is executable
       - name: Make evaluate.sh executable
         run: chmod +x week1/evaluate.sh
 
-      # 6. Run evaluation script
-      - name: Week 1 Evaluation
+      # 7. Run evaluation script
+      - name: Week 1 
         run: bash week1/evaluate.sh
