@@ -23,6 +23,13 @@ def compute_N50_from_lengths(lengths: List[int]) -> str:
             return str(l)
     return "NA"
 
+def format_runtime(seconds: int) -> str:
+    """Format seconds as h:mm:ss."""
+    hh = seconds // 3600
+    mm = (seconds % 3600) // 60
+    ss = seconds % 60
+    return f"{hh}:{mm:02d}:{ss:02d}"
+
 def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
     """Process one dataset: build DBG, generate contigs in memory, compute N50, and measure runtime."""
     start_time = time.time()
@@ -43,6 +50,13 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         # Compute N50 in memory
         N50 = compute_N50_from_lengths(contig_lengths)
 
+        end_time = time.time()
+        runtime_sec = int(end_time - start_time)
+        runtime_str = format_runtime(runtime_sec)
+
+        # Print runtime immediately
+        print(f"Processed {dataset_name} in {runtime_str}")
+
         metrics: Dict[str, str] = {
             "Dataset": dataset_name,
             "Rank": "NA",  
@@ -53,11 +67,16 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
             "N50": N50,
             "Misassemblies": "NA",
             "Mismatches per 100kbp": "NA",
+            "Runtime_sec": str(runtime_sec)
         }
 
     except Exception:
         print(f"Error processing {dataset_name}")
         traceback.print_exc()
+        end_time = time.time()
+        runtime_sec = int(end_time - start_time)
+        runtime_str = format_runtime(runtime_sec)
+        print(f"Failed {dataset_name} after {runtime_str}")
         metrics = {
             "Dataset": dataset_name,
             "Rank": "NA",
@@ -70,7 +89,6 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
             "Mismatches per 100kbp": "NA",
         }
 
-    metrics["Runtime_sec"] = str(int(time.time() - start_time))
     return metrics
 
 def main() -> None:
