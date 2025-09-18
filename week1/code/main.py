@@ -3,89 +3,128 @@ from utils import read_data
 import sys
 import os
 import traceback
+from typing import List, Dict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+from datetime import datetime
 
 sys.setrecursionlimit(1000000)
 
-def compute_N50(contig_file):
-    """
-    Compute N50 from contig lengths 
-    """
-    lengths = []
-    with open(contig_file) as f:
-        seq_len = 0
-        for line in f:
-            if line.startswith(">"):
-                if seq_len > 0:
-                    lengths.append(seq_len)
-                seq_len = 0
-            else:
-                seq_len += len(line.strip())
-        if seq_len > 0:
-            lengths.append(seq_len)
-
+def compute_N50_from_lengths(lengths: List[int]) -> str:
+    """Compute N50 from a list of contig lengths (in memory)."""
     if not lengths:
         return "NA"
-
     lengths.sort(reverse=True)
     total_len = sum(lengths)
     cum_len = 0
     for l in lengths:
         cum_len += l
         if cum_len >= total_len / 2:
-            return l
+            return str(l)
     return "NA"
 
-if __name__ == "__main__":
+def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
+    """Process one dataset: build DBG, generate contigs in memory, compute N50, and measure runtime."""
+    start_time = time.time()
     try:
-        data_root = os.path.join("./", "data")
-        results = []
+        # Read reads
+        short1, short2, long1 = read_data(dataset_path)
+        dbg = DBG(k=25, data_list=[short1, short2, long1])
 
-        for dataset in sorted(os.listdir(data_root)):
-            dataset_path = os.path.join(data_root, dataset)
-            if not os.path.isdir(dataset_path):
-                continue
+        # Generate contigs in memory (up to 20 longest contigs)
+        contigs: List[str] = []
+        for _ in range(20):
+            c = dbg.get_longest_contig()
+            if c is None:
+                break
+            contigs.append(c)
 
-            print(f"Processing {dataset}...")
-            short1, short2, long1 = read_data(dataset_path)
-            dbg = DBG(k=25, data_list=[short1, short2, long1])
+        # Compute N50 in memory
+        contig_lengths = [len(c) for c in contigs]
+        N50 = compute_N50_from_lengths(contig_lengths)
 
-            contig_file = os.path.join(dataset_path, "contig.fasta")
-            with open(contig_file, "w") as f:
-                for i in range(20):
-                    c = dbg.get_longest_contig()
-                    if c is None:
-                        break
-                    f.write(f">contig_{i}\n{c}\n")
-
-            # Compute N50 (reproducible)
-            N50 = compute_N50(contig_file)
-
-            # Other metrics require a reference genome, mark as NA
-            metrics = {
-                "Genome_Fraction(%)": "NA",
-                "Duplication ratio": "NA",
-                "N50": N50,
-                "Misassemblies": "NA",
-                "Mismatches per 100kbp": "NA"
-            }
-
-            results.append({
-                "Dataset": dataset,
-                **metrics
-            })
-
-        # Rank by N50 descending (NA treated as 0)
-        results.sort(key=lambda x: float(x["N50"]) if x["N50"] != "NA" else 0, reverse=True)
-        for rank, res in enumerate(results, 1):
-            res["Rank"] = rank
-
-        # Print Markdown table
-        header = ["Rank", "Dataset", "Genome_Fraction(%)", "Duplication ratio", "N50", "Misassemblies", "Mismatches per 100kbp"]
-        print("| " + " | ".join(header) + " |")
-        print("|" + "|".join(["---"]*len(header)) + "|")
-        for res in results:
-            print(f"| {res['Rank']} | {res['Dataset']} | {res['Genome_Fraction(%)']} | {res['Duplication ratio']} | {res['N50']} | {res['Misassemblies']} | {res['Mismatches per 100kbp']} |")
+        metrics: Dict[str, str] = {
+            "Dataset": dataset_name,
+            "Rank": "NA",  
+            "Submission_Time": datetime.now().strftime("%Y/%m/%d %I:%M:%S%p"),
+            "Submission_Count": "NA",
+            "Genome_Fraction(%)": "NA",
+            "Duplication ratio": "NA",
+            "N50": N50,
+            "Misassemblies": "NA",
+            "Mismatches per 100kbp": "NA",
+        }
 
     except Exception:
         traceback.print_exc()
-        sys.exit(1)
+        metrics = {
+            "Dataset": dataset_name,
+            "Rank": "NA",
+            "Submission_Time": datetime.now().strftime("%Y/%m/%d %I:%M:%S%p"),
+            "Submission_Count": "NA",
+            "Genome_Fraction(%)": "NA",
+            "Duplication ratio": "NA",
+            "N50": "NA",
+            "Misassemblies": "NA",
+            "Mismatches per 100kbp": "NA",
+        }
+
+    metrics["Runtime_sec"] = str(int(time.time() - start_time))
+    return metrics
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <data_root>")
+        return
+
+    data_root: str = sys.argv[1]
+    results: List[Dict[str, str]] = []
+
+    # List all datasets
+    datasets: List[str] = sorted(
+        [d for d in os.listdir(data_root) if os.path.isdir(os.path.join(data_root, d))]
+    )
+
+    # Parallel processing
+    with ThreadPoolExecutor(max_workers=len(datasets)) as executor:
+        future_to_dataset = {
+            executor.submit(process_dataset, os.path.join(data_root, d), d): d for d in datasets
+        }
+
+        for future in as_completed(future_to_dataset):
+            try:
+                results.append(metrics)
+            except Exception:
+                dataset_name = future_to_dataset[future]
+                print(f"Unhandled error processing {dataset_name}")
+                traceback.print_exc()
+
+    # Rank by N50 descending (NA treated as 0)
+    results.sort(key=lambda x: int(x["N50"]) if x["N50"] != "NA" else 0, reverse=True)
+    for rank, res in enumerate(results, 1):
+        res["Rank"] = str(rank)
+
+    # Print Markdown table (compatible with evaluate.sh)
+    header = [
+        "Rank",
+        "Dataset",
+        "Submission_Time",
+        "Submission_Count",
+        "Genome_Fraction(%)",
+        "Duplication ratio",
+        "N50",
+        "Misassemblies",
+        "Mismatches per 100kbp",
+    ]
+    print("| " + " | ".join(header) + " |")
+    print("|" + "|".join(["---"] * len(header)) + "|")
+    for res in results:
+        print(
+            f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | "
+            f"{res['Submission_Count']} | {res['Genome_Fraction(%)']} | "
+            f"{res['Duplication ratio']} | {res['N50']} | {res['Misassemblies']} | "
+            f"{res['Mismatches per 100kbp']} |"
+        )
+
+if __name__ == "__main__":
+    main()

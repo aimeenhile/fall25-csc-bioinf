@@ -15,31 +15,38 @@ COL_N50=8
 printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "Dataset" "Language" "Runtime" "N50"
 printf "%s\n" "-------------------------------------------------------------------------------------------------------"
 
-# Helper function to run a command and capture N50 from its Markdown table output
+# Helper function to run a command and capture N50 
 run_and_capture_n50() {
     local lang=$1
     local cmd=$2
     local dataset=$3
 
-    start=$(date +%s)
+    # Run the script and capture Markdown table output
+    output=$($cmd "$DATA_DIR")
 
-    # Capture the stdout of the script
-    output=$($cmd "$DATA_DIR/$dataset")
-    
-    end=$(date +%s)
-    runtime=$((end - start))
+    # Extract the line corresponding to the dataset
+    dataset_line=$(echo "$output" | grep -E "^\| .* $dataset .* \|")
 
-    # Extract N50 from Markdown table 
-    N50=$(echo "$output" | grep -E "^\|.*$dataset.*\|" | awk -F'|' '{gsub(/ /,"",$5); print $5}')
-    [[ -z "$N50" ]] && N50="NA"
+    if [[ -z "$dataset_line" ]]; then
+        echo "Error: Dataset $dataset not found in output"
+        N50="NA"
+        runtime_str="NA"
+    else
+        # Extract N50 and runtime (runtime in seconds is in the hidden column Runtime_sec)
+        N50=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$7); print $7}')
+        # Use runtime in seconds from the "Runtime_sec" column if present
+        runtime_sec=$(echo "$output" | grep -E "^\| .* $dataset .* \|" | awk -F'|' '{gsub(/ /,"",$10); print $10}')
+        if [[ -z "$runtime_sec" ]]; then
+            runtime_sec=0
+        fi
+        # Format runtime as h:mm:ss
+        hh=$((runtime_sec/3600))
+        mm=$(( (runtime_sec%3600)/60 ))
+        ss=$((runtime_sec%60))
+        runtime_str=$(printf "%d:%02d:%02d" $hh $mm $ss)
+    fi
 
-    # Format runtime as h:mm:ss
-    hh=$((runtime/3600))
-    mm=$(( (runtime%3600)/60 ))
-    ss=$((runtime%60))
-    runtime_str=$(printf "%d:%02d:%02d" $hh $mm $ss)
-
-    # Print nicely aligned output
+    # Print nicely aligned table
     printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime_str" "$N50"
 }
 
@@ -53,4 +60,3 @@ for dataset in $(ls "$DATA_DIR" | sort); do
         run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset"
     fi
 done
-

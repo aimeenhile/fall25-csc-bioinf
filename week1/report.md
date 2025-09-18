@@ -18,15 +18,15 @@ git push origin main
 ```
 
 # 2. Python Setup & Runs
-- Extract the 4 datasets provided
+- Extract the 4 datasets provided into `week1/data`
 ```
-unzip data1.zip
-unzip data2.zip
-unzip data3.zip
-unzip data4.zip
+unzip data1.zip -d week1/data/data1
+unzip data2.zip -d week1/data/data2
+unzip data3.zip -d week1/data/data3
+unzip data4.zip -d week1/data/data4
 ```
 - Organize the datasets and the source codes (datasets go to `/data` and `.py` files go to `/code`)
-- Run all the experiements with the source Python code
+- In directory `week1/code/`, run all the experiements with the source Python code
 ```
 ulimit -s 8192000
 python main.py ../data/data1
@@ -36,4 +36,7 @@ python main.py ../data/data4
 ```
 
 # 3. Condon Conversion & Runs
-
+- Codon version of `main.py` was implemented as `main.codon.py`
+```
+codon run -release code/main.codon.py ./data
+```
