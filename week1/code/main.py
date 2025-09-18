@@ -109,15 +109,10 @@ def main() -> None:
         "Genome_Fraction(%)", "Duplication ratio", "N50",
         "Misassemblies", "Mismatches per 100kbp", "Runtime"
     ]
-    print("\nMarkdown table output:")
+    
     print("| " + " | ".join(header) + " |")
     print("|" + "|".join(["---"]*len(header)) + "|")
     for res in results:
-        runtime_sec = int(res["Runtime_sec"])
-        hh = runtime_sec // 3600
-        mm = (runtime_sec % 3600) // 60
-        ss = runtime_sec % 60
-        runtime_str = f"{hh}:{mm:02d}:{ss:02d}"
         print(
             f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | {res['Submission_Count']} | "
             f"{res['Genome_Fraction(%)']} | {res['Duplication ratio']} | {res['N50']} | "

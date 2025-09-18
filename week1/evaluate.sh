@@ -11,6 +11,16 @@ COL_LANG=10
 COL_RUNTIME=10
 COL_N50=8
 
+# Detect CPU cores and cap between 2-4
+CPU_CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+if [[ -z "$CPU_CORES" ]]; then CPU_CORES=2; fi
+if (( CPU_CORES < 2 )); then MAX_JOBS=2
+elif (( CPU_CORES > 4 )); then MAX_JOBS=4
+else MAX_JOBS=$CPU_CORES
+fi
+
+job_count=0
+
 # Output header
 printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "Dataset" "Language" "Runtime" "N50"
 printf "%s\n" "-------------------------------------------------------------------------------------------------------"
@@ -41,23 +51,23 @@ run_and_capture_n50() {
         [[ -z "$runtime_str" ]] && runtime_str="NA"
     fi
 
-
     # Print nicely aligned table
     printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime_str" "$N50"
 }
 
-# Loop over datasets
+# Queue jobs
 for dataset in $(ls "$DATA_DIR" | sort); do
     if [ -d "$DATA_DIR/$dataset" ]; then
-        # Run Python and Codon in parallel
         run_and_capture_n50 "python" "python $CODE_DIR/main.py" "$dataset" &
-        pid_python=$!
-
+        ((job_count+=1))
         run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset" &
-        pid_codon=$!
+        ((job_count+=1))
 
-        # Wait for both to finish
-        wait $pid_python
-        wait $pid_codon
+        if (( job_count >= MAX_JOBS )); then
+            wait
+            job_count=0
+        fi
     fi
 done
+
+wait
