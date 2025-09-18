@@ -27,20 +27,20 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
     """Process one dataset: build DBG, generate contigs in memory, compute N50, and measure runtime."""
     start_time = time.time()
     try:
+        print(f"Processing {dataset_name}...")
         # Read reads
         short1, short2, long1 = read_data(dataset_path)
         dbg = DBG(k=25, data_list=[short1, short2, long1])
 
         # Generate contigs in memory (up to 20 longest contigs)
-        contigs: List[str] = []
-        for _ in range(20):
+        contig_lengths: List[str] = []
+        while True:
             c = dbg.get_longest_contig()
             if c is None:
                 break
-            contigs.append(c)
+            contig_lengths.append(len(c))
 
         # Compute N50 in memory
-        contig_lengths = [len(c) for c in contigs]
         N50 = compute_N50_from_lengths(contig_lengths)
 
         metrics: Dict[str, str] = {
@@ -56,6 +56,7 @@ def process_dataset(dataset_path: str, dataset_name: str) -> Dict[str, str]:
         }
 
     except Exception:
+        print(f"Error processing {dataset_name}")
         traceback.print_exc()
         metrics = {
             "Dataset": dataset_name,
@@ -115,6 +116,7 @@ def main() -> None:
         "N50",
         "Misassemblies",
         "Mismatches per 100kbp",
+        "Runtime_sec", 
     ]
     print("| " + " | ".join(header) + " |")
     print("|" + "|".join(["---"] * len(header)) + "|")
@@ -123,7 +125,7 @@ def main() -> None:
             f"| {res['Rank']} | {res['Dataset']} | {res['Submission_Time']} | "
             f"{res['Submission_Count']} | {res['Genome_Fraction(%)']} | "
             f"{res['Duplication ratio']} | {res['N50']} | {res['Misassemblies']} | "
-            f"{res['Mismatches per 100kbp']} |"
+            f"{res['Mismatches per 100kbp']} | {res['Runtime_sec']} |"
         )
 
 if __name__ == "__main__":

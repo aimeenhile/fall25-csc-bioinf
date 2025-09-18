@@ -32,19 +32,21 @@ run_and_capture_n50() {
         N50="NA"
         runtime_str="NA"
     else
-        # Extract N50 and runtime (runtime in seconds is in the hidden column Runtime_sec)
+        # Extract N50 (7th column)
         N50=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$7); print $7}')
-        # Use runtime in seconds from the "Runtime_sec" column if present
-        runtime_sec=$(echo "$output" | grep -E "^\| .* $dataset .* \|" | awk -F'|' '{gsub(/ /,"",$10); print $10}')
-        if [[ -z "$runtime_sec" ]]; then
-            runtime_sec=0
-        fi
+        [[ -z "$N50" ]] && N50="NA"
+
+        # Extract runtime in seconds (last column)
+        runtime_sec=$(echo "$dataset_line" | awk -F'|' '{gsub(/ /,"",$NF); print $NF}')
+        [[ -z "$runtime_sec" ]] && runtime_sec=0
+
         # Format runtime as h:mm:ss
         hh=$((runtime_sec/3600))
         mm=$(( (runtime_sec%3600)/60 ))
         ss=$((runtime_sec%60))
         runtime_str=$(printf "%d:%02d:%02d" $hh $mm $ss)
     fi
+
 
     # Print nicely aligned table
     printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime_str" "$N50"
