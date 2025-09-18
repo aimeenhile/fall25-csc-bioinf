@@ -3,92 +3,88 @@ from utils import read_data
 import sys
 import os
 import traceback
-import subprocess
 
 sys.setrecursionlimit(1000000)
 
-# === CONFIG ===
-DATA_ROOT = '../data'       # path to data folders (data1, data2, ...)
-K = 25
-TOP_CONTIGS = 20
-QUAST_PATH = 'quast'        # ensure quast is in PATH
+def compute_N50(contig_file):
+    """
+    Compute N50 from contig lengths 
+    """
+    lengths = []
+    with open(contig_file) as f:
+        seq_len = 0
+        for line in f:
+            if line.startswith(">"):
+                if seq_len > 0:
+                    lengths.append(seq_len)
+                seq_len = 0
+            else:
+                seq_len += len(line.strip())
+        if seq_len > 0:
+            lengths.append(seq_len)
 
-def run_assembler(dataset_path):
-    """Build DBG and output contigs."""
-    short1, short2, long1 = read_data(dataset_path)
-    dbg = DBG(k=K, data_list=[short1, short2, long1])
+    if not lengths:
+        return "NA"
 
-    contig_file = os.path.join(dataset_path, 'contig.fasta')
-    with open(contig_file, 'w') as f:
-        for i in range(TOP_CONTIGS):
-            c = dbg.get_longest_contig()
-            if c is None:
-                break
-            f.write(f'>contig_{i}\n')
-            f.write(c + '\n')
-    return contig_file
-
-def run_quast(contig_file, dataset_name):
-    """Run QUAST on contigs and return parsed stats."""
-    quast_out = os.path.join(os.path.dirname(contig_file), 'quast_output')
-    cmd = [
-        QUAST_PATH,
-        '-o', quast_out,
-        '--threads', '4',
-        contig_file
-    ]
-    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
-    # parse report.tsv
-    report_file = os.path.join(quast_out, 'report.tsv')
-    stats = {}
-    if os.path.exists(report_file):
-        with open(report_file, 'r') as f:
-            headers = f.readline().strip().split('\t')
-            values = f.readline().strip().split('\t')
-            stats = dict(zip(headers, values))
-    stats['Dataset'] = dataset_name
-    return stats
-
-def compute_rank(stats_list):
-    """Rank contigs by N50 descending (higher N50 -> better)."""
-    sorted_list = sorted(stats_list, key=lambda x: float(x.get('N50', 0)), reverse=True)
-    for i, s in enumerate(sorted_list, 1):
-        s['Rank'] = i
-    return sorted_list
-
-def print_markdown_table(stats_list):
-    """Print the final Markdown table."""
-    headers = ['Rank','Dataset','Submission Count','Genome Fraction (%)','Duplication ratio','N50','Misassemblies','Mismatches per 100 kbp']
-    print('| ' + ' | '.join(headers) + ' |')
-    print('|' + '---|'*len(headers))
-    for s in stats_list:
-        print('| {Rank} | {Dataset} | {# contigs} | {Genome Fraction} | {Duplication ratio} | {N50} | {# misassemblies} | {# mismatches per 100 kbp} |'.format(
-            Rank=s.get('Rank', ''),
-            Dataset=s.get('Dataset',''),
-            **s
-        ))
+    lengths.sort(reverse=True)
+    total_len = sum(lengths)
+    cum_len = 0
+    for l in lengths:
+        cum_len += l
+        if cum_len >= total_len / 2:
+            return l
+    return "NA"
 
 if __name__ == "__main__":
     try:
-        if not os.path.exists(DATA_ROOT):
-            raise FileNotFoundError(f"Data root '{DATA_ROOT}' not found. Please adjust DATA_ROOT path.")
-        
-        stats_all = []
-        for dataset in sorted(os.listdir(DATA_ROOT)):
-            dataset_path = os.path.join(DATA_ROOT, dataset)
+        data_root = os.path.join("./", "data")
+        results = []
+
+        for dataset in sorted(os.listdir(data_root)):
+            dataset_path = os.path.join(data_root, dataset)
             if not os.path.isdir(dataset_path):
                 continue
-            print(f'Processing {dataset} ...')
-            contig_file = run_assembler(dataset_path)
-            stats = run_quast(contig_file, dataset)
-            # add submission count as number of contigs
-            stats['# contigs'] = sum(1 for line in open(contig_file) if line.startswith('>'))
-            stats_all.append(stats)
 
-        ranked_stats = compute_rank(stats_all)
-        print('\n## Genome Assembly Results\n')
-        print_markdown_table(ranked_stats)
+            print(f"Processing {dataset}...")
+            short1, short2, long1 = read_data(dataset_path)
+            dbg = DBG(k=25, data_list=[short1, short2, long1])
+
+            contig_file = os.path.join(dataset_path, "contig.fasta")
+            with open(contig_file, "w") as f:
+                for i in range(20):
+                    c = dbg.get_longest_contig()
+                    if c is None:
+                        break
+                    f.write(f">contig_{i}\n{c}\n")
+
+            # Compute N50 (reproducible)
+            N50 = compute_N50(contig_file)
+
+            # Other metrics require a reference genome, mark as NA
+            metrics = {
+                "Genome_Fraction(%)": "NA",
+                "Duplication ratio": "NA",
+                "N50": N50,
+                "Misassemblies": "NA",
+                "Mismatches per 100kbp": "NA"
+            }
+
+            results.append({
+                "Dataset": dataset,
+                **metrics
+            })
+
+        # Rank by N50 descending (NA treated as 0)
+        results.sort(key=lambda x: float(x["N50"]) if x["N50"] != "NA" else 0, reverse=True)
+        for rank, res in enumerate(results, 1):
+            res["Rank"] = rank
+
+        # Print Markdown table
+        header = ["Rank", "Dataset", "Genome_Fraction(%)", "Duplication ratio", "N50", "Misassemblies", "Mismatches per 100kbp"]
+        print("| " + " | ".join(header) + " |")
+        print("|" + "|".join(["---"]*len(header)) + "|")
+        for res in results:
+            print(f"| {res['Rank']} | {res['Dataset']} | {res['Genome_Fraction(%)']} | {res['Duplication ratio']} | {res['N50']} | {res['Misassemblies']} | {res['Mismatches per 100kbp']} |")
 
     except Exception:
         traceback.print_exc()

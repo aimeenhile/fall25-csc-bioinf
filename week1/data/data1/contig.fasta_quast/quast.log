@@ -1,0 +1,46 @@
+/home/biouser/miniconda3/envs/bioinfo/bin/quast ./../data/data1/contig.fasta -o ./../data/data1/contig.fasta_quast --threads 2
+
+Version: 5.2.0
+
+System information:
+  OS: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-debian-trixie-sid (linux_64)
+  Python version: 3.6.15
+  CPUs number: 16
+
+Started: 2025-09-18 00:08:47
+
+Logging to /home/biouser/fall25-csc-bioinf/week1/data/data1/contig.fasta_quast/quast.log
+
+CWD: /home/biouser/fall25-csc-bioinf/week1/code
+Main parameters: 
+  MODE: default, threads: 2, min contig length: 500, min alignment length: 65, min alignment IDY: 95.0, \
+  ambiguity: one, min local misassembly length: 200, min extensive misassembly length: 1000
+
+Contigs:
+  Pre-processing...
+  ./../data/data1/contig.fasta ==> contig
+
+2025-09-18 00:08:48
+Running Basic statistics processor...
+  Contig files: 
+    contig
+
+'ascii' codec can't decode byte 0xef in position 14588: ordinal not in range(128)
+Traceback (most recent call last):
+  File "/home/biouser/miniconda3/envs/bioinfo/bin/quast", line 309, in <module>
+    return_code = main(sys.argv[1:])
+  File "/home/biouser/miniconda3/envs/bioinfo/bin/quast", line 149, in main
+    icarus_gc_fpath, circos_gc_fpath = basic_stats.do(ref_fpath, contigs_fpaths, os.path.join(output_dirpath, 'basic_stats'), output_dirpath)
+  File "/home/biouser/miniconda3/envs/bioinfo/opt/quast-5.2.0/quast_libs/basic_stats.py", line 267, in do
+    html_saver.save_contigs_lengths(results_dir, contigs_fpaths, corr_lists_of_lengths)
+  File "/home/biouser/miniconda3/envs/bioinfo/opt/quast-5.2.0/quast_libs/html_saver/html_saver.py", line 486, in save_contigs_lengths
+    append(results_dirpath, json_fpath, 'contigsLengths')
+  File "/home/biouser/miniconda3/envs/bioinfo/opt/quast-5.2.0/quast_libs/html_saver/html_saver.py", line 220, in append
+    init(html_fpath)
+  File "/home/biouser/miniconda3/envs/bioinfo/opt/quast-5.2.0/quast_libs/html_saver/html_saver.py", line 115, in init
+    script_texts.append(js_html(aux_f_rel_path))
+  File "/home/biouser/miniconda3/envs/bioinfo/opt/quast-5.2.0/quast_libs/html_saver/html_saver.py", line 95, in js_html
+    return '<script type="text/javascript">\n' + open(get_real_path(script_rel_path)).read() + '\n</script>\n'
+  File "/home/biouser/miniconda3/envs/bioinfo/lib/python3.6/encodings/ascii.py", line 26, in decode
+    return codecs.ascii_decode(input, self.errors)[0]
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xef in position 14588: ordinal not in range(128)

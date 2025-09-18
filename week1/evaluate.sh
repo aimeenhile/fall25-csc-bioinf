@@ -1,42 +1,56 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-# Path to your datasets
-DATASETS=("data/data1")  # add more datasets if needed
+# Root directories
+CODE_DIR="./code"
+DATA_DIR="./data"
+
+# Column widths 
+COL_DATASET=12
+COL_LANG=10
+COL_RUNTIME=10
+COL_N50=8
 
 # Output header
-echo -e "Dataset\tLanguage\tRuntime\tN50"
-echo "-------------------------------------------------------------------------------------------------------"
+printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "Dataset" "Language" "Runtime" "N50"
+printf "%s\n" "-------------------------------------------------------------------------------------------------------"
 
-for DATA in "${DATASETS[@]}"; do
-    # Python run
-    START=$(date +%s)
-    PYTHON_OUTPUT=$(python3 code/main.py "$DATA")
-    END=$(date +%s)
-    PYTHON_RUNTIME=$((END - START))
+# Helper function to run a command and capture N50 from its Markdown table output
+run_and_capture_n50() {
+    local lang=$1
+    local cmd=$2
+    local dataset=$3
+
+    start=$(date +%s)
+
+    # Capture the stdout of the script
+    output=$($cmd "$DATA_DIR/$dataset")
     
-    # Extract N50 (assuming last line of output contains the N50)
-    PYTHON_N50=$(echo "$PYTHON_OUTPUT" | tail -n1)
-    
-    # Format runtime as HH:MM:SS
-    PYTHON_RUNTIME_FMT=$(printf '%02d:%02d:%02d' $((PYTHON_RUNTIME/3600)) $((PYTHON_RUNTIME%3600/60)) $((PYTHON_RUNTIME%60)))
+    end=$(date +%s)
+    runtime=$((end - start))
 
-    echo -e "$(basename "$DATA")\tpython\t$PYTHON_RUNTIME_FMT\t$PYTHON_N50"
+    # Extract N50 from Markdown table (line containing dataset name)
+    N50=$(echo "$output" | grep -E "^\|.*$dataset.*\|" | awk -F'|' '{gsub(/ /,"",$5); print $5}')
+    [[ -z "$N50" ]] && N50="NA"
 
-    # Codon run
-    START=$(date +%s)
-    CODON_OUTPUT=$(codon run -release code/main.codon.py "$DATA")
-    END=$(date +%s)
-    CODON_RUNTIME=$((END - START))
+    # Format runtime as h:mm:ss
+    hh=$((runtime/3600))
+    mm=$(( (runtime%3600)/60 ))
+    ss=$((runtime%60))
+    runtime_str=$(printf "%d:%02d:%02d" $hh $mm $ss)
 
-    # Extract N50 similarly (last line of output)
-    CODON_N50=$(echo "$CODON_OUTPUT" | tail -n1)
-    CODON_RUNTIME_FMT=$(printf '%02d:%02d:%02d' $((CODON_RUNTIME/3600)) $((CODON_RUNTIME%3600/60)) $((CODON_RUNTIME%60)))
+    # Print nicely aligned output
+    printf "%-${COL_DATASET}s %-${COL_LANG}s %-${COL_RUNTIME}s %-${COL_N50}s\n" "$dataset" "$lang" "$runtime_str" "$N50"
+}
 
-    echo -e "$(basename "$DATA")\tcodon\t$CODON_RUNTIME_FMT\t$CODON_N50"
+# Loop over datasets
+for dataset in $(ls "$DATA_DIR" | sort); do
+    if [ -d "$DATA_DIR/$dataset" ]; then
+        # Run Python version
+        run_and_capture_n50 "python" "python3 $CODE_DIR/main.py" "$dataset"
+
+        # Run Codon version
+        run_and_capture_n50 "codon" "codon run -release $CODE_DIR/main.codon.py" "$dataset"
+    fi
 done
-Rank	Nickname	Submission Time	Submission Count	Genome_Fraction(%)	Duplication ratio	NGA50	Misassemblies	Mismatches per 100kbp
-20	crayon	2019/06/18 11:27:47pm	22	99.886	1.982	9118.8	2.0	0
-18	crayon	2019/06/18 11:29:13pm	7	99.942	2.0052	9129.2	3.0	0
-20	crayon	2019/06/18 11:29:59pm	9	78.6	1.6	7859.2	0.0	0
-5	crayon	2019/06/18 11:30:42pm	10	78.2948	1.607	55757.8	11.0
+
