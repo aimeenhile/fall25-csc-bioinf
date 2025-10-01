@@ -17,28 +17,12 @@ if __codon__:
     # Codon environment
     # The path is relative to the test file.
     from ..code.bio_codon import motifs
-    # In Codon, we need to define our own test decorator and assertion helpers.
-    def test(func):
-        func()
-
-    def assertEqual(a, b):
-        assert a == b, f"Assertion failed: {a} != {b}"
-
-    def assertTrue(condition):
-        assert condition, f"Assertion failed: condition is not True"
+    import unittest
+    import numpy as np
 
 else:
     # Python environment
     from Bio import motifs
-    # In Python, we can use unittest, but for consistency, we'll use simple functions.
-    def test(func):
-        func()
-
-    def assertEqual(a, b):
-        assert a == b, f"Assertion failed: {a} != {b}"
-
-    def assertTrue(condition):
-        assert condition, f"Assertion failed: condition is not True"
 
 # --- Test Cases ---
 
