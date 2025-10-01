@@ -1,0 +1,41 @@
+name: Week 1 Deliverable
+on: [push]
+
+jobs:
+  week1:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out repository code
+      - uses: actions/checkout@v5
+
+      # 2. Set up Python
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      # 3. Install Codon
+      - name: Install Codon
+        run: |
+          mkdir -p ${HOME}/.codon
+          curl -L https://github.com/exaloop/codon/releases/download/v0.19.3/codon-linux-x86_64.tar.gz | tar zxvf - --strip-components=1 -C ${HOME}/.codon
+          curl -L https://github.com/exaloop/seq/releases/download/v0.11.5/seq-linux-x86_64.tar.gz | tar zxvf - -C ${HOME}/.codon/lib/codon/plugins
+          echo "${HOME}/.codon/bin" >> $GITHUB_PATH
+
+      # 4. Set up Codon Python bridge
+      - name: Set up Codon Python bridge
+        run: |
+          pip install find_libpython
+          echo "CODON_PYTHON=$(find_libpython)" >> $GITHUB_ENV
+          echo "Found Python at: $(find_libpython)"
+
+       # 5. Increase stack size for large datasets
+      - name: Increase stack size
+        run: ulimit -s 8192000
+        
+      # 6. Ensure evaluate.sh is executable
+      - name: Make evaluate.sh executable
+        run: chmod +x week1/evaluate.sh
+
+      # 7. Run evaluation script
+      - name: Week 1 
+        run: bash week1/evaluate.sh

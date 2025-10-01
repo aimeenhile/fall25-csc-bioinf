@@ -14,6 +14,11 @@ from python.Bio.Seq import Seq
 
 #from . import _pwm  # type: ignore
 
+def _has_dna_alphabet(self):
+    return sorted(self.alphabet) == ["A", "C", "G", "T"]
+
+def _has_rna_alphabet(self):
+    return sorted(self.alphabet) == ["A", "C", "G", "U"]
 
 class GenericPositionMatrix(dict):
     """Base class for the support of position matrix operations."""
