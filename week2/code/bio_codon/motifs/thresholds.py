@@ -2,6 +2,8 @@
 
 """Approximate calculation of appropriate thresholds for motif finding."""
 
+from typing import Any, Optional, List, Dict, Tuple
+from . import matrix
 
 class ScoreDistribution:
     """Class representing approximate score distribution for a given motif.
@@ -10,8 +12,15 @@ class ScoreDistribution:
     scores with a predefined precision. Provides a number of methods for calculating
     thresholds for motif occurrences.
     """
+    min_score: float
+    interval: float
+    n_points: int
+    ic: float
+    step: float
+    mo_density: List[float]
+    bg_density: List[float]
 
-    def __init__(self, motif=None, precision=10**3, pssm=None, background=None):
+    def __init__(self, motif=None, precision: int=10**3, pssm=None, background=None):
         """Initialize the class."""
         if pssm is None:
             self.min_score = min(0.0, motif.min_score())

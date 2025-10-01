@@ -6,6 +6,7 @@ Implementation of frequency (count) matrices, position-weight matrices,
 and position-specific scoring matrices.
 """
 
+from typing import Any, Optional, List, Dict, Tuple, Union
 import math
 from python import numbers
 import numpy as np
@@ -16,6 +17,8 @@ from python.Bio.Seq import Seq
 
 class GenericPositionMatrix(dict):
     """Base class for the support of position matrix operations."""
+    length: int
+    alphabet: str
 
     def __init__(self, alphabet, values):
         """Initialize the class."""

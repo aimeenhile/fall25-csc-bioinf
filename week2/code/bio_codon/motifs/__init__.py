@@ -31,6 +31,10 @@ def parse(handle: Any, fmt: str, strict:bool = True) -> 'Motif':
 
     Currently supported format:
      - MINIMAL:          MINIMAL MEME output file motif
+     - pfm-four-columns: Generic position-frequency matrix format with four columns. (CIS-BP, HOMER, HOCOMOCO, Neph, Tiffin)
+     - pfm-four-rows:    Generic position-frequency matrix format with four row. (ScerTF, YeTFaSCo, hDPI, iDMMPMM, FlyFactorSurvey, Cys2His2 Zinc Finger Proteins PWM Predictor)
+     - pfm:              JASPAR-style position-frequency matrix
+     - jaspar:           JASPAR-style multiple PFM format
 
     If strict is True (default), the parser will raise a ValueError if the
     file contents does not strictly comply with the specified file format.
@@ -47,8 +51,7 @@ def read(handle: Any, fmt: str, strict: bool =True):
     """Read a motif from a handle using the specified file-format.
 
     This supports the same formats as Bio.motifs.parse(), but
-    only for files containing exactly one motif.  For example,
-    reading a JASPAR-style pfm file:
+    only for files containing exactly one motif.  
 
     If the handle contains no records, or more than one record,
     an exception is raised.

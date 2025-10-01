@@ -2,9 +2,11 @@
 
 """Module for the support of MEME minimal motif format."""
 
+from typing import Any, Optional, List, Dict, Tuple, Union
+from . import Motif
 from python.Bio.Seq import Seq
 
-def read(handle):
+def read(handle: Any):
     """Parse the text output of the MEME program into a meme.Record object.
 
     Examples
@@ -82,6 +84,12 @@ class Instances(list[Seq]):
 
 class Record(list):
     """Class for holding the results of a minimal MEME run."""
+    version: str
+    datafile: str
+    command: str
+    alphabet: Optional[str]
+    background: Dict[str, float]
+    sequences: List[Any]
 
     def __init__(self):
         """Initialize record class values."""
@@ -92,12 +100,13 @@ class Record(list):
         self.background = {}
         self.sequences = []
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, int]):
         """Return the motif of index key."""
         if isinstance(key, str):
             for motif in self:
                 if motif.name == key:
                     return motif
+            raise KeyError(key)
         else:
             return list.__getitem__(self, key)
 
@@ -105,7 +114,7 @@ class Record(list):
 # Everything below is private
 
 
-def _read_background(record, handle):
+def _read_background(record: Record, handle: Any):
     """Read background letter frequencies (PRIVATE)."""
     for line in handle:
         if line.startswith("Background letter frequencies"):
