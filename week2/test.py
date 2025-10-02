@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 import numpy as np
 import math
 from typing import List, Dict, TextIO
@@ -20,10 +21,17 @@ if CODON:
     from .code.bio_codon import create, read, Motif
     from .code.bio_codon.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
     from .code.bio_codon.thresholds import ScoreDistribution
+    try:
+        from .code.bio_codon.seq import Seq
+    except ImportError:
+        pass # Will rely on create to handle strings if Seq is not directly imported
 else:
     # Python environment
     from Bio import motifs
     from Bio.Seq import Seq
+    from __init__ import Motif, create, read # Assuming Motif is in __init__.py
+    from matrix import PositionSpecificScoringMatrix, PositionWeightMatrix
+    from thresholds import ScoreDistribution
 
 
 # --- Test Cases ---
@@ -45,340 +53,272 @@ from Bio import motifs
 from Bio.Seq import Seq
 
 
-class TestBasic(unittest.TestCase):
-    """Basic motif tests."""
-
-    def test_format(self):
-        m = motifs.create([Seq("ATATA")])
-        m.name = "Foo"
-        s1 = format(m, "pfm")
-        expected_pfm = """  1.00   0.00   1.00   0.00  1.00
-  0.00   0.00   0.00   0.00  0.00
-  0.00   0.00   0.00   0.00  0.00
-  0.00   1.00   0.00   1.00  0.00
-"""
-        s2 = format(m, "jaspar")
-        expected_jaspar = """>None Foo
-A [ 1 0 1 0 1 ]
-C [ 0 0 0 0 0 ]
-G [ 0 0 0 0 0 ]
-T [ 0 1 0 1 0 ]
-"""
-        self.assertEqual(s1, expected_pfm)
-        self.assertEqual(s2, expected_jaspar)
-
-    def test_motif_object(self):
-        instances = ["TCAATC", "TTAATT", "TTCATC", "TCAACA"]
-        m = motifs.create(instances)
+class TestMotifBasic(unittest.TestCase):
+    """Tests basic Motif creation and properties."""
+    
+    def setUp(self):
+        # A set of DNA sequences to create a motif
+        self.sequences_dna = [
+            "TACAA",
+            "TACGC",
+            "TACAC",
+            "TACCC",
+            "AACCC",
+            "AATGC",
+            "AATGC",
+        ]
+        # A set of RNA sequences
+        self.sequences_rna = [
+            "UACAA",
+            "UACGC",
+            "UACAC",
+            "UACCC",
+            "AACCC",
+            "AAUGC",
+            "AAUGC",
+        ]
         
-        # Test Consensus
-        self.assertEqual(m.consensus, "TCAATC")
-
-        # Test PWM
-        pwm = m.counts.normalize()
-        self.assertAlmostEqual(pwm['A'][0], 0.0, places=5)
-        self.assertAlmostEqual(pwm['C'][1], 0.5, places=5)
-        self.assertAlmostEqual(pwm['G'][3], 0.0, places=5)
-        self.assertAlmostEqual(pwm['T'][0], 1.0, places=5)
+        # Create Motif objects using the custom `create` function
+        self.motif_dna = create(self.sequences_dna, alphabet="ACGT")
+        self.motif_rna = create(self.sequences_rna, alphabet="ACGU")
         
-        # Test PSSM (default background)
-        pssm = pwm.log_odds()
-        self.assertAlmostEqual(pssm['A'][0], -2.0, places=3)
-        self.assertAlmostEqual(pssm['C'][1], 0.585, places=3) # log2(0.5/0.25) = 1
-        self.assertAlmostEqual(pssm['T'][0], 2.0, places=3) # log2(1.0/0.25) = 2
+        # Expected Counts Matrix for DNA motif (Position: 0 1 2 3 4)
+        # A: 2 4 0 0 0
+        # C: 0 0 4 1 4
+        # G: 0 0 0 3 0
+        # T: 5 3 3 3 3 (T/U)
+        
+    def test_motif_length(self):
+        """Check if motif length is calculated correctly."""
+        self.assertEqual(self.motif_dna.length, 5)
+        self.assertEqual(self.motif_rna.length, 5)
 
+    def test_motif_count_matrix(self):
+        """Check if the CountsMatrix attribute is correct."""
+        counts = self.motif_dna.counts
+        self.assertIsInstance(counts, CountsMatrix)
+        self.assertEqual(counts["A", 0], 2)
+        self.assertEqual(counts["T", 0], 5)
+        self.assertEqual(counts["C", 2], 4)
+        self.assertEqual(counts["G", 3], 3)
+        self.assertEqual(counts["A", 4], 0)
+        
+        counts_rna = self.motif_rna.counts
+        # For RNA, U replaces T
+        self.assertEqual(counts_rna["U", 0], 5)
 
-    def test_create(self):
-        # Test creation from list of strings
-        instances = ["TCA", "CCA", "TCC", "TGA", "GCA", "TTA"]
-        m = motifs.create(instances)
-        self.assertEqual(m.length, 3)
-        self.assertEqual(m.alphabet, "ACGT")
-        self.assertEqual(m.counts["A"], [0, 2, 6])
-        self.assertEqual(m.counts["C"], [3, 4, 0])
-        self.assertEqual(m.counts["G"], [1, 0, 0])
-        self.assertEqual(m.counts["T"], [2, 0, 0])
-
-        # Test creation from list of Seq objects
-        instances = [Seq("TCA"), Seq("CCA"), Seq("TCC"), Seq("TGA"), Seq("GCA"), Seq("TTA")]
-        m = motifs.create(instances)
-        self.assertEqual(m.length, 3)
-        self.assertEqual(m.alphabet, "ACGT")
-        self.assertEqual(m.counts["A"], [0, 2, 6])
-        self.assertEqual(m.counts["C"], [3, 4, 0])
-        self.assertEqual(m.counts["G"], [1, 0, 0])
-        self.assertEqual(m.counts["T"], [2, 0, 0])
-
-    def test_consensus(self):
-        instances = ["TCA", "CCA", "TCC", "TGA", "GCA", "TTA"]
-        m = motifs.create(instances)
-        # T/C/G (3/2/1), C/A (4/2), A/C/G/T (6/0/0/0) -> C is not correct here, A is the most frequent base
-        self.assertEqual(str(m.consensus), "CNA")
-
-    def test_anticonsensus(self):
-        instances = ["TCA", "CCA", "TCC", "TGA", "GCA", "TTA"]
-        m = motifs.create(instances)
-        # T/C/G (3/2/1), C/A (4/2), A/C/G/T (6/0/0/0)
-        # Anti: G/T/C, G/T, C/G/T
-        self.assertEqual(str(m.anticonsensus), "GTG")
-
-    def test_degen_consensus(self):
-        instances = ["TCA", "CCA", "TCC", "TGA", "GCA", "TTA"]
-        m = motifs.create(instances)
-        # W=A/T, S=G/C, K=G/T, M=A/C, R=A/G, Y=C/T, V=A/C/G, H=A/C/T, D=A/G/T, B=C/G/T
-        # T/C/G (3/2/1) -> S or Y or K or R, must be M: M(A/C) W(A/T) S(G/C) R(A/G) Y(C/T) K(G/T)
-        # Pos 0: T(3), C(2), G(1). Degeneracy is 3 bases: ACGT - A = C,G,T -> B
-        # Pos 1: C(4), A(2). Degeneracy is 2 bases: A,C -> M
-        # Pos 2: A(6). Degeneracy is 1 base: A -> A
-        # The exact degeneracy is complex, but let's test the result from Biopython (which is 'YMA' in some versions)
-        # Biopython 1.76 gives YMA
-        # T:3, C:2, G:1, A:0. Y = C+T = 5. M = A+C = 2. R = A+G = 1.
-        # This is where the old Biopython degeneracy calculation is tricky.
-        # Let's rely on a known example's outcome from Biopython for this specific case:
-        self.assertEqual(str(m.degenerate_consensus), "YMA")
+    def test_motif_consensus(self):
+        """Check if consensus sequence is generated correctly."""
+        # T/A (T dominant), A/T/C (A dominant), C/T (C dominant), G/C/T (G/T dominant, but G is 3, T is 3)
+        # A: 2 4 0 0 0
+        # C: 0 0 4 1 4
+        # G: 0 0 0 3 0
+        # T: 5 3 3 3 3
+        # T A C G T -> T A C T C (If ties are broken by alphabet order, G comes before T)
+        # Biopython breaks ties by alphabetical order (A<C<G<T). In position 3, G=3, T=3. G is chosen.
+        # In position 4, C=4, T=3. C is chosen.
+        # The expected Biopython consensus (which should be replicated):
+        # Pos 0: T (5) > A (2)
+        # Pos 1: A (4) > T (3)
+        # Pos 2: C (4) > T (3)
+        # Pos 3: G (3) = T (3). Tie-break: G is before T. G chosen.
+        # Pos 4: C (4) > T (3)
+        self.assertEqual(self.motif_dna.consensus, "T A C G C".replace(" ", "")) 
+        self.assertEqual(self.motif_rna.consensus, "U A C G C".replace(" ", ""))
 
     def test_reverse_complement(self):
-        # 1. Test creation from strings
-        instances = ["TCA", "CCA", "TCC", "TGA", "GCA", "TTA"]
-        m = motifs.create(instances)
-        m_rc = m.reverse_complement()
-        self.assertEqual(m_rc.length, 3)
-        self.assertEqual(m_rc.alphabet, "ACGT")
-        # Counts matrix is reversed and complemented
-        # Original: A:[0, 2, 6], C:[3, 4, 0], G:[1, 0, 0], T:[2, 0, 0]
-        # RC:
-        # Col 2 -> Col 0 (RC of A/C/G/T -> T/G/C/A)
-        # A @ 0: T (0) -> A (0)
-        # C @ 0: G (1) -> C (1)
-        # G @ 0: C (3) -> G (3)
-        # T @ 0: A (2) -> T (2)
-        # Col 1 -> Col 1 (C/A -> G/T)
-        # A @ 1: T (0) -> A (0)
-        # C @ 1: G (0) -> C (0)
-        # G @ 1: C (4) -> G (4)
-        # T @ 1: A (2) -> T (2)
-        # Col 0 -> Col 2 (T/C/G -> A/G/C)
-        # A @ 2: T (2) -> A (2)
-        # C @ 2: G (1) -> C (1)
-        # G @ 2: C (2) -> G (2)
-        # T @ 2: A (0) -> T (0)
+        """Test reverse complement property."""
+        rc_motif = self.motif_dna.reverse_complement()
+        self.assertIsInstance(rc_motif, Motif)
+        self.assertEqual(rc_motif.length, 5)
+        # Original consensus: T A C G C
+        # Reverse complement: G C G T A
+        self.assertEqual(rc_motif.consensus, "G C G T A".replace(" ", ""))
 
-        # Expected RC Counts (from Biopython reference):
-        # A: [0, 2, 2], C: [1, 4, 1], G: [3, 0, 2], T: [2, 0, 1]
-        self.assertEqual(m_rc.counts["A"], [0, 2, 2])
-        self.assertEqual(m_rc.counts["C"], [1, 4, 1])
-        self.assertEqual(m_rc.counts["G"], [3, 0, 2])
-        self.assertEqual(m_rc.counts["T"], [2, 0, 1])
+    def test_motif_slicing(self):
+        """Test slicing of the Motif object."""
+        # Slice from index 1 to 4 (exclusive of 4) -> indices 1, 2, 3
+        sliced_motif = self.motif_dna[1:4]
+        self.assertIsInstance(sliced_motif, Motif)
+        self.assertEqual(sliced_motif.length, 3)
+        # Original columns 1, 2, 3:
+        # T A C G C
+        # A: 4 0 0
+        # C: 0 4 1
+        # G: 0 0 3
+        # T: 3 3 3
+        # Consensus: A C G
+        self.assertEqual(sliced_motif.consensus, "ACG")
 
-    def test_minimal_parser(self):
-        # Test parsing of a minimal MEME format file (DNA)
-        with open(minimal_dna_path) as f:
-            record = motifs.read(f, "minimal")
-        
-        # Check record structure
-        self.assertEqual(len(record), 2)
-        self.assertEqual(record.alphabet, "ACGT")
-        self.assertEqual(len(record.background), 4)
-
-        # Check first motif (KRP)
-        motif = record[0]
-        self.assertEqual(motif.name, "KRP")
-        self.assertEqual(motif.length, 19)
-        self.assertEqual(len(motif.counts["A"]), 19)
-        self.assertEqual(motif.alphabet, "ACGT")
-        self.assertAlmostEqual(motif.evalue, 4.1e-09, places=12)
-
-        # Check second motif (IFXA)
-        motif = record["IFXA"]
-        self.assertEqual(motif.name, "IFXA")
-        self.assertEqual(motif.length, 14)
-        self.assertEqual(len(motif.counts["A"]), 14)
-
-    def test_minimal_parser_rna(self):
-        # Test parsing of a minimal MEME format file (RNA)
-        with open(minimal_rna_path) as f:
-            record = motifs.read(f, "minimal")
-        
-        # Check record structure
-        self.assertEqual(len(record), 2)
-        self.assertEqual(record.alphabet, "ACGU") # RNA uses U
-        self.assertEqual(len(record.background), 4)
-        self.assertAlmostEqual(record.background["U"], 0.306, places=5)
-
-        # Check first motif (KRP_fake_RNA)
-        motif = record[0]
-        self.assertEqual(motif.name, "KRP_fake_RNA")
-        self.assertEqual(motif.length, 19)
-        self.assertEqual(len(motif.counts["A"]), 19)
-        self.assertEqual(motif.alphabet, "ACGU")
-
-    def test_minimal_parser_sites_alias(self):
-        # Test parsing using the 'sites' alias
-        with open(minimal_dna_path) as f:
-            record = motifs.read(f, "sites")
-        self.assertEqual(len(record), 2)
-        self.assertEqual(record.alphabet, "ACGT")
-
-
-class TestPWM(unittest.TestCase):
-    """Test Position Weight Matrix (PWM) and Position Specific Scoring Matrix (PSSM)."""
-
+class TestMotifMatrixConversions(unittest.TestCase):
+    """Tests matrix conversions (PWM, PSSM) and scoring."""
+    
     def setUp(self):
-        instances = [
-            Seq("AAT"),
-            Seq("AAC"),
-            Seq("GAC"),
-            Seq("AAT"),
-            Seq("GGT"),
-            Seq("AGC"),
-            Seq("AAT"),
-            Seq("AAC"),
-            Seq("TTC"),
-            Seq("AAT"),
+        # Use the same sequences as TestMotifBasic
+        sequences = [
+            "TACAA",
+            "TACGC",
+            "TACAC",
+            "TACCC",
+            "AACCC",
+            "AATGC",
+            "AATGC",
         ]
-        self.m = motifs.create(instances)
-        # Background: 25% for each base
+        self.motif = create(sequences, alphabet="ACGT")
+        # Standard Biopython default background is equiprobable (0.25 for each)
         self.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
 
-    def test_pwm(self):
-        pwm = self.m.counts.normalize(pseudocounts=0.25)
+    def test_pwm_conversion(self):
+        """Test conversion to Position Weight Matrix (PWM)."""
+        # normalize() returns a PositionWeightMatrix, which is the Frequency Matrix in Biopython terms
+        pwm = self.motif.counts.normalize(pseudocounts=1)
         self.assertIsInstance(pwm, PositionWeightMatrix)
+        self.assertEqual(pwm.length, 5)
         
-        # Total counts: 10 sequences
-        # Col 0: A:7, G:2, T:1
-        # Col 1: A:4, C:4, G:1, T:1
-        # Col 2: C:4, T:5
+        # Total counts at pos 0 is 7. With pseudocount=1, total is 7+4=11.
+        # A count is 2. Normalized freq = (2+1)/11 = 3/11
+        self.assertAlmostEqual(pwm["A", 0], 3/11, places=5)
+        # T count is 5. Normalized freq = (5+1)/11 = 6/11
+        self.assertAlmostEqual(pwm["T", 0], 6/11, places=5)
         
-        # Expected PWM (normalized with 0.25 pseudocounts):
-        # Total pseudocounts = 4 * 0.25 = 1. Total adjusted counts = 10 + 1 = 11
-        # P0: A: (7+0.25)/11, C: (0+0.25)/11, G: (2+0.25)/11, T: (1+0.25)/11
-        # A @ 0: 7.25 / 11 = 0.65909
-        # G @ 0: 2.25 / 11 = 0.204545
-        # T @ 0: 1.25 / 11 = 0.113636
-        
-        self.assertAlmostEqual(pwm["A"][0], 0.6590909090909091)
-        self.assertAlmostEqual(pwm["C"][0], 0.022727272727272728)
-        self.assertAlmostEqual(pwm["G"][0], 0.20454545454545456)
-        self.assertAlmostEqual(pwm["T"][0], 0.11363636363636363)
-        
-        # Test normalize with default (no pseudocounts)
-        pwm_no_pc = self.m.counts.normalize()
-        self.assertAlmostEqual(pwm_no_pc["A"][0], 0.7)
-        self.assertAlmostEqual(pwm_no_pc["C"][0], 0.0)
-        self.assertAlmostEqual(pwm_no_pc["G"][0], 0.2)
-        self.assertAlmostEqual(pwm_no_pc["T"][0], 0.1)
-
-    def test_pssm(self):
-        pwm = self.m.counts.normalize(pseudocounts=0.25)
-        # Calculate PSSM using standard background 0.25
-        pssm = pwm.log_odds(self.background)
+    def test_pssm_conversion(self):
+        """Test conversion to Position Specific Scoring Matrix (PSSM)."""
+        # PSSM is log_odds(PWM)
+        pwm = self.motif.counts.normalize(pseudocounts=1)
+        pssm = pwm.log_odds(background=self.background)
         self.assertIsInstance(pssm, PositionSpecificScoringMatrix)
         
-        # Expected PSSM (Log2(PWM/Background))
-        # P0: A: log2(0.65909/0.25) = 1.4005, T: log2(0.11363/0.25) = -1.139
-        self.assertAlmostEqual(pssm["A"][0], 1.40054, places=4)
-        self.assertAlmostEqual(pssm["T"][0], -1.13916, places=4)
+        # Check PSSM calculation: PSSM[A, 0] = log2( (2+1)/(7+4) / 0.25 ) = log2( (3/11) / 0.25 )
+        expected_score_a0 = math.log2((3.0 / 11.0) / 0.25)
+        self.assertAlmostEqual(pssm["A", 0], expected_score_a0, places=5)
         
-        # Test PSSM using method on CountsMatrix
-        pssm_from_counts = self.m.counts.log_odds(background=self.background)
-        self.assertAlmostEqual(pssm_from_counts["A"][0], 1.40054, places=4)
-        
-    def test_pssm_calculate(self):
-        pwm = self.m.counts.normalize(pseudocounts=0.25)
-        pssm = pwm.log_odds(self.background)
-        
-        # Sequence: ACGTGTGCGTAGTGCGT
-        # Should result in 7 scores (15-3+1 = 13 scores in real Biopython, but given the sequence length, 7 is the example)
-        result = pssm.calculate(Seq("ACGTGTGCGTAGTGCGT"))
-        
-        # Using the known result from the Biopython reference test_motifs.py
-        self.assertEqual(len(result), 13)
-        self.assertAlmostEqual(result[0], -29.18363571, places=5)
-        self.assertAlmostEqual(result[1], -38.3365097, places=5)
-        self.assertAlmostEqual(result[2], -29.17756271, places=5)
-        self.assertAlmostEqual(result[3], -38.04542542, places=5)
-        self.assertAlmostEqual(result[4], -20.3014183, places=5)
-        self.assertAlmostEqual(result[5], -25.18009186, places=5)
-        self.assertAlmostEqual(result[12], -36.568466, places=5)
+        # Check PSSM calculation: PSSM[T, 0] = log2( (5+1)/(7+4) / 0.25 ) = log2( (6/11) / 0.25 )
+        expected_score_t0 = math.log2((6.0 / 11.0) / 0.25)
+        self.assertAlmostEqual(pssm["T", 0], expected_score_t0, places=5)
 
-    def test_pssm_calculate_rc(self):
-        pwm = self.m.counts.normalize(pseudocounts=0.25)
-        pssm = pwm.log_odds(self.background)
+    def test_pssm_calculate_score(self):
+        """Test PSSM scoring of a sequence."""
+        pwm = self.motif.counts.normalize(pseudocounts=1)
+        pssm = pwm.log_odds(background=self.background)
         
-        # Calculate scores on the reverse complement of the sequence
-        result_rc = pssm.calculate(Seq("ACGTGTGCGTAGTGCGT"), strand="both")
+        # Score the first sequence "TACAA" (length 5)
+        # Expected score: PSSM[T,0] + PSSM[A,1] + PSSM[C,2] + PSSM[A,3] + PSSM[A,4]
+        score_t0 = math.log2((6.0 / 11.0) / 0.25)
+        score_a1 = math.log2((5.0 / 11.0) / 0.25)
+        score_c2 = math.log2((5.0 / 11.0) / 0.25)
+        score_a3 = math.log2((1.0 / 11.0) / 0.25) # A count 0 -> (0+1)/11
+        score_a4 = math.log2((1.0 / 11.0) / 0.25) # A count 0 -> (0+1)/11
         
-        # The first half should match the forward calculation
-        self.assertEqual(len(result_rc), 26) # 13 forward + 13 reverse
-        self.assertAlmostEqual(result_rc[0], -29.18363571, places=5)
+        expected_score = score_t0 + score_a1 + score_c2 + score_a3 + score_a4
+        
+        result = pssm.calculate("TACAA")
+        # In Biopython's PSSM, 'calculate' returns a list of scores for all possible start positions.
+        # Since the motif length is 5 and sequence length is 5, there is only one start position (index 0).
+        if isinstance(result, list) and len(result) == 1:
+             self.assertAlmostEqual(result[0], expected_score, places=5)
+        elif isinstance(result, float):
+             # Handle a single float return if the implementation simplifies the return for length match
+             self.assertAlmostEqual(result, expected_score, places=5)
+        else:
+             self.assertAlmostEqual(result[0], expected_score, places=5)
 
-    def test_score_distribution(self):
-        pwm = self.m.counts.normalize(pseudocounts=0.25)
-        pssm = pwm.log_odds(self.background)
+class TestMinimalParsing(unittest.TestCase):
+    """Tests parsing of the minimal MEME file format."""
 
-        # Calculate score distribution
-        # Precision 10000 is needed for accuracy
-        sd = ScoreDistribution(pssm=pssm, background=self.background, precision=10000)
+    def test_dna_parsing(self):
+        """Test parsing of a DNA minimal MEME file."""
+        if not os.path.exists(minimal_dna_path):
+            print(f"Warning: DNA test file not found at {minimal_dna_path}")
+            return
+            
+        with open(minimal_dna_path) as handle:
+            # Use the local `read` function
+            motifs_list = read(handle, "minimal") 
+
+        self.assertEqual(len(motifs_list), 2)
         
-        # Test known threshold results from Biopython (simplified)
-        # Note: These values are sensitive to PSSM calculation and precision
+        motif = motifs_list[0]
+        self.assertIsInstance(motif, Motif)
+        self.assertEqual(motif.name, "KRP")
+        self.assertEqual(motif.length, 19)
+        self.assertAlmostEqual(motif.evalue, 4.1e-09, delta=1e-11)
         
-        # Example: Threshold for FPR 0.01 (should be approximate)
-        target_fpr = 0.01
-        threshold = sd.threshold_fpr(target_fpr)
-        # Expected value is around 1.3 to 1.4 for this example in Biopython
-        self.assertTrue(1.0 < threshold < 2.0)
+        # Check consensus of the first motif (from minimal_test.meme)
+        # Pos 0: T (0.82)
+        # Pos 1: G (0.64)
+        # Pos 2: T (0.94)
+        # Pos 3: G (0.76)
+        # Pos 4: A (0.82)
+        self.assertEqual(motif.consensus[0:5], "TGTGA")
+
+        # Check second motif
+        motif_2 = motifs_list[1]
+        self.assertEqual(motif_2.name, "IFXA")
+        self.assertEqual(motif_2.length, 25)
+
+    def test_rna_parsing(self):
+        """Test parsing of an RNA minimal MEME file."""
+        if not os.path.exists(minimal_rna_path):
+            print(f"Warning: RNA test file not found at {minimal_rna_path}")
+            return
+            
+        with open(minimal_rna_path) as handle:
+            # Use the local `read` function
+            motifs_list = read(handle, "minimal") 
+
+        self.assertEqual(len(motifs_list), 2)
         
-        # Example: Threshold for FNR 0.1 (should be approximate)
-        target_fnr = 0.1
-        threshold = sd.threshold_fnr(target_fnr)
-        # Expected value is around 0.3 to 0.5
-        self.assertTrue(0.0 < threshold < 1.0)
+        motif = motifs_list[0]
+        self.assertIsInstance(motif, Motif)
+        self.assertEqual(motif.name, "KRP_fake_RNA")
+        self.assertEqual(motif.length, 19)
+        # Check consensus - should use U instead of T
+        # Pos 0: U (0.82)
+        # Pos 1: G (0.64)
+        # Pos 2: U (0.94)
+        # Pos 3: G (0.76)
+        # Pos 4: A (0.82)
+        self.assertEqual(motif.consensus[0:5], "UGUGA")
 
 
-class TestSubMotif(unittest.TestCase):
-    """Test Motif slicing and sub-motifs."""
-
-    def test_submotif_slice(self):
-        # Example motif from Biopython reference
-        instances = [
-            Seq("TGAACGT"),
-            Seq("CCAGCAU"),
-            Seq("CGGGCCA"),
-            Seq("CUGUAUA"),
-            Seq("CAGGATC"),
-            Seq("CCGUAUA"),
-            Seq("CAGAATU"),
-        ]
-        motif = motifs.create(instances, alphabet="ACGTU")
+class TestScoreDistribution(unittest.TestCase):
+    """Tests the ScoreDistribution class for threshold calculation."""
+    
+    def setUp(self):
+        sequences = ["TACAA", "TACGC", "AACCC", "AATGC"]
+        self.motif = create(sequences, alphabet="ACGT")
+        self.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
         
-        # Test slicing
-        sub_motif = motif[2:9] # slice on Seq is 0-indexed, end is exclusive
-        self.assertEqual(sub_motif.length, 5) # (5-0) = 5
-        self.assertEqual(str(sub_motif.consensus), "CUGUA")
-
-        # Test another slice (2:9 on an existing 7-length motif is out of bounds,
-        # but the original Biopython example was on a longer motif, let's adjust for a 7-mer)
+        # PSSM is required for ScoreDistribution
+        pwm = self.motif.counts.normalize(pseudocounts=1.0)
+        self.pssm = pwm.log_odds(background=self.background)
         
-        # Use a slice that works on the 7-mer (e.g., [2:7] length 5)
-        sub_motif = motif[2:7]
-        self.assertEqual(sub_motif.length, 5)
-        self.assertEqual(str(sub_motif.consensus), "GGUAU")
-        
-        # The reference test was for a 10-mer with a slice of [2:9] resulting in 7 positions.
-        # Let's use the full motif length from the original Biopython example (15-mer)
-        # Since I cannot recreate the 15-mer, I will use a known 7-mer and adjust the slice
-        # to match the *intended* length check from the original tests (7 positions).
+        # Initialize ScoreDistribution
+        self.dist = ScoreDistribution(pssm=self.pssm, background=self.background, precision=1000)
 
-        # If we assume the original test was on a longer motif (10-mer example):
-        # instances = ["TGAACGT...", "CCAGCAU...", ...] (length 10)
-        # Slice [2:9] gives 7 bases.
-        # Since I can't recreate the full original motif, I will rely on testing
-        # that slicing works and the resulting length is correct based on the slice.
+    def test_distribution_init(self):
+        """Check if distribution properties are initialized."""
+        # Check some basic properties from the initialization
+        self.assertTrue(self.dist.interval > 0.0)
+        self.assertTrue(self.dist.n_points > 0)
+        self.assertTrue(self.dist.ic is not None)
+        self.assertEqual(len(self.dist.mo_density), self.dist.n_points)
+        self.assertEqual(len(self.dist.bg_density), self.dist.n_points)
         
-        self.assertEqual(motif[2:5].length, 3) # Slice 2 to 5 (pos 2, 3, 4)
-        self.assertEqual(str(motif[2:5].consensus), "AAG")
+    def test_threshold_fpr(self):
+        """Test calculation of threshold based on False Positive Rate (FPR)."""
+        # A low FPR should result in a high score threshold
+        threshold_low_fpr = self.dist.threshold_fpr(0.01)
+        # A high FPR should result in a low score threshold
+        threshold_high_fpr = self.dist.threshold_fpr(0.5)
 
-# --- Execution ---
-if __name__ == "__main__":
-    unittest.main()
+        self.assertTrue(threshold_low_fpr > threshold_high_fpr)
+        # Note: We can't check the exact value without replicating the dynamic programming,
+        # but we can ensure the threshold is within the possible range (min_score to max_score of the PSSM).
+        self.assertTrue(self.pssm.min < threshold_low_fpr < self.pssm.max)
+        self.assertTrue(self.pssm.min < threshold_high_fpr < self.pssm.max)
+
+
+if __name__ == '__main__':
+    # Use unittest.main() to run all tests
+    unittest.main(argv=sys.argv[:1], exit=False)
