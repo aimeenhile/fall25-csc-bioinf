@@ -1,10 +1,11 @@
 # bio_codon/motifs/__init__.py
 
 """Tools for sequence motif analysis.
+"""
 
-from typing import Any, Optional, List, Dict, Tuple, Union
-
-from python import warnings
+from typing import Optional, List, Dict, Tuple, Union, TextIO
+from collections import defaultdict
+import warnings
 from python.urllib.parse import urlencode
 from python.urllib.request import Request, urlopen
 import numpy as np
@@ -15,49 +16,35 @@ from python.Bio.Seq import Seq
 from .matrix import CountsMatrix, PositionWeightMatrix, PositionSpecificScoringMatrix
 from . import minimal
 from . import thresholds
-"""
 
-from typing import list, dict, Optional, Any
-import math
+
 from .matrix import (
-    CountMatrix,
     FrequencyPositionMatrix,
-    PositionWeightMatrix,
     PositionSpecificScoringMatrix,
-    DNA_ALPHABET
+    PositionWeightMatrix,
+    GenericPositionMatrix,
 )
-from .thresholds import ScoreDistribution
-from . import minimal 
+from .minimal import read as minimal_read, Record
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
+# Helper type for background dictionaries
+Background = Dict[str, float]
 
-class Instances:
+# Degenerate ambiguity codes for consensus sequences (IUPAC DNA)
+_DEGENERATE_CODES: Dict[str, str] = {
+    'A': 'A', 'C': 'C', 'G': 'G', 'T': 'T',
+    'R': 'AG', 'Y': 'CT', 'S': 'GC', 'W': 'AT',
+    'K': 'GT', 'M': 'AC', 'B': 'CGT', 'D': 'AGT',
+    'H': 'ACT', 'V': 'ACG', 'N': 'ACGT'
+}
+
+class Instances(List[Seq]):
     """Class containing a list of sequences that made the motifs."""
-    sequences: list[str]
-    length: int
 
-    def __init__(self, sequences: list[str]):
-        if not sequences:
-            self.sequences = []
-            self.length = 0
-        else:
-            self.sequences = sequences
-            self.length = len(sequences[0])
-
-    def reverse_complement(self) -> 'Instances':
-        """Returns the reverse complement of all contained instances."""
-        # Simple mapping for DNA bases and unknown 'N'
-        rev_comp_map: dict[str, str] = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'N'}
-        rev_comp_sequences: list[str] = []
-        
-        for seq in self.sequences:
-            rev_seq: list[str] = []
-            # Manually reverse complement the sequence
-            for i in range(len(seq) - 1, -1, -1):
-                base_char: str = seq[i]
-                rev_seq.append(rev_comp_map.get(str(base_char).upper(), 'N'))
-            rev_comp_sequences.append("".join(rev_seq))
-            
-        return Instances(rev_comp_sequences)
+    def __init__(self, instances: Optional[List[Seq]] = None):
+        """Initialize the class."""
+        super().__init__(instances or [])
         
     def __len__(self) -> int:
         return len(self.sequences)
@@ -66,188 +53,150 @@ class Instances:
         return f"<Instances: {len(self.sequences)} sequences of length {self.length}>"
 
 
+class AlignmentMock:
+    """Mock class to replicate necessary attributes of Bio.Align.Alignment for Motif creation."""
+    def __init__(self, sequences: List[Seq]):
+        self.sequences = sequences
+        self.length = len(sequences[0]) if sequences else 0
+        self.column_annotations = {} # Simplification
+
+    def get_alignment_length(self) -> int:
+        return self.length
+
+
 class Motif:
-    """A class representing sequence motifs."""
+    """Class for sequence motif analysis."""
 
-    name: str
-    instances: Instances
-    counts: CountMatrix
-    length: int
-    
-    # Configuration properties with internal caches/defaults
-    _pseudocounts: float = 0.5
-    _background: dict[str, float] = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
-    _freq_matrix: Optional[FrequencyPositionMatrix] = None
-    _pwm: Optional[PositionWeightMatrix] = None
+    alphabet: str
+    sequence: list[str]
+    alignment: AlignmentMock
 
-    def __init__(self, sequences: list[str], name: str = "Unnamed Motif"):
-        self.name = name
-        self.instances = Instances(sequences)
-        self.counts = CountMatrix(sequences)
-        self.length = self.counts.length
-    
-    # Getter/Setter for pseudocounts, clearing cache on change
-    @property
-    def pseudocounts(self) -> float:
-        return self._pseudocounts
+    def __init__(self, alignment: AlignmentMock, alphabet: str):
+        """Initialize the Motif object."""
+        self._alignment = alignment
+        self._alphabet = alphabet
 
-    @pseudocounts.setter
-    def pseudocounts(self, value: float):
-        self._pseudocounts = value
-        # Clear cache when settings change
-        self._freq_matrix = None
-        self._pwm = None
+        # 1. CountsMatrix
+        self.counts = self._calculate_counts()
 
-    # Getter/Setter for background, clearing cache on change
-    @property
-    def background(self) -> dict[str, float]:
-        return self._background
-        
-    @background.setter
-    def background(self, value: dict[str, float]):
-        self._background = value
-        # Clear cache when settings change
-        self._pwm = None
+        # 2. PositionWeightMatrix (PWM) - Normalized Counts
+        # Default to no pseudocounts for basic PWM
+        self.pwm: PositionWeightMatrix = self.counts.normalize(pseudocounts=0.0)
 
-    def _get_freq_matrix(self) -> FrequencyPositionMatrix:
-        """Computes and caches the frequency matrix using current pseudocounts."""
-        if self._freq_matrix is None:
-            self._freq_matrix = FrequencyPositionMatrix(
-                self.counts, 
-                pseudocount=self._pseudocounts
-            )
-        return self._freq_matrix
+        # 3. PositionSpecificScoringMatrix (PSSM) - Log odds
+        # Default to uniform background
+        background = dict.fromkeys(self._alphabet, 1.0 / len(self._alphabet))
+        self.pssm: PositionSpecificScoringMatrix = self.pwm.log_odds(background)
+
+        # Other properties
+        self.name: Optional[str] = None
+        self.altname: Optional[str] = None
+        self.evalue: Optional[float] = None
+        self.num_occurrences: Optional[int] = None
+        self.instances = Instances(alignment.sequences)
+
+    def _calculate_counts(self) -> CountsMatrix:
+        """Calculate the CountsMatrix from the alignment."""
+        sequences = self._alignment.sequences
+        length = self._alignment.get_alignment_length()
+        counts: Dict[str, List[float]] = {base: [0.0] * length for base in self._alphabet}
+
+        for i in range(length):
+            column_bases = [str(seq)[i] for seq in sequences]
+            for base in column_bases:
+                if base in self._alphabet:
+                    counts[base][i] += 1.0
+
+        return CountsMatrix(self._alphabet, counts)
 
     @property
     def consensus(self) -> str:
-        """Returns the consensus sequence based on frequency."""
-        return self._get_freq_matrix().consensus()
+        """Returns the consensus sequence for this motif."""
+        consensus_seq: List[str] = []
+        for i in range(self.counts.length):
+            column = {base: self.counts[base][i] for base in self._alphabet}
+            max_count = -1.0
+            consensus_base: Optional[str] = None
+            for base, count in column.items():
+                if count > max_count:
+                    max_count = count
+                    consensus_base = base
+                elif count == max_count and consensus_base:
+                    # Tie-breaking rule: use the base that comes first in the alphabet
+                    if self._alphabet.index(base) < self._alphabet.index(consensus_base):
+                         consensus_base = base
 
-    @property
-    def pwm(self) -> PositionWeightMatrix:
-        """Returns the PositionWeightMatrix (log-odds scores)."""
-        if self._pwm is None:
-            freq_mat = self._get_freq_matrix()
-            self._pwm = PositionWeightMatrix(freq_mat, self._background)
-        return self._pwm
+            if consensus_base is not None:
+                consensus_seq.append(consensus_base)
+            else:
+                consensus_seq.append('N') # Should not happen with valid alphabet
 
-    @property
-    def pssm(self) -> PositionSpecificScoringMatrix:
-        """Returns the PSSM (an alias for PWM)."""
-        return self.pwm
+        return "".join(consensus_seq)
+
+    def __len__(self) -> int:
+        """Return the length of the Motif."""
+        return self.counts.length
+
+    def __getitem__(self, key: Union[int, slice]) -> 'Motif':
+        """Return a slice of the Motif."""
+        if isinstance(key, slice):
+            start = key.start if key.start is not None else 0
+            stop = key.stop if key.stop is not None else len(self)
+            step = key.step if key.step is not None else 1
+
+            new_sequences: List[Seq] = []
+            for seq in self._alignment.sequences:
+                new_sequences.append(seq[start:stop:step])
+
+            rc_alignment = AlignmentMock(new_sequences)
+            return Motif(rc_alignment, self._alphabet)
+
+        raise TypeError("Motif slicing only supports slice objects.")
 
     def reverse_complement(self) -> 'Motif':
-        """Returns a new Motif instance that is the reverse complement."""
-        rc_instances = self.instances.reverse_complement()
-        rc_motif = Motif(rc_instances.sequences, name=f"RC of {self.name}")
-        # Copy settings to the new motif
-        rc_motif.pseudocounts = self._pseudocounts
-        rc_motif.background = self._background
-        return rc_motif
-        
-    def __len__(self) -> int:
-        return self.length
+        """Return the reverse complement of the Motif."""
+        if 'T' in self._alphabet and 'A' in self._alphabet and 'G' in self._alphabet and 'C' in self._alphabet:
+            # Assuming standard DNA/RNA alphabet for RC
+            pass
+        else:
+            warnings.warn(f"Reverse complement not defined for non-ACGT alphabet ({self._alphabet}).")
 
-    def __str__(self) -> str:
-        return f"{self.name} (L={self.length}, N={len(self.instances)}) Consensus: {self.consensus}"
-        
-    def __format__(self, format_spec: str) -> str:
-        """Allows formatting using f-string syntax (e.g., f'{motif:minimal}')."""
-        if format_spec == 'minimal':
-            return write(self, format='minimal')
-        return str(self)
+        rc_sequences = [s.reverse_complement() for s in self._alignment.sequences]
+        rc_alignment = AlignmentMock(rc_sequences)
+        return Motif(rc_alignment, self._alphabet)
 
     
 # --- Public I/O Functions ---
 
-def create(instances: list[str], name: str = "Motif from Instances") -> Motif:
-    """Factory function to create a Motif from instances."""
-    return Motif(instances, name=name)
+def create(instances: List[str], alphabet: str = "ACGT") -> 'Motif':
+    """Create a Motif object from a list of strings."""
+    # Convert string instances to Seq objects
+    sequences = [Seq(s) for s in instances]
 
-def read(data: list[str], format: str = 'minimal') -> list[Motif]:
-    """
-    Reads motifs from a list of strings (lines) in the specified format.
-    Only 'minimal' format is supported in this Codon port.
-    """
-    if format == 'minimal':
-        # Use the minimal I/O module
-        record = minimal.read(data)
-        return record.motifs
+    # Check for uniform length
+    if not sequences or not all(len(s) == len(sequences[0]) for s in sequences):
+        raise ValueError("Instances must not be empty and must all have the same length.")
+
+    alignment = AlignmentMock(sequences) # Use AlignmentMock
+    return Motif(alignment=alignment, alphabet=alphabet)
+
+
+def parse(handle: TextIO, fmt: str, strict: bool = True) -> List['Motif']:
+    """Parse an output file from a motif finding program."""
+    fmt = fmt.lower()
+    if fmt == "sites":
+        # Simplified 'sites' format for testing, assumes minimal style
+        return minimal.read(handle)
+    if fmt == "minimal":
+        return minimal.read(handle)
     else:
-        raise ValueError(f"Unknown or unsupported format '{format}'. Only 'minimal' is implemented.")
+        raise ValueError(f"Unknown format '{fmt}'. Only 'minimal' and 'sites' are supported.")
 
-def parse(data: str, format: str = 'minimal') -> list[Motif]:
-    """Parses a string containing motif data by splitting it into lines."""
-    lines: list[str] = data.split('\n')
-    return read(lines, format)
-
-def write(motif: Motif, format: str = 'minimal') -> str:
-    """Converts a Motif object into a string representation in the given format."""
-    if format == 'minimal':
-        # Simple minimal format: Name + Consensus
-        return f">{motif.name}\n{motif.consensus}"
-    else:
-        raise ValueError(f"Unknown or unsupported format '{format}'. Only 'minimal' is implemented.")
-
-# --- Example Usage ---
-
-def main():
-    print("--- Codon Bio.motifs Port Demonstration ---")
-    
-    # Sequences that define a TATA-like box (consensus TACAAT)
-    sequences: list[str] = [
-        "TACAAT",
-        "TACAAG",
-        "CACAAT",
-        "GAGAAG",
-        "AACAAG",
-        "TACAAC",
-        "TACAAA",
-    ]
-
-    # 1. Create and Display Motif
-    my_motif = create(sequences, name="TATA-like Box")
-    print("\n--- 1. Full Motif Data ---")
-    print(str(my_motif.counts)) 
-    print(str(my_motif.pwm)) 
-    print(f"Consensus: {my_motif.consensus}")
-    
-    # 2. Score and Threshold
-    test_pwm = my_motif.pwm
-    good_sequence: str = "TACAAT"
-    poor_sequence: str = "GGGGGG"
-    
-    good_score: float = test_pwm.calculate_score(good_sequence)
-    poor_score: float = test_pwm.calculate_score(poor_sequence)
-    
-    dist = ScoreDistribution(test_pwm)
-    p_value: float = 0.001
-    threshold: float = dist.threshold_for_p_value(p_value)
-    
-    print("\n--- 2. Scoring and Threshold ---")
-    print(f"Score for consensus '{good_sequence}': {good_score:.4f}")
-    print(f"Score for non-site '{poor_sequence}': {poor_score:.4f}")
-    print(f"Approximate score threshold for P={p_value}: {threshold:.4f}")
-    
-    # 3. I/O Test
-    minimal_output = write(my_motif, format='minimal')
-    print("\n--- 3. Minimal Format Output ---")
-    print(minimal_output)
-    
-    # Read back (simulating a file read)
-    lines_to_read: list[str] = [
-        ">MY_NEW_MOTIF_1",
-        "ATGC",
-        "ATTT",
-        ">MY_NEW_MOTIF_2",
-        "GGCA",
-        "GGGG"
-    ]
-    read_motifs: list[Motif] = read(lines_to_read, format='minimal')
-    print("\n--- 4. Reading Minimal Format (2 motifs found) ---")
-    for m in read_motifs:
-        print(f"Read Motif: {m.name}, Consensus: {m.consensus}")
-
-# The entry point of the Codon program
-if __name__ == "__main__":
-    main()
+def read(handle: TextIO, fmt: str, strict: bool = True) -> 'Motif':
+    """Read a single motif from a handle."""
+    motifs = parse(handle, fmt, strict)
+    if not motifs:
+        raise ValueError("No motifs found in handle")
+    if len(motifs) > 1:
+        warnings.warn("Found more than one motif, returning the first.")
+    return motifs[0]
