@@ -50,14 +50,7 @@ if hasattr(str, 'memcpy'):
     # The global 'from Bio.Seq import Seq' should suffice if the Codon bridge is working.
     
 else:
-    try:
-        from Bio.motifs.matrix import CountsMatrix, PositionWeightMatrix, PositionSpecificScoringMatrix
-        from Bio.motifs.thresholds import ScoreDistribution
-    except (ImportError, AttributeError):
-        # Fallback for newer Biopython versions (or oddly configured environments)
-        # where classes are exposed directly via the Bio.motifs __init__.py
-        from Bio.motifs import CountsMatrix, PositionWeightMatrix, PositionSpecificScoringMatrix, ScoreDistribution
-
+    from Bio import motifs
     # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
     create = motifs.create

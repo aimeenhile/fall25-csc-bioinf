@@ -30,14 +30,8 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 # Run Codon tests (this part will only run if Python tests succeeded due to 'set -e')
-codon run -release test.py > codon_output.txt 2>&1 || {
-    echo "------------------------------------------"
-    echo "CODON TEST FAILED - TRACEBACK BELOW:"
-    echo "------------------------------------------"
-    cat codon_output.txt
-    echo "------------------------------------------"
-    exit 1 
-}
+codon run -release test.py 
+
 echo "Codon tests completed."
 
 # Compare results
