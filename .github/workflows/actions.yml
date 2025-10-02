@@ -28,5 +28,5 @@ jobs:
           pip install biopython
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: Week 2
+      - name: Week 2 Evaluation
         run: bash week2/evaluate.sh
