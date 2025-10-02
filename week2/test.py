@@ -5,7 +5,7 @@ import math
 from typing import List, Dict, TextIO
 
 DATA = "data"
-data_dir = os.path.join(os.path.dirname(__file__), "data", "week2")
+data_dir = os.path.join(os.path.dirname(__file__), "data")
 minimal_dna_path = os.path.join(data_dir, "minimal_test.meme")
 minimal_rna_path = os.path.join(data_dir, "minimal_test_rna.meme")
 
