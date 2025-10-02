@@ -40,7 +40,7 @@ else:
     
 if hasattr(str, 'memcpy'):
     # Codon Environment
-    from python.Bio.Seq import Seq 
+    from Bio.Seq import Seq 
     from bio_codon.motifs import create, read, Motif
     from bio_codon.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
     from bio_codon.motifs.thresholds import ScoreDistribution 
