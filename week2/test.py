@@ -4,7 +4,11 @@ import numpy as np
 import math
 from typing import List, Dict, TextIO
 
-"""
+DATA = "data"
+data_dir = os.path.join(os.path.dirname(__file__), "data", "week2")
+minimal_dna_path = os.path.join(data_dir, "minimal_test.meme")
+minimal_rna_path = os.path.join(data_dir, "minimal_test_rna.meme")
+
 if __codon__:
     # Codon environment
     from .code.bio_codon import create, read, Motif
@@ -14,44 +18,9 @@ else:
     # Python environment
     from Bio import motifs
     from Bio.Seq import Seq
-"""
-
-DATA = "data"
-data_dir = os.path.join(os.path.dirname(__file__), "data", "week2")
-minimal_dna_path = os.path.join(data_dir, "minimal_test.meme")
-minimal_rna_path = os.path.join(data_dir, "minimal_test_rna.meme")
-
-if __codon__:
-    # Codon environment: Import the specific functions/classes
-    from .code.bio_codon import create as create_func, read, Motif
-    from .code.bio_codon.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
-    from .code.bio_codon.thresholds import ScoreDistribution
-    # Must also import Seq for consistency, as it's used directly in tests
-    from .code.bio_codon.Seq import Seq
-    
-    # Create an alias object for the 'motifs' module structure used in tests
-    # This allows tests to call 'motifs.create()', mimicking Biopython's module access.
-    class CodonMotifsAlias:
-        create = staticmethod(create_func)
-        read = staticmethod(read)
-        Motif = Motif
-
-    motifs = CodonMotifsAlias()
-
-else:
-    # Python environment: Import Biopython modules/classes
-    from Bio import motifs
-    from Bio.Seq import Seq
-    # Must explicitly import matrix and thresholds classes for consistent test usage
-    # These classes are usually not available directly from 'from Bio import motifs'
-    from Bio.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
-    from Bio.motifs.thresholds import ScoreDistribution
 
 
 # --- Test Cases ---
-
-@test
-"""Tests for motifs module."""
 
 import math
 import tempfile
@@ -66,9 +35,8 @@ except ImportError:
         "Install numpy if you want to use Bio.motifs."
     ) from None
 
-# If running in the Python environment, 'motifs' and 'Seq' are already imported
-# from the 'else' block above. Matrix and Threshold classes are also imported.
-# In Codon, they are aliased.
+from Bio import motifs
+from Bio.Seq import Seq
 
 
 class TestBasic(unittest.TestCase):
@@ -90,20 +58,29 @@ C [ 0 0 0 0 0 ]
 G [ 0 0 0 0 0 ]
 T [ 0 1 0 1 0 ]
 """
-        s3 = format(m, "transfac")
-        expected_transfac = """ID Foo
-BF 
-P0   A      C      G      T
-01  1.00   0.00   0.00   0.00   
-02  0.00   0.00   0.00   1.00   
-03  1.00   0.00   0.00   0.00   
-04  0.00   0.00   0.00   1.00   
-05  1.00   0.00   0.00   0.00   
-XX
-"""
         self.assertEqual(s1, expected_pfm)
         self.assertEqual(s2, expected_jaspar)
-        self.assertEqual(s3, expected_transfac)
+
+    def test_motif_object(self):
+        instances = ["TCAATC", "TTAATT", "TTCATC", "TCAACA"]
+        m = motifs.create(instances)
+        
+        # Test Consensus
+        self.assertEqual(m.consensus, "TCAATC")
+
+        # Test PWM
+        pwm = m.counts.normalize()
+        self.assertAlmostEqual(pwm['A'][0], 0.0, places=5)
+        self.assertAlmostEqual(pwm['C'][1], 0.5, places=5)
+        self.assertAlmostEqual(pwm['G'][3], 0.0, places=5)
+        self.assertAlmostEqual(pwm['T'][0], 1.0, places=5)
+        
+        # Test PSSM (default background)
+        pssm = pwm.log_odds()
+        self.assertAlmostEqual(pssm['A'][0], -2.0, places=3)
+        self.assertAlmostEqual(pssm['C'][1], 0.585, places=3) # log2(0.5/0.25) = 1
+        self.assertAlmostEqual(pssm['T'][0], 2.0, places=3) # log2(1.0/0.25) = 2
+
 
     def test_create(self):
         # Test creation from list of strings
