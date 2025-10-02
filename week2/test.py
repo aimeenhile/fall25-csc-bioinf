@@ -29,7 +29,10 @@ else:
     # Python environment
     from Bio import motifs
     from Bio.Seq import Seq
-    from Bio.motifs import Motif, create, read # Assuming Motif is in __init__.py
+    import __init__
+    Motif = __init__.Motif
+    create = __init__.create
+    read = __init__.read
     from matrix import PositionSpecificScoringMatrix, PositionWeightMatrix
     from thresholds import ScoreDistribution
 
