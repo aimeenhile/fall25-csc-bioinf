@@ -3,7 +3,7 @@ import os
 import sys
 import numpy as np
 import math
-from typing import List, Dict, TextIO
+from typing import List, Dict
 from Bio.Seq import Seq
 
 DATA = "data"
