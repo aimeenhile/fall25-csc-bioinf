@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import math
 from typing import List, Dict, TextIO
+from Bio.Seq import Seq
 
 DATA = "data"
 data_dir = os.path.join(os.path.dirname(__file__), "data")
@@ -28,13 +29,13 @@ if CODON:
 else:
     # Python environment
     from Bio import motifs
-    from Bio.Seq import Seq
-    import __init__
-    Motif = __init__.Motif
-    create = __init__.create
-    read = __init__.read
-    from matrix import PositionSpecificScoringMatrix, PositionWeightMatrix
-    from thresholds import ScoreDistribution
+    Motif = motifs.Motif
+    create = motifs.create
+    read = motifs.read
+    CountsMatrix = motifs.matrix.CountsMatrix
+    PositionWeightMatrix = motifs.matrix.PositionWeightMatrix
+    PositionSpecificScoringMatrix = motifs.matrix.PositionSpecificScoringMatrix
+    ScoreDistribution = motifs.thresholds.ScoreDistribution
 
 
 # --- Test Cases ---
@@ -82,8 +83,8 @@ class TestMotifBasic(unittest.TestCase):
         ]
         
         # Create Motif objects using the custom `create` function
-        self.motif_dna = create(self.sequences_dna, alphabet="ACGT")
-        self.motif_rna = create(self.sequences_rna, alphabet="ACGU")
+        self.motif_dna = create([Seq(s) for s in self.sequences_dna], alphabet="ACGT")
+        self.motif_rna = create([Seq(s) for s in self.sequences_rna], alphabet="ACGU")
         
         # Expected Counts Matrix for DNA motif (Position: 0 1 2 3 4)
         # A: 2 4 0 0 0
