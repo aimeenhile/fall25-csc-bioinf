@@ -4,7 +4,6 @@ import sys
 import numpy as np
 import math
 from typing import List, Dict
-from Bio.Seq import Seq
 
 DATA = "data"
 data_dir = os.path.join(os.path.dirname(__file__), "data")
