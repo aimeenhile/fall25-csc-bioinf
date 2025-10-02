@@ -9,7 +9,13 @@ data_dir = os.path.join(os.path.dirname(__file__), "data", "week2")
 minimal_dna_path = os.path.join(data_dir, "minimal_test.meme")
 minimal_rna_path = os.path.join(data_dir, "minimal_test_rna.meme")
 
-if __codon__:
+try:
+    __codon__
+    CODON = True
+except NameError:
+    CODON = False
+
+if CODON:
     # Codon environment
     from .code.bio_codon import create, read, Motif
     from .code.bio_codon.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
