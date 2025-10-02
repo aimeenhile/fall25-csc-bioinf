@@ -36,12 +36,6 @@ else:
     create = motifs.create
     read = motifs.read
     
-    # Use the imported submodules to access the classes
-    CountsMatrix = matrix.CountsMatrix
-    PositionWeightMatrix = matrix.PositionWeightMatrix
-    PositionSpecificScoringMatrix = matrix.PositionSpecificScoringMatrix
-    ScoreDistribution = thresholds.ScoreDistribution
-
 
 # --- Test Cases ---
 
