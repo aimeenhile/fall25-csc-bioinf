@@ -43,6 +43,7 @@ if hasattr(str, 'memcpy'):
     # --- Codon Environment Imports ---
     # When running 'codon run test.py' from week2/, imports must reference the 
     # top-level directory ('bio_codon').
+    from python.Bio.Seq import Seq 
     from bio_codon.motifs import create, read, Motif
     from bio_codon.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
     from bio_codon.motifs.thresholds import ScoreDistribution
@@ -50,6 +51,7 @@ if hasattr(str, 'memcpy'):
     # The global 'from Bio.Seq import Seq' should suffice if the Codon bridge is working.
     
 else:
+    from Bio.Seq import Seq 
     from Bio import motifs
     # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
