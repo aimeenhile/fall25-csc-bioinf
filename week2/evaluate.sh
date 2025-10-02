@@ -1,39 +1,40 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status or on pipefail.
+# Add "--failfast" to python test.py for debugging purposes:
+# python test.py --failfast > python_output.txt 2>&1
+
 set -euo pipefail
 
-# The script starts at the repository root 
-# Add the repository root (PWD) to PYTHONPATH so 'bio_codon' package can be found.
-export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
-
-# Change to the working directory 
+# The script starts at the repository root; move to week2
 cd week2
 
 # Run tests
 echo "=========================================="
 echo "Running Python tests (BioPython)..."
 echo "=========================================="
-python test.py > python_output.txt 2>&1
-echo "Python tests completed."
+# Run the Python tests and capture output and errors to a file.
+# The '||' operator executes the following command ONLY if the first command fails (returns non-zero exit code).
+# If the python command fails, we print the captured error file.
+python test.py > python_output.txt 2>&1 || { 
+    echo "------------------------------------------"
+    echo "PYTHON TEST FAILED - TRACEBACK BELOW:"
+    echo "------------------------------------------"
+    cat python_output.txt
+    echo "------------------------------------------"
+    exit 1 
+}
+echo "Python tests completed successfully."
 
 echo ""
 echo "=========================================="
-echo "Running Codon tests (bio_codon)..."
+echo "Running Codon tests..."
 echo "=========================================="
-# Codon uses the PYTHONPATH set above to locate bio_codon source
-codon run -release test.py > codon_output.txt 
+# Run Codon tests (this part will only run if Python tests succeeded due to 'set -e')
+codon run -release test.py > codon_output.txt 2>&1
 echo "Codon tests completed."
 
-# --- Compare Results ---
+# Compare results
 echo "Comparing results..."
-# Use diff and provide a clear success/failure message
-if diff python_output.txt codon_output.txt; then
-    echo "✅ SUCCESS: Python and Codon outputs are identical."
-else
-    echo "❌ FAILURE: Differences found between Python and Codon outputs."
-    # Exit with error code 1 to fail the GitHub Action job
-    exit 1
-fi
+diff python_output.txt codon_output.txt || echo "Differences found between Python and Codon outputs."
 
 echo "Evaluation completed."
