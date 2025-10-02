@@ -19,9 +19,9 @@ except NameError:
 
 if CODON:
     # Codon environment
-    from .code.bio_codon import create, read, Motif
-    from .code.bio_codon.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
-    from .code.bio_codon.thresholds import ScoreDistribution
+    from bio_codon import create, read, Motif
+    from bio_codon.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
+    from bio_codon.thresholds import ScoreDistribution
     try:
         from .code.bio_codon.seq import Seq
     except ImportError:
