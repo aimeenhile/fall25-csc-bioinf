@@ -54,19 +54,14 @@ else:
     # We use the standard, installed Biopython library for reference tests.
     from Bio import motifs
     # Import matrix/threshold classes directly from their explicit submodules
-    import Bio.motifs.matrix
-    import Bio.motifs.thresholds
+    from Bio.motifs import CountsMatrix, PositionWeightMatrix, PositionSpecificScoringMatrix, ScoreDistribution
+
     # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
     create = motifs.create
     read = motifs.read
 
-    CountsMatrix = Bio.motifs.matrix.CountsMatrix
-    PositionWeightMatrix = Bio.motifs.matrix.PositionWeightMatrix
-    PositionSpecificScoringMatrix = Bio.motifs.matrix.PositionSpecificScoringMatrix
-    ScoreDistribution = Bio.motifs.thresholds.ScoreDistribution
 
-    
 # --- Test Cases ---
 
 import math
