@@ -36,7 +36,27 @@ else:
     create = motifs.create
     read = motifs.read
     
-
+if hasattr(str, 'memcpy'):
+    # --- Codon Environment Imports ---
+    # When running 'codon run test.py' from week2/, imports must reference the 
+    # top-level directory ('bio_codon').
+    from bio_codon.motifs import create, read, Motif
+    from bio_codon.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
+    from bio_codon.motifs.thresholds import ScoreDistribution
+    
+    # The global 'from Bio.Seq import Seq' should suffice if the Codon bridge is working.
+    
+else:
+    # --- Python Environment Imports ---
+    # We use the standard, installed Biopython library for reference tests.
+    from Bio import motifs
+    # Import matrix/threshold classes directly from their explicit submodules
+    from Bio.motifs.matrix import CountsMatrix, PositionWeightMatrix, PositionSpecificScoringMatrix
+    from Bio.motifs.thresholds import ScoreDistribution
+    
+    # Re-map the names to match the variables used in the test cases for consistency
+    Motif = motifs.Motif
+    create = motifs.create
 # --- Test Cases ---
 
 import math
