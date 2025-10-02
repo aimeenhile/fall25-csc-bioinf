@@ -29,13 +29,18 @@ if CODON:
 else:
     # Python environment
     from Bio import motifs
+    from Bio.motifs import matrix, thresholds 
+
+    # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
     create = motifs.create
     read = motifs.read
-    CountsMatrix = motifs.matrix.CountsMatrix
-    PositionWeightMatrix = motifs.matrix.PositionWeightMatrix
-    PositionSpecificScoringMatrix = motifs.matrix.PositionSpecificScoringMatrix
-    ScoreDistribution = motifs.thresholds.ScoreDistribution
+    
+    # Use the imported submodules to access the classes
+    CountsMatrix = matrix.CountsMatrix
+    PositionWeightMatrix = matrix.PositionWeightMatrix
+    PositionSpecificScoringMatrix = matrix.PositionSpecificScoringMatrix
+    ScoreDistribution = thresholds.ScoreDistribution
 
 
 # --- Test Cases ---
