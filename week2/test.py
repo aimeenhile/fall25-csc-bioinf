@@ -4,7 +4,6 @@ import sys
 import numpy as np
 import math
 from typing import List, Dict
-from io import StringIO
 
 # DATA 
 data_dir = "data" 
@@ -49,6 +48,7 @@ else:
     # Python Environment
     from Bio.Seq import Seq 
     from Bio import motifs
+    from io import StringIO
     # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
     create = motifs.create
