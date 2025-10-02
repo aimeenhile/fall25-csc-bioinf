@@ -22,7 +22,7 @@ echo "=========================================="
 echo "Running Codon tests (bio_codon)..."
 echo "=========================================="
 # Codon uses the PYTHONPATH set above to locate bio_codon source
-codon run -release test.py > codon_output.txt 2>&1
+codon run -release test.py > codon_output.txt 
 echo "Codon tests completed."
 
 # --- Compare Results ---
