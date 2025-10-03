@@ -4,7 +4,7 @@
 
 from typing import List, Optional, Dict, Tuple, Union
 from .__init__ import Motif, Record 
-from python.Bio.Seq import Seq
+from python import Bio.Seq.Seq
 from collections import defaultdict
 import re
 

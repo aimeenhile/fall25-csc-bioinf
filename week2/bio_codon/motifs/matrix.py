@@ -8,7 +8,7 @@ and position-specific scoring matrices.
 import math
 from python import numbers
 import numpy as np
-from python.Bio.Seq import Seq
+from python import Bio.Seq.Seq
 from typing import Dict, Tuple, List, Optional, Union
 
 # A utility to calculate IUPAC degenerate consensus (simplified)
