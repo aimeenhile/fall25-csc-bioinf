@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 import math
 import sys 
-from typing import List, Dict
 
 # --- DATA PATHS (Corrected for new location: bio_codon/motifs/test.py) ---
 # We must go up two levels (../../) to reach the 'week2/' root, then down into 'data/'
