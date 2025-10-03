@@ -11,6 +11,21 @@ minimal_dna_path = data_dir + "/minimal_test.meme"
 minimal_rna_path = data_dir + "/minimal_test_rna.meme"
 
 """
+if hasattr(str, 'memcpy'):
+    # Codon Environment
+    from bio_codon.motifs import create, read, Motif
+    from bio_codon.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
+    from bio_codon.motifs.thresholds import ScoreDistribution 
+else:
+    # Python Environment
+    from Bio.Seq import Seq 
+    from Bio import motifs
+    from io import StringIO
+    # Re-map the names to match the variables used in the test cases for consistency
+    Motif = motifs.Motif
+    create = motifs.create
+    read = motifs.read
+"""
 try:
     __codon__
     CODON = True
@@ -29,25 +44,11 @@ if CODON:
 else:
     # Python environment
     from Bio import motifs
-    from Bio.motifs import matrix, thresholds 
+    from Bio.Seq import Seq
 
-    # Re-map the names to match the variables used in the test cases for consistency
-    Motif = motifs.Motif
-    create = motifs.create
-    read = motifs.read
-"""
+    from Bio.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+    from Bio.motifs.threshold import ScoreDistribution
 
-    
-if hasattr(str, 'memcpy'):
-    # Codon Environment
-    from bio_codon.motifs import create, read, Motif
-    from bio_codon.motifs.matrix import PositionSpecificScoringMatrix, PositionWeightMatrix, CountsMatrix
-    from bio_codon.motifs.thresholds import ScoreDistribution 
-else:
-    # Python Environment
-    from Bio.Seq import Seq 
-    from Bio import motifs
-    from io import StringIO
     # Re-map the names to match the variables used in the test cases for consistency
     Motif = motifs.Motif
     create = motifs.create
@@ -221,8 +222,9 @@ class TestMinimalParsing(unittest.TestCase):
         with open(minimal_dna_path) as f:
             motifs_list = read(f, "minimal") 
 
-        # Check first and only motif
-        self.assertEqual(len(motifs_list), 1)
+        self.assertEqual(len(motifs_list), 3) 
+
+        # Check first motif
         motif = motifs_list[0]
         self.assertEqual(motif.name, "KRP")
         self.assertEqual(motif.length, 19)
@@ -241,14 +243,14 @@ class TestMinimalParsing(unittest.TestCase):
         with open(minimal_rna_path) as f:
             motifs_list = read(f, "minimal") 
 
-        # Check first and only motif
-        self.assertEqual(len(motifs_list), 1)
-        
+        self.assertEqual(len(motifs_list), 3)
+
+        # Check first motif
         motif = motifs_list[0]
         self.assertEqual(motif.name, "KRP_fake_RNA")
         self.assertEqual(motif.length, 19)
         self.assertEqual(motif.alphabet, "ACGU")
-        self.assertIn("U", motif.alphabet) # Check for Uracil
+        # self.assertIn("U", motif.alphabet) # Check for Uracil
         
         # Check one value from the CountsMatrix
         # nsites=17, PFM[U, 0] = 0.823529. Count = round(0.823529 * 17) = 14
