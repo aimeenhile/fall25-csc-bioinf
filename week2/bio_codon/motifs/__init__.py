@@ -6,7 +6,7 @@ from collections import defaultdict
 from python import warnings 
 import numpy as np
 
-from Bio.Seq import Seq
+from python import Bio.Seq.Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Align import Alignment 
 
