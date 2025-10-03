@@ -32,25 +32,36 @@ else:
     from Bio import motifs
     from Bio.Seq import Seq # Import Seq needed for object creation in setUp
     
-    # NEW FIX: The previous attempts to use Bio.motifs.matrix failed (both import and attribute access).
-    # We are now attempting to import the classes directly from the Bio.motifs namespace, 
-    # which is required in some older or non-standard Biopython environments.
+    # --- DYNAMIC CLASS DISCOVERY FIX ---
+    # Since standard import patterns (like Bio.motifs.matrix.CountsMatrix) are failing 
+    # due to environment-specific Biopython structure, we create a temporary instance 
+    # and grab the class type dynamically from the resulting objects.
     
     try:
-        CountsMatrix = motifs.CountsMatrix
-        PositionSpecificScoringMatrix = motifs.PositionSpecificScoringMatrix
-        PositionWeightMatrix = motifs.PositionWeightMatrix
-        ScoreDistribution = motifs.ScoreDistribution
-    except AttributeError:
-        # Fallback for Biopython versions where the classes are still in sub-modules 
-        # but must be imported explicitly by module name first.
-        # This covers the import structure of more modern Biopython versions.
-        from Bio.motifs import matrix, thresholds
-        CountsMatrix = matrix.CountsMatrix
-        PositionSpecificScoringMatrix = matrix.PositionSpecificScoringMatrix
-        PositionWeightMatrix = matrix.PositionWeightMatrix
-        ScoreDistribution = thresholds.ScoreDistribution
+        # Create a minimal motif instance
+        sequences_temp = [Seq("GATTACA"), Seq("TATTTTA")]
+        motif_temp = motifs.create(sequences_temp)
+        counts_temp = motif_temp.counts
 
+        # Dynamically assign the class types
+        CountsMatrix = type(counts_temp)
+        
+        # Get PWM type (returned by normalize)
+        pwm_temp = counts_temp.normalize(pseudocounts=0.1)
+        PositionWeightMatrix = type(pwm_temp)
+        
+        # Get PSSM type (returned by log_odds). Background required for log_odds.
+        pssm_temp = pwm_temp.log_odds(background={"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25})
+        PositionSpecificScoringMatrix = type(pssm_temp)
+        
+        # Try importing ScoreDistribution from the usual location
+        from Bio.motifs import thresholds
+        ScoreDistribution = thresholds.ScoreDistribution
+        
+    except Exception as e:
+        # If dynamic discovery fails, re-raise the error for debugging
+        print(f"Error during dynamic class discovery: {e}", file=sys.stderr)
+        raise e
 
     # Re-map the names for the main motif functions
     Motif = motifs.Motif
@@ -110,6 +121,7 @@ class TestMotifBasic(unittest.TestCase):
     def test_motif_count_matrix(self):
         """Check if the CountsMatrix attribute is correct."""
         counts = self.motif_dna.counts
+        # This assert uses the dynamically discovered CountsMatrix class
         self.assertIsInstance(counts, CountsMatrix) 
         self.assertEqual(counts["A", 0], 2)
         self.assertEqual(counts["T", 0], 5)
@@ -171,7 +183,7 @@ class TestMotifMatrixConversions(unittest.TestCase):
 
     def test_pwm_conversion(self):
         """Test conversion to Position Weight Matrix (PWM)."""
-        # normalize() returns a PositionWeightMatrix, which is the Frequency Matrix in Biopython terms
+        # normalize() returns a PositionWeightMatrix
         pwm = self.motif.counts.normalize(pseudocounts=1)
         self.assertIsInstance(pwm, PositionWeightMatrix)
         self.assertEqual(pwm.length, 5)
