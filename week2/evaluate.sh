@@ -12,9 +12,7 @@ cd week2
 echo "=========================================="
 echo "Running Python tests (BioPython)..."
 echo "=========================================="
-# Run the Python tests and capture output and errors to a file.
-# The '||' operator executes the following command ONLY if the first command fails (returns non-zero exit code).
-# If the python command fails, we print the captured error file.
+
 python test.py > python_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "PYTHON TEST FAILED - TRACEBACK BELOW:"
@@ -29,9 +27,15 @@ echo ""
 echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
-# Run Codon tests (this part will only run if Python tests succeeded due to 'set -e')
-codon run -release test.py 
 
+codon test.py > codon_output.txt 2>&1 || { 
+    echo "------------------------------------------"
+    echo "CODON TEST FAILED - TRACEBACK BELOW:"
+    echo "------------------------------------------"
+    cat codon_output.txt
+    echo "------------------------------------------"
+    exit 1 
+}
 echo "Codon tests completed."
 
 # Compare results
