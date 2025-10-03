@@ -17,16 +17,20 @@ except NameError:
     CODON = False
 
 if CODON:
-    # Codon environment: Use relative imports to find modules within the 'bio_codon' package.
+    # Codon environment: Using standard relative imports for clarity and package structure adherence.
     try:
-        # Assuming create, read, Motif are exposed at the bio_codon package root (../)
+        # Import function/class from bio_codon/motifs/__init__.py (the current package root)
         from . import create, read, Motif 
-        # Assuming matrix and thresholds are sibling directories to motifs
+        
+        # Import classes from sibling modules (../matrix, ../thresholds)
         from ..matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
         from ..thresholds import ScoreDistribution
+        
+        # Use the Codon-wrapped version of BioPython's Seq
         from python import Bio as cBio
         Seq = cBio.Seq.Seq
-        # from ..seq import Seq 
+        # from ..seq import Seq # Alternate if using custom Seq class
+        
     except ImportError as e:
         print(f"Codon import error. Check that create, read, Motif, etc., are correctly exposed in the 'bio_codon' package: {e}", file=sys.stderr)
         raise e
