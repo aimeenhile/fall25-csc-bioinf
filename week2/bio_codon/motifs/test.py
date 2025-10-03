@@ -20,11 +20,13 @@ if CODON:
     # Codon environment: Use relative imports to find modules within the 'bio_codon' package.
     try:
         # Assuming create, read, Motif are exposed at the bio_codon package root (../)
-        from .. import create, read, Motif 
+        from . import create, read, Motif 
         # Assuming matrix and thresholds are sibling directories to motifs
         from ..matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
         from ..thresholds import ScoreDistribution
-        from ..seq import Seq 
+        from python import Bio as cBio
+        Seq = cBio.Seq.Seq
+        # from ..seq import Seq 
     except ImportError as e:
         print(f"Codon import error. Check that create, read, Motif, etc., are correctly exposed in the 'bio_codon' package: {e}", file=sys.stderr)
         raise e
