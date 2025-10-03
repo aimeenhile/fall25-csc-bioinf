@@ -5,14 +5,12 @@
 from typing import List, Dict, Union, Optional, Tuple
 from collections import defaultdict
 
-from python import warnings
-from python.urllib.parse import urlencode
-from python.urllib.request import Request, urlopen
+from warnings import filterwarnings 
 import numpy as np
 
-from python.Bio.Seq import Seq
-from python.Bio.SeqRecord import SeqRecord
-from python.Bio.Align import Alignment 
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Align import Alignment 
 
 from .matrix import (
     FrequencyPositionMatrix,
@@ -48,6 +46,13 @@ class Instances(List[Seq]):
         else:
             super().__init__([])
 
+    def __str__(self) -> str:
+        """Return a string containing all sequences."""
+        return '\n'.join(str(s) for s in self)
+    
+    def __repr__(self) -> str:
+        """Return a string representation of the Instances object."""
+        return f"Instances({super().__repr__()})"
 
 class AlignmentMock:
     """Mock Alignment class to hold sequences for Motif constructor."""
@@ -55,10 +60,25 @@ class AlignmentMock:
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
 
+    def __len__(self):
+        return len(self.sequences)
+    
+    def __getitem__(self, index: int) -> Seq:
+        return self.sequences[index]
+
 
 class Motif:
     """Class to hold the information for a sequence motif."""
 
+    _alphabet: str
+    _alignment: AlignmentMock # Use AlignmentMock or the real Alignment, depending on if it's working
+    counts: CountsMatrix
+    
+    # Placeholder attributes for optional/calculated properties
+    name: Optional[str] = None
+    evalue: Optional[float] = None
+    num_occurrences: Optional[int] = None
+    
     def __init__(
         self,
         alphabet: str,
