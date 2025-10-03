@@ -32,14 +32,26 @@ else:
     from Bio import motifs
     from Bio.Seq import Seq # Import Seq needed for object creation in setUp
     
-    # FIX: The previous 'from Bio.motifs.matrix import ...' was failing.
-    # We now access the required classes via the imported 'motifs' object's submodules 
-    # and rename them locally to match the test case usage (e.g., CountsMatrix).
-    CountsMatrix = motifs.matrix.CountsMatrix
-    PositionSpecificScoringMatrix = motifs.matrix.PositionSpecificScoringMatrix
-    PositionWeightMatrix = motifs.matrix.PositionWeightMatrix
-    ScoreDistribution = motifs.thresholds.ScoreDistribution
+    # NEW FIX: The previous attempts to use Bio.motifs.matrix failed (both import and attribute access).
+    # We are now attempting to import the classes directly from the Bio.motifs namespace, 
+    # which is required in some older or non-standard Biopython environments.
     
+    try:
+        CountsMatrix = motifs.CountsMatrix
+        PositionSpecificScoringMatrix = motifs.PositionSpecificScoringMatrix
+        PositionWeightMatrix = motifs.PositionWeightMatrix
+        ScoreDistribution = motifs.ScoreDistribution
+    except AttributeError:
+        # Fallback for Biopython versions where the classes are still in sub-modules 
+        # but must be imported explicitly by module name first.
+        # This covers the import structure of more modern Biopython versions.
+        from Bio.motifs import matrix, thresholds
+        CountsMatrix = matrix.CountsMatrix
+        PositionSpecificScoringMatrix = matrix.PositionSpecificScoringMatrix
+        PositionWeightMatrix = matrix.PositionWeightMatrix
+        ScoreDistribution = thresholds.ScoreDistribution
+
+
     # Re-map the names for the main motif functions
     Motif = motifs.Motif
     create = motifs.create
@@ -98,7 +110,6 @@ class TestMotifBasic(unittest.TestCase):
     def test_motif_count_matrix(self):
         """Check if the CountsMatrix attribute is correct."""
         counts = self.motif_dna.counts
-        # This assert now works in the Python environment due to the fixed imports
         self.assertIsInstance(counts, CountsMatrix) 
         self.assertEqual(counts["A", 0], 2)
         self.assertEqual(counts["T", 0], 5)
