@@ -12,7 +12,9 @@ from python import Bio.Seq.Seq
 # FIX: Removed Union from imports to avoid internal Codon compiler crash.
 from typing import Dict, Tuple, List, Optional
 from collections import defaultdict
-from . import Background # Import type hint from __init__.py if needed
+# FIX: Defining Background type here to break circular import with __init__.py
+Background = Dict[str, float]
+
 
 # A utility to calculate IUPAC degenerate consensus (simplified)
 # W (A/T), S (G/C), K (G/T), M (A/C), R (A/G), Y (C/T), V (A/C/G), H (A/C/T), D (A/G/T), B (C/G/T)
@@ -23,8 +25,6 @@ IUPAC_CODE: Dict[str, str] = {
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
 # Inverse mapping for degeneracy calculation.
-# FIX: Using separate maps by tuple length to avoid the Codon type checker issue with Dict[Union[Tuple[...], ...], ...]
-# All keys remain alphabetically sorted (canonical) to match lookup logic.
 
 DEGENERATE_MAP_2: Dict[Tuple[str, str], str] = {
     ('A', 'T'): 'W',      # A or T

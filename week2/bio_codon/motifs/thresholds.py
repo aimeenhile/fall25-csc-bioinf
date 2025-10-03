@@ -4,11 +4,10 @@
 
 import math
 import numpy as np
-# FIX: Removed Union from imports to avoid internal Codon compiler crash.
 from typing import Optional, List, Dict, Tuple
 from .matrix import PositionSpecificScoringMatrix
 from collections import defaultdict
-from . import Background # Import type hint from __init__.py
+from .matrix import Background
 
 
 class ScoreDistribution:

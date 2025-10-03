@@ -20,9 +20,6 @@ from .matrix import (
 )
 from .minimal import read as minimal_read, Record
 
-# Helper type for background dictionaries
-Background = Dict[str, float]
-
 # Degenerate ambiguity codes for consensus sequences (IUPAC DNA)
 _DEGENERATE_CODES: Dict[str, str] = {
     'A': 'A', 'C': 'C', 'G': 'G', 'T': 'T',
