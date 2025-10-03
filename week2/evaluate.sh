@@ -28,9 +28,23 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 
-codon run --no-opt test.py > codon_output.txt 2>&1 || { 
+# 1. Compile the test.py file into an executable named 'test'
+echo "Compiling with 'codon build test.py'..."
+codon build test.py || { 
     echo "------------------------------------------"
-    echo "CODON TEST FAILED - TRACEBACK BELOW:"
+    echo "CODON BUILD FAILED - TRACEBACK BELOW:"
+    echo "------------------------------------------"
+    # Codon build errors usually print directly to the console/stderr
+    echo "Failed to compile test.py. See output above for details."
+    echo "------------------------------------------"
+    exit 1 
+}
+
+# 2. Execute the compiled binary and redirect output
+echo "Executing compiled binary './test'..."
+./test > codon_output.txt 2>&1 || { 
+    echo "------------------------------------------"
+    echo "CODON EXECUTION FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
     cat codon_output.txt
     echo "------------------------------------------"
