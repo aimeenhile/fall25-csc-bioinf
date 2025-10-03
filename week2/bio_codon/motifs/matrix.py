@@ -1,20 +1,26 @@
-# bio_codon/motifs/matrix.py
+Seq# bio_codon/motifs/matrix.py
 
 """Support for various forms of sequence motif matrices.
 
 Implementation of frequency (count) matrices, position-weight matrices,
 and position-specific scoring matrices.
 """
+
 import math
 from python import numbers
 import numpy as np
-from python import Bio.Seq.Seq
+from python import Bio.Seq.Seq as Seq
 # FIX: Removed Union from imports to avoid internal Codon compiler crash.
 from typing import Dict, Tuple, List, Optional, Union
 from collections import defaultdict
-# FIX: Defining Background type here to break circular import with __init__.py
+
+# Defining Background type 
 Background = Dict[str, float]
 
+# Define aliases for common tuple types used in degeneracy maps to resolve 
+TwoTuple = Tuple[str, str]
+ThreeTuple = Tuple[str, str, str]
+FourTuple = Tuple[str, str, str, str]
 
 # A utility to calculate IUPAC degenerate consensus (simplified)
 # W (A/T), S (G/C), K (G/T), M (A/C), R (A/G), Y (C/T), V (A/C/G), H (A/C/T), D (A/G/T), B (C/G/T)
@@ -24,23 +30,25 @@ IUPAC_CODE: Dict[str, str] = {
     "R": "AG", "Y": "CT", "V": "ACG", "H": "ACT",
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
-# Inverse mapping for degeneracy calculation.
 
-DEGENERATE_MAP_2: Dict[Tuple[str, str], str] = {
+# Inverse mapping for degeneracy calculation.
+DEGENERATE_MAP_2: Dict[TwoTuple, str] = {
     ('A', 'T'): 'W',      # A or T
-    ('C', 'G'): 'S',      # G or C
+    ('C', 'G'): 'S',      # C or G
     ('G', 'T'): 'K',      # G or T
     ('A', 'C'): 'M',      # A or C
     ('A', 'G'): 'R',      # A or G
     ('C', 'T'): 'Y',      # C or T
 }
-DEGENERATE_MAP_3: Dict[Tuple[str, str, str], str] = {
-    ('C', 'G', 'T'): 'B', # C or G or T
-    ('A', 'G', 'T'): 'D', # A or G or T
-    ('A', 'C', 'T'): 'H', # A or C or T
+
+DEGENERATE_MAP_3: Dict[ThreeTuple, str] = {
     ('A', 'C', 'G'): 'V', # A or C or G
+    ('A', 'C', 'T'): 'H', # A or C or T
+    ('A', 'G', 'T'): 'D', # A or G or T
+    ('C', 'G', 'T'): 'B', # C or G or T
 }
-DEGENERATE_MAP_4: Dict[Tuple[str, str, str, str], str] = {
+
+DEGENERATE_MAP_4: Dict[FourTuple, str] = {
     ('A', 'C', 'G', 'T'): 'N', # A or C or G or T
 }
 
@@ -50,11 +58,15 @@ DEGENERATE_MAP: Dict[int, Dict[Tuple, str]] = {
     3: DEGENERATE_MAP_3,
     4: DEGENERATE_MAP_4,
 }
+
 # Consolidate all maps for a single lookup function
+ConsolidatedDegenerateMapType = Union[TwoTuple, ThreeTuple, FourTuple]
+
 DEGENERATE_MAP: Dict[ConsolidatedDegenerateMapType, str] = {}
 DEGENERATE_MAP.update(DEGENERATE_MAP_2)
 DEGENERATE_MAP.update(DEGENERATE_MAP_3)
 DEGENERATE_MAP.update(DEGENERATE_MAP_4)
+
 
 class GenericPositionMatrix:
     """Base class for all position-based matrices (Counts, Frequencies, PWM, PSSM)."""
