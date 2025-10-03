@@ -20,10 +20,11 @@ IUPAC_CODE: Dict[str, str] = {
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
 # Inverse mapping for degeneracy calculation (simplified for common cases)
-DEGENERATE_MAP: Dict[Tuple[str, ...], str] = {
+DEGENERATE_MAP: Dict[Union[Tuple[str, str], Tuple[str, str, str]], str] = {
     ('A', 'T'): 'W', ('G', 'C'): 'S', ('A', 'G'): 'R', ('C', 'T'): 'Y',
     ('A', 'C', 'G'): 'V',
 }
+
 
 
 def _get_background_prob(background: Optional[Dict[str, float]], base: str) -> float:
