@@ -30,7 +30,7 @@ echo "=========================================="
 
 # 1. Compile the test.py file into an executable named 'test'
 echo "Compiling with 'codon build test.py'..."
-codon build test.py || { 
+codon build -release test.py || { 
     echo "------------------------------------------"
     echo "CODON BUILD FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
