@@ -52,13 +52,6 @@ DEGENERATE_MAP_4: Dict[FourTuple, str] = {
     ('A', 'C', 'G', 'T'): 'N', # A or C or G or T
 }
 
-# Mapping from tuple size to its corresponding map
-DEGENERATE_MAP: Dict[int, Dict[Tuple, str]] = {
-    2: DEGENERATE_MAP_2,
-    3: DEGENERATE_MAP_3,
-    4: DEGENERATE_MAP_4,
-}
-
 # Consolidate all maps for a single lookup function
 ConsolidatedDegenerateMapType = Union[TwoTuple, ThreeTuple, FourTuple]
 
