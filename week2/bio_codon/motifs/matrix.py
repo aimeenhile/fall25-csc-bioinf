@@ -11,6 +11,7 @@ import numpy as np
 from python import Bio.Seq.Seq
 from typing import Dict, Tuple, List, Optional, Union
 
+
 # A utility to calculate IUPAC degenerate consensus (simplified)
 # W (A/T), S (G/C), K (G/T), M (A/C), R (A/G), Y (C/T), V (A/C/G), H (A/C/T), D (A/G/T), B (C/G/T)
 IUPAC_CODE: Dict[str, str] = {
@@ -20,11 +21,21 @@ IUPAC_CODE: Dict[str, str] = {
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
 # Inverse mapping for degeneracy calculation (simplified for common cases)
-DEGENERATE_MAP: Dict[Union[Tuple[str, str], Tuple[str, str, str]], str] = {
-    ('A', 'T'): 'W', ('G', 'C'): 'S', ('A', 'G'): 'R', ('C', 'T'): 'Y',
-    ('A', 'C', 'G'): 'V',
+# FIX: Using Tuple[str, ...] to handle varying tuple lengths (2 and 3)
+# FIX: Keys must be alphabetically sorted to match lookup logic in _calculate_degenerate_consensus
+DEGENERATE_MAP: Dict[Tuple[str, ...], str] = {
+    ('A', 'T'): 'W',      # A or T
+    ('C', 'G'): 'S',      # C or G (Sorted from G, C)
+    ('A', 'G'): 'R',      # A or G
+    ('C', 'T'): 'Y',      # C or T
+    ('G', 'T'): 'K',      # G or T (Added missing common code)
+    ('A', 'C'): 'M',      # A or C (Added missing common code)
+    ('A', 'C', 'G'): 'V', # A, C, or G
+    ('A', 'C', 'T'): 'H', # A, C, or T
+    ('A', 'G', 'T'): 'D', # A, G, or T
+    ('C', 'G', 'T'): 'B', # C, G, or T
+    ('A', 'C', 'G', 'T'): 'N', # Any base
 }
-
 
 
 def _get_background_prob(background: Optional[Dict[str, float]], base: str) -> float:
