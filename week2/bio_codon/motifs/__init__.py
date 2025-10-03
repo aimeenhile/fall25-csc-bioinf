@@ -7,8 +7,8 @@ from python import warnings
 import numpy as np
 
 from python import Bio.Seq.Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.Align import Alignment 
+from python import Bio.SeqRecord.SeqRecord
+from python import Bio.Align.Alignment 
 
 from .matrix import (
     FrequencyPositionMatrix,
