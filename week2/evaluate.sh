@@ -28,7 +28,7 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 
-codon build bio_codon -release || { echo "Codon compilation failed."; exit 1; } 
+codon build bio_codon -release -o bio_codon_compiled.so | { echo "Codon compilation failed."; exit 1; } 
 
 codon run bio_codon/motifs/test.py > codon_output.txt 2>&1 || { 
     echo "------------------------------------------"
