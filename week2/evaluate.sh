@@ -28,7 +28,7 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 
-codon test.py > codon_output.txt 2>&1 || { 
+codon run test.py > codon_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "CODON TEST FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
