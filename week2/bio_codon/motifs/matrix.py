@@ -20,6 +20,7 @@ IUPAC_CODE: Dict[str, str] = {
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
 # Inverse mapping for degeneracy calculation.
+# FIX: Using separate maps by tuple length to avoid the Codon type checker issue with Dict[Union[Tuple[...], ...], ...]
 # All keys remain alphabetically sorted (canonical) to match lookup logic.
 
 DEGENERATE_MAP_2: Dict[Tuple[str, str], str] = {
@@ -80,8 +81,13 @@ class GenericPositionMatrix(dict):
             lines.append(f"{letter}: " + " ".join(words))
         return "\n".join(lines)
 
-    def __getitem__(self, key: Union[str, Tuple[str, int], Tuple[Union[int, slice], int]]):
-        """Allow access like m.counts['A', 3] or m.counts[:, 3]."""
+    # FIX: Simplify the Union hint for key to avoid the 'union already sealed' compiler crash.
+    def __getitem__(self, key: Union[str, Tuple[object, int]]):
+        """Allow access like m.counts['A', 3] or m.counts[:, 3].
+        
+        The Union hint on the key argument handles str for row access (m['A'])
+        and Tuple for cell/column access (m['A', 3] or m[:, 3]).
+        """
         if isinstance(key, str):
             # Access like m['A'] - returns the list of values for base 'A'
             return super().__getitem__(key)
@@ -165,12 +171,13 @@ class GenericPositionMatrix(dict):
                 code: Optional[str] = None
                 
                 # Search the correct map based on the tuple length
+                # We use specific map types (DEGENERATE_MAP_2, _3, _4) to avoid the previous compiler error.
                 if len(base_tuple) == 2:
-                    code = DEGENERATE_MAP_2.get(base_tuple)
+                    code = DEGENERATE_MAP_2.get(base_tuple) # type: ignore
                 elif len(base_tuple) == 3:
-                    code = DEGENERATE_MAP_3.get(base_tuple)
+                    code = DEGENERATE_MAP_3.get(base_tuple) # type: ignore
                 elif len(base_tuple) == 4:
-                    code = DEGENERATE_MAP_4.get(base_tuple)
+                    code = DEGENERATE_MAP_4.get(base_tuple) # type: ignore
                 
                 # Append the degenerate code or fall back to 'N'
                 if code:
