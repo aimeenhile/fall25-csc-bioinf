@@ -19,22 +19,27 @@ IUPAC_CODE: Dict[str, str] = {
     "R": "AG", "Y": "CT", "V": "ACG", "H": "ACT",
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
-# Inverse mapping for degeneracy calculation (simplified for common cases)
-# FIX: CRITICAL CHANGE: Explicitly define key types using Union to satisfy the Codon compiler.
-# The compiler rejects 'Tuple[str, ...]' when tuple lengths are mixed.
-KeyType = Union[Tuple[str, str], Tuple[str, str, str], Tuple[str, str, str, str]]
-DEGENERATE_MAP: Dict[KeyType, str] = {
+# Inverse mapping for degeneracy calculation.
+# All keys remain alphabetically sorted (canonical) to match lookup logic.
+
+DEGENERATE_MAP_2: Dict[Tuple[str, str], str] = {
     ('A', 'T'): 'W',      # A or T
-    ('C', 'G'): 'S',      # C or G (Canonical/Sorted)
-    ('A', 'G'): 'R',      # A or G (Canonical/Sorted)
-    ('C', 'T'): 'Y',      # C or T (Canonical/Sorted)
-    ('G', 'T'): 'K',      # G or T (Canonical/Sorted)
-    ('A', 'C'): 'M',      # A or C (Canonical/Sorted)
-    ('A', 'C', 'G'): 'V', # A, C, or G (Canonical/Sorted)
-    ('A', 'C', 'T'): 'H', # A, C, or T (Canonical/Sorted)
-    ('A', 'G', 'T'): 'D', # A, G, or T (Canonical/Sorted)
-    ('C', 'G', 'T'): 'B', # C, G, or T (Canonical/Sorted)
-    ('A', 'C', 'G', 'T'): 'N', # Any base (Canonical/Sorted)
+    ('C', 'G'): 'S',      # C or G
+    ('A', 'G'): 'R',      # A or G
+    ('C', 'T'): 'Y',      # C or T
+    ('G', 'T'): 'K',      # G or T
+    ('A', 'C'): 'M',      # A or C
+}
+
+DEGENERATE_MAP_3: Dict[Tuple[str, str, str], str] = {
+    ('A', 'C', 'G'): 'V', # A, C, or G
+    ('A', 'C', 'T'): 'H', # A, C, or T
+    ('A', 'G', 'T'): 'D', # A, G, or T
+    ('C', 'G', 'T'): 'B', # C, G, or T
+}
+
+DEGENERATE_MAP_4: Dict[Tuple[str, str, str, str], str] = {
+    ('A', 'C', 'G', 'T'): 'N', # Any base
 }
 
 
@@ -145,7 +150,7 @@ class GenericPositionMatrix(dict):
             max_value: float = max(column.values())
             
             # Bases that contribute significantly to the position (e.g., > 50% of max value)
-            # The list of bases MUST be sorted to match the canonical order of keys in DEGENERATE_MAP
+            # The list of bases MUST be sorted to match the canonical order of keys in the maps
             significant_bases: List[str] = sorted([
                 base for base, value in column.items()
                 if value >= max_value * 0.5
@@ -153,12 +158,21 @@ class GenericPositionMatrix(dict):
             
             # Convert the list of bases to an IUPAC degenerate code
             base_tuple = tuple(significant_bases)
+            
             if len(base_tuple) == 1:
                 degenerate_consensus_seq.append(base_tuple[0])
             else:
-                # Simple lookup for common cases, otherwise fallback to 'N'
-                # The sorted base_tuple now matches the sorted keys in DEGENERATE_MAP
-                code = DEGENERATE_MAP.get(base_tuple)
+                code: Optional[str] = None
+                
+                # Search the correct map based on the tuple length
+                if len(base_tuple) == 2:
+                    code = DEGENERATE_MAP_2.get(base_tuple)
+                elif len(base_tuple) == 3:
+                    code = DEGENERATE_MAP_3.get(base_tuple)
+                elif len(base_tuple) == 4:
+                    code = DEGENERATE_MAP_4.get(base_tuple)
+                
+                # Append the degenerate code or fall back to 'N'
                 if code:
                     degenerate_consensus_seq.append(code)
                 else:
