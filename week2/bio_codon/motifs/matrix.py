@@ -1,4 +1,4 @@
-Seq# bio_codon/motifs/matrix.py
+# bio_codon/motifs/matrix.py
 
 """Support for various forms of sequence motif matrices.
 
@@ -9,7 +9,7 @@ and position-specific scoring matrices.
 import math
 from python import numbers
 import numpy as np
-from python import Bio.Seq.Seq as Seq
+from python import Bio.Seq.Seq
 # FIX: Removed Union from imports to avoid internal Codon compiler crash.
 from typing import Dict, Tuple, List, Optional, Union
 from collections import defaultdict
