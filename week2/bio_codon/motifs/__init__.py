@@ -1,11 +1,9 @@
-# bio_codon/motifs/__init__.py
-
 """Tools for sequence motif analysis."""
 
 from typing import List, Dict, Union, Optional, Tuple
 from collections import defaultdict
 
-from warnings import filterwarnings 
+import warnings # Codon compatible: using standard import
 import numpy as np
 
 from Bio.Seq import Seq
@@ -16,6 +14,7 @@ from .matrix import (
     FrequencyPositionMatrix,
     PositionSpecificScoringMatrix,
     PositionWeightMatrix,
+    CountsMatrix,
     GenericPositionMatrix,
 )
 from .minimal import read as minimal_read, Record
@@ -55,7 +54,9 @@ class Instances(List[Seq]):
         return f"Instances({super().__repr__()})"
 
 class AlignmentMock:
-    """Mock Alignment class to hold sequences for Motif constructor."""
+    """Mock Alignment class to hold sequences for Motif constructor.
+    Used instead of Bio.Align.Alignment in Codon to simplify dependencies.
+    """
     def __init__(self, sequences: List[Seq]):
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
@@ -109,7 +110,7 @@ class Motif:
         for i in range(self.length):
             max_count = -1
             max_base = ''
-            for base in self.alphabet:
+            for base in self.counts.alphabet: # Iterate over the actual alphabet from counts
                 count = self.counts[base, i]
                 if count > max_count:
                     max_count = count
@@ -126,13 +127,11 @@ class Motif:
 
     @classmethod
     def from_minimal_format(cls, name: str, alphabet: str, matrix_data: Dict[str, List[float]], num_occurrences: Optional[int], evalue: Optional[float], background: Optional[Background], alength: Optional[int], w: Optional[int]):
-        """Create a Motif from parsed minimal format data."""
-        # In minimal format, matrix_data are probabilities (PWM), not counts.
-        # To create a CountsMatrix, we must scale the probabilities by num_occurrences (nsites).
+        """Create a Motif from parsed minimal format data.
         
-        # NOTE: This is a deviation from typical Biopython behavior where 'counts'
-        # are calculated from instances. Since minimal format only provides PWM,
-        # we back-calculate pseudo-counts for the CountsMatrix for compatibility.
+        Note: Minimal format provides PWM, so pseudo-counts are back-calculated
+        for the CountsMatrix constructor.
+        """
         
         counts_data: Dict[str, List[float]] = {}
         if num_occurrences is None:
@@ -140,6 +139,7 @@ class Motif:
             num_occurrences = 20
         
         for base, freqs in matrix_data.items():
+            # Calculate pseudo-counts: Count = Frequency * Num_Occurrences
             counts_data[base] = [freq * num_occurrences for freq in freqs]
             
         counts = CountsMatrix(alphabet=alphabet, values=counts_data)
@@ -159,7 +159,7 @@ class Motif:
         return str(self.counts)
 
     def __getitem__(self, key: Union[slice, Tuple[int, int]]) -> 'Motif':
-        """Return a slice of the Motif (slicing is simplified here)."""
+        """Return a slice of the Motif (slicing the underlying matrix)."""
         if isinstance(key, slice):
             start = key.start if key.start is not None else 0
             stop = key.stop if key.stop is not None else self.length
@@ -182,18 +182,12 @@ class Motif:
         raise NotImplementedError("Only slicing is supported for Motif object.")
 
     def reverse_complement(self) -> 'Motif':
-        """Return the reverse complement of the motif."""
+        """Return the reverse complement of the motif. (Matrix-based RC)."""
         # Simple check for DNA/RNA
         if not all(b in 'ACGTU' for b in self.alphabet):
             raise ValueError(f"Reverse complement is only supported for DNA/RNA motifs. Alphabet: {self.alphabet}.")
 
-        # This requires an actual sequence-based reverse complement, which is complex.
-        # For matrix-based reverse complement (which is what Biopython often does for matrices):
-        
-        # 1. Reverse the columns of the matrix
-        # 2. Swap A <-> T (or U), G <-> C
-        
-        # Simplified DNA/RNA complement map
+        # Simplified DNA/RNA complement map (ACGT/ACGU)
         complement_map = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A'}
         
         new_counts_values: Dict[str, List[float]] = {base: [0.0] * self.length for base in self.alphabet}
@@ -205,7 +199,6 @@ class Motif:
             
             for old_base, new_base in complement_map.items():
                 if old_base in self.alphabet and new_base in self.alphabet:
-                    # Move the count from old_base at j to new_base at new_j
                     new_counts_values[new_base][new_j] = self.counts[old_base, j]
                 
         # Create the new CountsMatrix
@@ -228,7 +221,7 @@ def create(instances: List[str], alphabet: str = "ACGT") -> 'Motif':
     if not sequences or not all(len(s) == len(sequences[0]) for s in sequences):
         raise ValueError("Instances must not be empty and must all have the same length.")
 
-    # AlignmentMock is used instead of Alignment for simplicity
+    # AlignmentMock is used instead of Alignment for simplified dependencies
     alignment = AlignmentMock(sequences)
 
     # Calculate counts
@@ -249,14 +242,15 @@ def create(instances: List[str], alphabet: str = "ACGT") -> 'Motif':
 def parse(path: str, fmt: str, strict: bool = True) -> List['Motif']:
     """Parse an output file from a motif finding program.
 
-    In the Codon environment, this function takes a file path (str)
+    Accepts a file **path** (str) instead of a file handle for Codon compatibility.
+
     Currently supported formats (case is ignored):
-     - minimal: MEME minimal motif format
-     - sites: Alias for minimal
+      - minimal: MEME minimal motif format
+      - sites: Alias for minimal
     """
     fmt = fmt.lower()
     if fmt == "sites" or fmt == "minimal":
-        # minimal_read is assumed to handle file opening/closing now
+        # minimal_read must be adapted to accept a path string instead of a file handle
         return minimal_read(path)
     else:
         raise ValueError(f"Unknown format '{fmt}'. Only 'minimal' and 'sites' are supported.")
@@ -264,11 +258,14 @@ def parse(path: str, fmt: str, strict: bool = True) -> List['Motif']:
 
 def read(path: str, fmt: str, strict: bool = True) -> 'Motif':
     """Read a single motif from a file path.
+
+    Accepts a file **path** (str) instead of a file handle for Codon compatibility.
     """
     motifs = parse(path, fmt, strict)
     if not motifs:
         raise ValueError("No motifs found in file path")
     if len(motifs) > 1:
+        # Using standard warnings mechanism
         warnings.warn(
             f"More than one motif found in file path. Returning the first one only.",
             RuntimeWarning,
