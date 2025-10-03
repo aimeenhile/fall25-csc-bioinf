@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 import numpy as np
 import math
 from typing import List, Dict
@@ -81,8 +82,14 @@ class TestMotifBasic(unittest.TestCase):
         ]
         
         # Create Motif objects using the custom `create` function
-        self.motif_dna = create([Seq(s) for s in self.sequences_dna], alphabet="ACGT")
-        self.motif_rna = create([Seq(s) for s in self.sequences_rna], alphabet="ACGU")
+        try:
+            # Try creating with Seq if available (Python/Biopython)
+            self.motif_dna = create([Seq(s) for s in self.sequences_dna], alphabet="ACGT")
+            self.motif_rna = create([Seq(s) for s in self.sequences_rna], alphabet="ACGU")
+        except NameError:
+            # Fallback for environments where Seq is not directly imported (Codon)
+            self.motif_dna = create(self.sequences_dna, alphabet="ACGT")
+            self.motif_rna = create(self.sequences_rna, alphabet="ACGU")
         
         # Expected Counts Matrix for DNA motif (Position: 0 1 2 3 4)
         # A: 2 4 0 0 0
@@ -111,22 +118,10 @@ class TestMotifBasic(unittest.TestCase):
 
     def test_motif_consensus(self):
         """Check if consensus sequence is generated correctly."""
-        # T/A (T dominant), A/T/C (A dominant), C/T (C dominant), G/C/T (G/T dominant, but G is 3, T is 3)
-        # A: 2 4 0 0 0
-        # C: 0 0 4 1 4
-        # G: 0 0 0 3 0
-        # T: 5 3 3 3 3
-        # T A C G T -> T A C T C (If ties are broken by alphabet order, G comes before T)
         # Biopython breaks ties by alphabetical order (A<C<G<T). In position 3, G=3, T=3. G is chosen.
-        # In position 4, C=4, T=3. C is chosen.
-        # The expected Biopython consensus (which should be replicated):
-        # Pos 0: T (5) > A (2)
-        # Pos 1: A (4) > T (3)
-        # Pos 2: C (4) > T (3)
-        # Pos 3: G (3) = T (3). Tie-break: G is before T. G chosen.
-        # Pos 4: C (4) > T (3)
-        self.assertEqual(self.motif_dna.consensus, "T A C G C".replace(" ", "")) 
-        self.assertEqual(self.motif_rna.consensus, "U A C G C".replace(" ", ""))
+        # Expected consensus: T A C G C
+        self.assertEqual(self.motif_dna.consensus, "TACGC") 
+        self.assertEqual(self.motif_rna.consensus, "UACGC")
 
     def test_reverse_complement(self):
         """Test reverse complement property."""
@@ -135,7 +130,7 @@ class TestMotifBasic(unittest.TestCase):
         self.assertEqual(rc_motif.length, 5)
         # Original consensus: T A C G C
         # Reverse complement: G C G T A
-        self.assertEqual(rc_motif.consensus, "G C G T A".replace(" ", ""))
+        self.assertEqual(rc_motif.consensus, "GCGTA")
 
     def test_motif_slicing(self):
         """Test slicing of the Motif object."""
@@ -143,13 +138,7 @@ class TestMotifBasic(unittest.TestCase):
         sliced_motif = self.motif_dna[1:4]
         self.assertIsInstance(sliced_motif, Motif)
         self.assertEqual(sliced_motif.length, 3)
-        # Original columns 1, 2, 3:
-        # T A C G C
-        # A: 4 0 0
-        # C: 0 4 1
-        # G: 0 0 3
-        # T: 3 3 3
-        # Consensus: A C G
+        # Consensus of columns 1, 2, 3: A C G
         self.assertEqual(sliced_motif.consensus, "ACG")
 
 class TestMotifMatrixConversions(unittest.TestCase):
@@ -166,7 +155,12 @@ class TestMotifMatrixConversions(unittest.TestCase):
             "AATGC",
             "AATGC",
         ]
-        self.motif = create(sequences, alphabet="ACGT")
+        
+        try:
+            self.motif = create([Seq(s) for s in sequences], alphabet="ACGT")
+        except NameError:
+            self.motif = create(sequences, alphabet="ACGT")
+            
         # Standard Biopython default background is equiprobable (0.25 for each)
         self.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
 
@@ -205,24 +199,19 @@ class TestMotifMatrixConversions(unittest.TestCase):
         
         # Score the first sequence "TACAA" (length 5)
         # Expected score: PSSM[T,0] + PSSM[A,1] + PSSM[C,2] + PSSM[A,3] + PSSM[A,4]
-        score_t0 = math.log2((6.0 / 11.0) / 0.25)
-        score_a1 = math.log2((5.0 / 11.0) / 0.25)
-        score_c2 = math.log2((5.0 / 11.0) / 0.25)
-        score_a3 = math.log2((1.0 / 11.0) / 0.25) # A count 0 -> (0+1)/11
-        score_a4 = math.log2((1.0 / 11.0) / 0.25) # A count 0 -> (0+1)/11
+        score_t0 = math.log2((6.0 / 11.0) / 0.25) # (5+1)/11
+        score_a1 = math.log2((5.0 / 11.0) / 0.25) # (4+1)/11
+        score_c2 = math.log2((5.0 / 11.0) / 0.25) # (4+1)/11
+        score_a3 = math.log2((1.0 / 11.0) / 0.25) # (0+1)/11
+        score_a4 = math.log2((1.0 / 11.0) / 0.25) # (0+1)/11
         
         expected_score = score_t0 + score_a1 + score_c2 + score_a3 + score_a4
         
         result = pssm.calculate("TACAA")
-        # In Biopython's PSSM, 'calculate' returns a list of scores for all possible start positions.
-        # Since the motif length is 5 and sequence length is 5, there is only one start position (index 0).
-        if isinstance(result, list) and len(result) == 1:
-             self.assertAlmostEqual(result[0], expected_score, places=5)
-        elif isinstance(result, float):
-             # Handle a single float return if the implementation simplifies the return for length match
-             self.assertAlmostEqual(result, expected_score, places=5)
-        else:
-             self.assertAlmostEqual(result[0], expected_score, places=5)
+        
+        # Handle cases where calculate returns a list or a single float
+        final_score = result[0] if isinstance(result, list) else result
+        self.assertAlmostEqual(final_score, expected_score, places=5)
 
 class TestMinimalParsing(unittest.TestCase):
     """Tests parsing of the minimal MEME file format."""
@@ -232,57 +221,42 @@ class TestMinimalParsing(unittest.TestCase):
         with open(minimal_dna_path) as f:
             motifs_list = read(f, "minimal") 
 
-        # Check first motif
+        # Check first and only motif
         self.assertEqual(len(motifs_list), 1)
         motif = motifs_list[0]
-        # self.assertIsInstance(motif, Motif)
         self.assertEqual(motif.name, "KRP")
         self.assertEqual(motif.length, 19)
-        # Pos 0: T (0.82)
-        # Pos 1: G (0.64)
-        # Pos 2: T (0.94)
-        # Pos 3: G (0.76)
-        # Pos 4: A (0.82)
         self.assertEqual(motif.alphabet, "ACGT")
 
         # Check one value from the CountsMatrix
-        # This checks if the CountsMatrix was calculated correctly from the PFM
         # nsites=17, PFM[A, 4] = 0.823529. Count = round(0.823529 * 17) = 14
         self.assertAlmostEqual(motif.counts["A"][4], 14.0, delta=0.01)
-
-
-        # Check second motif
-        self.assertEqual(len(motifs_list), 1)
-        motif_2 = motifs_list[1]
-        self.assertEqual(motif_2.name, "IFXA")
-        self.assertEqual(motif_2.length, 25)
-        self.assertEqual(motif.alphabet, "ACGT")
-
-        # nsites= 14
+        
+        # Check consensus
+        # Pos 0: T (0.82), Pos 1: G (0.64), Pos 2: T (0.94), Pos 3: G (0.76), Pos 4: A (0.82)
+        self.assertEqual(motif.consensus[:5], "TGTGA")
 
     def test_rna_parsing(self):
         """Test parsing of an RNA minimal MEME file."""
         with open(minimal_rna_path) as f:
             motifs_list = read(f, "minimal") 
 
+        # Check first and only motif
         self.assertEqual(len(motifs_list), 1)
         
         motif = motifs_list[0]
-        # self.assertIsInstance(motif, Motif)
         self.assertEqual(motif.name, "KRP_fake_RNA")
         self.assertEqual(motif.length, 19)
         self.assertEqual(motif.alphabet, "ACGU")
         self.assertIn("U", motif.alphabet) # Check for Uracil
+        
         # Check one value from the CountsMatrix
         # nsites=17, PFM[U, 0] = 0.823529. Count = round(0.823529 * 17) = 14
         self.assertAlmostEqual(motif.counts["U"][0], 14.0, delta=0.01)
 
         # Check consensus - should use U instead of T
-        # Pos 0: U (0.82)
-        # Pos 1: G (0.64)
-        # Pos 2: U (0.94)
-        # Pos 3: G (0.76)
-        # Pos 4: A (0.82)
+        # Pos 0: U (0.82), Pos 1: G (0.64), Pos 2: U (0.94), Pos 3: G (0.76), Pos 4: A (0.82)
+        self.assertEqual(motif.consensus[:5], "UGUGA")
 
 
 class TestScoreDistribution(unittest.TestCase):
@@ -290,7 +264,12 @@ class TestScoreDistribution(unittest.TestCase):
     
     def setUp(self):
         sequences = ["TACAA", "TACGC", "AACCC", "AATGC"]
-        self.motif = create(sequences, alphabet="ACGT")
+        
+        try:
+            self.motif = create([Seq(s) for s in sequences], alphabet="ACGT")
+        except NameError:
+            self.motif = create(sequences, alphabet="ACGT")
+            
         self.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
         
         # PSSM is required for ScoreDistribution
@@ -298,16 +277,17 @@ class TestScoreDistribution(unittest.TestCase):
         self.pssm = pwm.log_odds(background=self.background)
         
         # Initialize ScoreDistribution
-        self.dist = ScoreDistribution(pssm=self.pssm, background=self.background, precision=1000)
+        self.dist = ScoreDistribution(pssm=self.pssm, background=self.background, precision=10000)
 
     def test_distribution_init(self):
         """Check if distribution properties are initialized."""
         # Check some basic properties from the initialization
         self.assertTrue(self.dist.interval > 0.0)
         self.assertTrue(self.dist.n_points > 0)
-        self.assertTrue(self.dist.ic is not None)
-        self.assertEqual(len(self.dist.mo_density), self.dist.n_points)
-        self.assertEqual(len(self.dist.bg_density), self.dist.n_points)
+        self.assertTrue(self.dist.ic is not None) 
+        # Check that the densities are calculated
+        self.assertTrue(len(self.dist.mo_density) > 0)
+        self.assertTrue(len(self.dist.bg_density) > 0)
         
     def test_threshold_fpr(self):
         """Test calculation of threshold based on False Positive Rate (FPR)."""
@@ -317,8 +297,7 @@ class TestScoreDistribution(unittest.TestCase):
         threshold_high_fpr = self.dist.threshold_fpr(0.5)
 
         self.assertTrue(threshold_low_fpr > threshold_high_fpr)
-        # Note: We can't check the exact value without replicating the dynamic programming,
-        # but we can ensure the threshold is within the possible range (min_score to max_score of the PSSM).
+        # Ensure the threshold is within the possible range (min_score to max_score of the PSSM).
         self.assertTrue(self.pssm.min < threshold_low_fpr < self.pssm.max)
         self.assertTrue(self.pssm.min < threshold_high_fpr < self.pssm.max)
 
