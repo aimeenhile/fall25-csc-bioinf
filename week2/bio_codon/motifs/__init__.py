@@ -1,22 +1,29 @@
-# __init__.py
+# bio_codon/motifs/__init__.py
 
-"""Tools for sequence motif analysis.
-"""
+"""Tools for sequence motif analysis."""
 
-from typing import List, Dict, Any, Union, Optional, Tuple, TextIO
+from typing import List, Dict, Union, Optional, Tuple
 from collections import defaultdict
+
+from python import warnings
+from python.urllib.parse import urlencode
+from python.urllib.request import Request, urlopen
+import numpy as np
+
+from python.Bio.Seq import Seq
+from python.Bio.SeqRecord import SeqRecord
+from python.Bio.Align import Alignment 
+
 from .matrix import (
     FrequencyPositionMatrix,
     PositionSpecificScoringMatrix,
     PositionWeightMatrix,
     GenericPositionMatrix,
 )
-# minimal.read is imported as minimal_read
-from .minimal import read as minimal_read, Record 
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.Align import Alignment 
-import warnings # Re-added warnings import
+from .minimal import read as minimal_read, Record
+
+# Helper type for background dictionaries
+Background = Dict[str, float]
 
 # Degenerate ambiguity codes for consensus sequences (IUPAC DNA)
 _DEGENERATE_CODES: Dict[str, str] = {
@@ -31,233 +38,220 @@ _COMPLEMENT: Dict[str, str] = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'U': 'A',
 _COMPLEMENT.update({v: k for k, v in _COMPLEMENT.items() if len(v) == 1}) # Add T:A, C:G etc.
 
 
-# Helper class to avoid deep dependency issues in Motif init, similar to Biopython's internal structure.
+class Instances(List[Seq]):
+    """Class containing a list of sequences that made the motifs."""
+
+    def __init__(self, instances: Optional[List[Seq]] = None):
+        """Initialize the class."""
+        if instances is not None:
+            super().__init__(instances)
+        else:
+            super().__init__([])
+
+
 class AlignmentMock:
     """Mock Alignment class to hold sequences for Motif constructor."""
     def __init__(self, sequences: List[Seq]):
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
-        self.column_annotations = {}
 
 
-class Instances(List[Seq]):
-    """Class containing a list of sequences that made the motifs."""
+class Motif:
+    """Class to hold the information for a sequence motif."""
 
-    def __init__(self, alphabet: str, alignment: Optional[AlignmentMock] = None, counts: Optional[CountsMatrix] = None, **kwargs):
-        self._alphabet = alphabet
-        self._alignment = alignment
+    def __init__(
+        self,
+        alphabet: str,
+        counts: CountsMatrix,
+        alignment: Optional[AlignmentMock] = None,
+        name: str = "None",
+        num_occurrences: Optional[int] = None,
+        evalue: Optional[float] = None,
+        background: Optional[Background] = None,
+        instances: Optional[Instances] = None,
+    ):
+        """Initialize the Motif."""
+        self.alphabet = alphabet
+        self.counts = counts
+        self.length = counts.length
+        self._alignment = alignment if alignment is not None else AlignmentMock([])
+        self.name = name
+        self.num_occurrences = num_occurrences
+        self.evalue = evalue
+        self.background = background
+        self.instances = instances if instances is not None else Instances()
+
+    @property
+    def consensus(self) -> str:
+        """Return the consensus sequence for this motif."""
+        # Simplified consensus: use the base with the highest count at each position
+        consensus_seq = []
+        for i in range(self.length):
+            max_count = -1
+            max_base = ''
+            for base in self.alphabet:
+                count = self.counts[base, i]
+                if count > max_count:
+                    max_count = count
+                    max_base = base
+                elif count == max_count:
+                    # Tie-breaking for degeneracy is complex, simplified here
+                    pass
+            consensus_seq.append(max_base)
+        return "".join(consensus_seq)
+
+    def pssm(self, background: Optional[Background] = None) -> PositionSpecificScoringMatrix:
+        """Return the position-specific scoring matrix (PSSM) for the motif."""
+        return self.counts.pssm(background)
+
+    @classmethod
+    def from_minimal_format(cls, name: str, alphabet: str, matrix_data: Dict[str, List[float]], num_occurrences: Optional[int], evalue: Optional[float], background: Optional[Background], alength: Optional[int], w: Optional[int]):
+        """Create a Motif from parsed minimal format data."""
+        # In minimal format, matrix_data are probabilities (PWM), not counts.
+        # To create a CountsMatrix, we must scale the probabilities by num_occurrences (nsites).
         
-        if counts is not None:
-            self.counts = counts
-        elif alignment is not None and alignment.sequences:
-            # Manually calculate counts from alignment to resolve test_create failure
-            sequences = alignment.sequences
-            length = len(sequences[0])
-            self.counts = CountsMatrix(alphabet, {base: [0.0] * length for base in alphabet}) # Use 0.0 for consistency
+        # NOTE: This is a deviation from typical Biopython behavior where 'counts'
+        # are calculated from instances. Since minimal format only provides PWM,
+        # we back-calculate pseudo-counts for the CountsMatrix for compatibility.
+        
+        counts_data: Dict[str, List[float]] = {}
+        if num_occurrences is None:
+            # Fallback for num_occurrences if not provided
+            num_occurrences = 20
+        
+        for base, freqs in matrix_data.items():
+            counts_data[base] = [freq * num_occurrences for freq in freqs]
             
-            for seq in sequences:
-                for i, base in enumerate(str(seq)):
-                    if base in self.counts:
-                        self.counts[base][i] += 1.0
-        else:
-            # If no counts and no meaningful alignment, initialize an empty CountsMatrix
-            length = kwargs.get('length', 0)
-            self.counts = CountsMatrix(alphabet, {base: [0.0] * length for base in alphabet})
-            
-        # Cached properties
-        self._consensus: Optional[Seq] = None
-        self._anticonsensus: Optional[Seq] = None
-        self._degenerate_consensus: Optional[Seq] = None
-
-    @property
-    def length(self) -> int:
-        """Return the length of the motif."""
-        return self.counts.length
-
-    @property
-    def consensus(self) -> Seq:
-        """Return the consensus sequence for the motif (most frequent base) (FIXED: F: test_consensus)."""
-        if self._consensus is None:
-            consensus_str = []
-            for i in range(self.length):
-                column_counts = {base: self.counts[base][i] for base in self._alphabet}
-                max_count = -1.0
-                max_base = 'N'
-                for base in sorted(self._alphabet): # Sort for consistent tie-breaking
-                    count = column_counts.get(base, 0.0)
-                    if count > max_count:
-                        max_count = count
-                        max_base = base
-                    elif count == max_count:
-                        # Tie-breaker (Biopython is arbitrary, but let's use a non-degenerate code)
-                        max_base = 'N' 
-                consensus_str.append(max_base if max_count > 0 else 'N')
-            self._consensus = Seq("".join(consensus_str))
-        return self._consensus
+        counts = CountsMatrix(alphabet=alphabet, values=counts_data)
+        
+        return cls(
+            alphabet=alphabet,
+            counts=counts,
+            name=name,
+            num_occurrences=num_occurrences,
+            evalue=evalue,
+            background=background,
+            instances=None # No instances in minimal format
+        )
     
-    @property
-    def anticonsensus(self) -> Seq:
-        """Return the anticonsensus sequence for the motif (least frequent base) (FIXED: F: test_anticonsensus)."""
-        if self._anticonsensus is None:
-            anticonsensus_str = []
-            for i in range(self.length):
-                column_counts = {base: self.counts[base][i] for base in self._alphabet}
-                min_count = float('inf')
-                min_base = 'N'
-                
-                # Biopython considers non-present bases as the anticonsensus if no tie.
-                present_bases = [base for base, count in column_counts.items() if count > 0]
-                
-                if not present_bases:
-                    min_base = sorted(self._alphabet)[0] # Arbitrary if all zero
-                else:
-                    for base in sorted(self._alphabet):
-                        count = column_counts.get(base, 0.0)
-                        if count < min_count:
-                            min_count = count
-                            min_base = base
-                        elif count == min_count:
-                            # Tie-breaker logic: lowest alphabetically
-                            if min_base == 'N' or base < min_base:
-                                min_base = base
-                
-                anticonsensus_str.append(min_base)
-            self._anticonsensus = Seq("".join(anticonsensus_str))
-        return self._anticonsensus
-        
-    @property
-    def degenerate_consensus(self) -> Seq:
-        """Return the degenerate consensus sequence (IUPAC) (FIXED: F: test_degen_consensus)."""
-        if self._degenerate_consensus is None:
-            degenerate_str = []
-            for i in range(self.length):
-                column_counts = {base: self.counts[base][i] for base in self._alphabet}
-                
-                # Bases that occur most frequently (typically > 50% or based on total counts)
-                # Biopython standard: bases whose count is 50% of the max count or more.
-                max_col_count = max(column_counts.values()) if column_counts else 0
-                
-                present_bases = sorted([base for base, count in column_counts.items() 
-                                        if count >= max_col_count / 2.0 and count > 0])
-                
-                # Map set of bases to degenerate code
-                if not present_bases:
-                    code = 'N'
-                elif len(present_bases) == 1:
-                    code = present_bases[0]
-                else:
-                    base_tuple = tuple(present_bases)
-                    found_code = 'N'
-                    # Check for simple combinations first
-                    for code_key, bases in _DEGENERATE_CODES.items():
-                        if set(bases) == set(present_bases):
-                            found_code = code_key
-                            break
-                    code = found_code
-                    
-                degenerate_str.append(code)
-            self._degenerate_consensus = Seq("".join(degenerate_str))
-        return self._degenerate_consensus
+    def __str__(self):
+        """Returns a string representation of the Motif (simplified PFM format)."""
+        return str(self.counts)
 
-
-    def __getitem__(self, key: slice) -> 'Motif':
-        """Return a submotif from a slice (FIXED: F: test_submotif_slice)."""
-        if not isinstance(key, slice):
-            raise TypeError("Motif slicing only supports slices, not direct indexing.")
-        
-        start, stop, step = key.start, key.stop, key.step
-        
-        if step is not None and step != 1:
-             raise ValueError("Slicing a motif with a step other than 1 is not supported.")
-        
-        new_counts_values: Dict[str, List[float]] = {}
-        for base in self._alphabet:
-            # Slice the counts list for each base
-            new_counts_values[base] = self.counts[base][start:stop]
+    def __getitem__(self, key: Union[slice, Tuple[int, int]]) -> 'Motif':
+        """Return a slice of the Motif (slicing is simplified here)."""
+        if isinstance(key, slice):
+            start = key.start if key.start is not None else 0
+            stop = key.stop if key.stop is not None else self.length
+            step = key.step if key.step is not None else 1
             
-        new_counts = CountsMatrix(self._alphabet, new_counts_values)
-        return Motif(alphabet=self._alphabet, counts=new_counts)
-        
+            # Simplified slicing for CountsMatrix values
+            sliced_counts_values = {}
+            for base, values in self.counts.items():
+                sliced_counts_values[base] = values[start:stop:step]
+            
+            sliced_counts = CountsMatrix(self.alphabet, sliced_counts_values)
+            
+            return Motif(
+                alphabet=self.alphabet,
+                counts=sliced_counts,
+                name=f"{self.name}[{start}:{stop}]",
+                background=self.background
+            )
+            
+        raise NotImplementedError("Only slicing is supported for Motif object.")
 
     def reverse_complement(self) -> 'Motif':
-        """Return the reverse complement motif (FIXED: F: test_reverse_complement)."""
+        """Return the reverse complement of the motif."""
+        # Simple check for DNA/RNA
+        if not all(b in 'ACGTU' for b in self.alphabet):
+            raise ValueError(f"Reverse complement is only supported for DNA/RNA motifs. Alphabet: {self.alphabet}.")
+
+        # This requires an actual sequence-based reverse complement, which is complex.
+        # For matrix-based reverse complement (which is what Biopython often does for matrices):
         
-        # 1. Reverse the order of columns (counts)
-        reversed_columns = []
-        for i in range(self.length - 1, -1, -1):
-            column = {base: self.counts[base][i] for base in self._alphabet}
-            reversed_columns.append(column)
+        # 1. Reverse the columns of the matrix
+        # 2. Swap A <-> T (or U), G <-> C
+        
+        # Simplified DNA/RNA complement map
+        complement_map = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A'}
+        
+        new_counts_values: Dict[str, List[float]] = {base: [0.0] * self.length for base in self.alphabet}
+        
+        # Iterate through original positions (j) from the end to the start
+        for j in range(self.length):
+            # new column index is self.length - 1 - j
+            new_j = self.length - 1 - j
             
-        # 2. Complement the rows
-        new_counts_values: Dict[str, List[float]] = {base: [] for base in self._alphabet}
+            for old_base, new_base in complement_map.items():
+                if old_base in self.alphabet and new_base in self.alphabet:
+                    # Move the count from old_base at j to new_base at new_j
+                    new_counts_values[new_base][new_j] = self.counts[old_base, j]
+                
+        # Create the new CountsMatrix
+        rc_counts = CountsMatrix(self.alphabet, new_counts_values)
+        
+        return Motif(
+            alphabet=self.alphabet,
+            counts=rc_counts,
+            name=f"RC({self.name})",
+            background=self.background
+        )
 
-        for col in reversed_columns:
-            complemented_col: Dict[str, float] = defaultdict(float)
-            for base in self._alphabet:
-                comp_base = _COMPLEMENT.get(base)
-                if comp_base and comp_base in self._alphabet:
-                    complemented_col[comp_base] += col.get(base, 0.0)
-                else:
-                    # Handle self-complementary or unknown bases
-                    complemented_col[base] += col.get(base, 0.0)
-            
-            # Append the complemented column counts to the new counts values
-            for base in self._alphabet:
-                new_counts_values[base].append(complemented_col.get(base, 0.0))
-
-        new_counts = CountsMatrix(self._alphabet, new_counts_values)
-        return Motif(alphabet=self._alphabet, counts=new_counts)
-    
-    def __format__(self, format_spec: str) -> str:
-        """Allow custom format specifiers for the Motif object."""
-        format_spec = format_spec.lower()
-        if format_spec == "pfm":
-            # Delegate to the CountsMatrix format method
-            return self.counts.format("pfm")
-        # ... other formats
-        return str(self)
 
 def create(instances: List[str], alphabet: str = "ACGT") -> 'Motif':
-    """Create a Motif object from a list of strings (FIXED: F: test_create)."""
+    """Create a Motif object from a list of strings."""
     # Convert string instances to Seq objects
     sequences = [Seq(s) for s in instances]
     
     # Check for uniform length
-    if not sequences:
-        raise ValueError("Instances must not be empty.")
-        
-    length = len(sequences[0])
-    if not all(len(s) == length for s in sequences):
-        raise ValueError("Instances must all have the same length.")
+    if not sequences or not all(len(s) == len(sequences[0]) for s in sequences):
+        raise ValueError("Instances must not be empty and must all have the same length.")
 
-    # Manually calculate counts
+    # AlignmentMock is used instead of Alignment for simplicity
+    alignment = AlignmentMock(sequences)
+
+    # Calculate counts
+    length = alignment.length
     counts_data: Dict[str, List[float]] = {base: [0.0] * length for base in alphabet}
     
     for seq in sequences:
         for i, base in enumerate(str(seq)):
-            if base in counts_data:
+            if base in alphabet:
                 counts_data[base][i] += 1.0
+            # Ignore bases not in the alphabet
 
-    counts = CountsMatrix(alphabet, counts_data)
+    counts = CountsMatrix(alphabet=alphabet, values=counts_data)
     
-    # Return a Motif constructed from the explicit CountsMatrix
-    return Motif(alphabet=alphabet, counts=counts)
+    return Motif(alignment=alignment, counts=counts, alphabet=alphabet, instances=Instances(sequences))
 
 
-def parse(handle: Any, fmt: str, strict: bool = True) -> List['Motif']:
-    """Parse an output file from a motif finding program."""
+def parse(path: str, fmt: str, strict: bool = True) -> List['Motif']:
+    """Parse an output file from a motif finding program.
+
+    In the Codon environment, this function takes a file path (str)
+    Currently supported formats (case is ignored):
+     - minimal: MEME minimal motif format
+     - sites: Alias for minimal
+    """
     fmt = fmt.lower()
     if fmt == "sites" or fmt == "minimal":
-        # Both formats point to minimal parser in this setup
-        return minimal.read(handle)
-    raise ValueError(f"Unknown format '{fmt}'. Only 'minimal' and 'sites' are supported.")
+        # minimal_read is assumed to handle file opening/closing now
+        return minimal_read(path)
+    else:
+        raise ValueError(f"Unknown format '{fmt}'. Only 'minimal' and 'sites' are supported.")
 
-def read(handle: Any, fmt: str, strict: bool = True) -> 'Motif':
-    """Read a single motif from a handle (FIXED: E: test_minimal_parser, test_minimal_parser_rna)."""
-    motifs_list = parse(handle, fmt, strict)
-    if not motifs_list:
-        raise ValueError("No motifs found in handle")
-    if len(motifs_list) > 1:
-        # Raises error if multiple motifs found when only one is expected by 'read'
-        raise ValueError("More than one motif found in handle") 
-    return motifs_list[0] # FIX: Return the single motif found.
+
+def read(path: str, fmt: str, strict: bool = True) -> 'Motif':
+    """Read a single motif from a file path.
+    """
+    motifs = parse(path, fmt, strict)
+    if not motifs:
+        raise ValueError("No motifs found in file path")
+    if len(motifs) > 1:
+        warnings.warn(
+            f"More than one motif found in file path. Returning the first one only.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    return motifs[0]
