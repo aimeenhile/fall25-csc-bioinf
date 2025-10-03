@@ -19,12 +19,12 @@ except NameError:
 
 if CODON:
     # Codon environment
-    from bio_codon import motifs
+    from bio_codon import create, read, Motif
     from python import Bio as cBio
     Seq = cBio.Seq.Seq
     # These are expected to be available directly within the Codon implementation namespace
-    # from bio_codon.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
-    # from bio_codon.motifs.thresholds import ScoreDistribution
+    from bio_codon.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+    from bio_codon.thresholds import ScoreDistribution
 else:
     # Python environment (BioPython)
     from Bio import motifs
