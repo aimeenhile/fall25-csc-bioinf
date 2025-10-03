@@ -10,7 +10,7 @@ from python import numbers
 import numpy as np
 from python import Bio.Seq.Seq
 # FIX: Removed Union from imports to avoid internal Codon compiler crash.
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Union
 from collections import defaultdict
 # FIX: Defining Background type here to break circular import with __init__.py
 Background = Dict[str, float]
@@ -50,7 +50,11 @@ DEGENERATE_MAP: Dict[int, Dict[Tuple, str]] = {
     3: DEGENERATE_MAP_3,
     4: DEGENERATE_MAP_4,
 }
-
+# Consolidate all maps for a single lookup function
+DEGENERATE_MAP: Dict[ConsolidatedDegenerateMapType, str] = {}
+DEGENERATE_MAP.update(DEGENERATE_MAP_2)
+DEGENERATE_MAP.update(DEGENERATE_MAP_3)
+DEGENERATE_MAP.update(DEGENERATE_MAP_4)
 
 class GenericPositionMatrix:
     """Base class for all position-based matrices (Counts, Frequencies, PWM, PSSM)."""
