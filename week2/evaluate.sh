@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Add "--failfast" to python test.py for debugging purposes:
-# python test.py --failfast > python_output.txt 2>&1
+# python bio_codon/motifs/test.py --failfast > python_output.txt 2>&1
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ echo "=========================================="
 echo "Running Python tests (BioPython)..."
 echo "=========================================="
 
-python test.py > python_output.txt 2>&1 || { 
+python bio_codon/motifs/test.py > python_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "PYTHON TEST FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
@@ -28,7 +28,9 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 
-codon run test.py > codon_output.txt 2>&1 || { 
+codon build bio_codon -release || { echo "Codon compilation failed."; exit 1; } 
+
+codon run bio_codon/motifs/test.py > codon_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "CODON TEST FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
@@ -39,6 +41,7 @@ codon run test.py > codon_output.txt 2>&1 || {
 echo "Codon tests completed."
 
 # Compare results
+echo ""
 echo "Comparing results..."
 diff python_output.txt codon_output.txt || echo "Differences found between Python and Codon outputs."
 
