@@ -11,7 +11,6 @@ import numpy as np
 from python import Bio.Seq.Seq
 from typing import Dict, Tuple, List, Optional, Union
 
-
 # A utility to calculate IUPAC degenerate consensus (simplified)
 # W (A/T), S (G/C), K (G/T), M (A/C), R (A/G), Y (C/T), V (A/C/G), H (A/C/T), D (A/G/T), B (C/G/T)
 IUPAC_CODE: Dict[str, str] = {
@@ -21,20 +20,21 @@ IUPAC_CODE: Dict[str, str] = {
     "D": "AGT", "B": "CGT", "N": "ACGT"
 }
 # Inverse mapping for degeneracy calculation (simplified for common cases)
-# FIX: Using Tuple[str, ...] to handle varying tuple lengths (2 and 3)
-# FIX: Keys must be alphabetically sorted to match lookup logic in _calculate_degenerate_consensus
-DEGENERATE_MAP: Dict[Tuple[str, ...], str] = {
+# FIX: CRITICAL CHANGE: Explicitly define key types using Union to satisfy the Codon compiler.
+# The compiler rejects 'Tuple[str, ...]' when tuple lengths are mixed.
+KeyType = Union[Tuple[str, str], Tuple[str, str, str], Tuple[str, str, str, str]]
+DEGENERATE_MAP: Dict[KeyType, str] = {
     ('A', 'T'): 'W',      # A or T
-    ('C', 'G'): 'S',      # C or G (Sorted from G, C)
-    ('A', 'G'): 'R',      # A or G
-    ('C', 'T'): 'Y',      # C or T
-    ('G', 'T'): 'K',      # G or T (Added missing common code)
-    ('A', 'C'): 'M',      # A or C (Added missing common code)
-    ('A', 'C', 'G'): 'V', # A, C, or G
-    ('A', 'C', 'T'): 'H', # A, C, or T
-    ('A', 'G', 'T'): 'D', # A, G, or T
-    ('C', 'G', 'T'): 'B', # C, G, or T
-    ('A', 'C', 'G', 'T'): 'N', # Any base
+    ('C', 'G'): 'S',      # C or G (Canonical/Sorted)
+    ('A', 'G'): 'R',      # A or G (Canonical/Sorted)
+    ('C', 'T'): 'Y',      # C or T (Canonical/Sorted)
+    ('G', 'T'): 'K',      # G or T (Canonical/Sorted)
+    ('A', 'C'): 'M',      # A or C (Canonical/Sorted)
+    ('A', 'C', 'G'): 'V', # A, C, or G (Canonical/Sorted)
+    ('A', 'C', 'T'): 'H', # A, C, or T (Canonical/Sorted)
+    ('A', 'G', 'T'): 'D', # A, G, or T (Canonical/Sorted)
+    ('C', 'G', 'T'): 'B', # C, G, or T (Canonical/Sorted)
+    ('A', 'C', 'G', 'T'): 'N', # Any base (Canonical/Sorted)
 }
 
 
@@ -105,8 +105,9 @@ class GenericPositionMatrix(dict):
 
     def _calculate_consensus(self) -> str:
         """Calculate the consensus sequence (PRIVATE)."""
-        if self._consensus is not None:
-            return self._consensus
+        # NOTE: self._consensus is not defined in __init__, so we'll treat this as
+        # a standard property calculation. For proper state, it should be initialized.
+        # Assuming the caller/Motif handles caching if needed.
         
         consensus_seq: List[str] = []
         for i in range(self.length or 0):
@@ -120,12 +121,12 @@ class GenericPositionMatrix(dict):
                     max_base = base
                 elif value == max_value:
                     # Tie-breaking: Biopython usually just takes the first one found
-                    # or an arbitrary one. We will keep the current max_base
                     pass
             consensus_seq.append(max_base)
         
-        self._consensus = "".join(consensus_seq)
-        return self._consensus
+        # NOTE: Skipping internal attribute caching (self._consensus = ...) for simplicity
+        # and to match the limited snippet context.
+        return "".join(consensus_seq)
 
     @property
     def consensus(self) -> str:
@@ -134,9 +135,8 @@ class GenericPositionMatrix(dict):
 
     def _calculate_degenerate_consensus(self) -> str:
         """Calculate the degenerate consensus sequence (PRIVATE)."""
-        if self._degenerate_consensus is not None:
-            return self._degenerate_consensus
-
+        # NOTE: self._degenerate_consensus is not defined in __init__.
+        
         degenerate_consensus_seq: List[str] = []
         # Calculate the threshold for degenerate consensus based on max value
         # Simplified: bases with value > (max_value / 2) are included in degeneracy
@@ -145,6 +145,7 @@ class GenericPositionMatrix(dict):
             max_value: float = max(column.values())
             
             # Bases that contribute significantly to the position (e.g., > 50% of max value)
+            # The list of bases MUST be sorted to match the canonical order of keys in DEGENERATE_MAP
             significant_bases: List[str] = sorted([
                 base for base, value in column.items()
                 if value >= max_value * 0.5
@@ -156,15 +157,15 @@ class GenericPositionMatrix(dict):
                 degenerate_consensus_seq.append(base_tuple[0])
             else:
                 # Simple lookup for common cases, otherwise fallback to 'N'
-                # This part is highly simplified for Codon environment
+                # The sorted base_tuple now matches the sorted keys in DEGENERATE_MAP
                 code = DEGENERATE_MAP.get(base_tuple)
                 if code:
                     degenerate_consensus_seq.append(code)
                 else:
                     degenerate_consensus_seq.append('N')
         
-        self._degenerate_consensus = "".join(degenerate_consensus_seq)
-        return self._degenerate_consensus
+        # NOTE: Skipping internal attribute caching (self._degenerate_consensus = ...)
+        return "".join(degenerate_consensus_seq)
 
     @property
     def degenerate_consensus(self) -> str:
@@ -254,7 +255,6 @@ class PositionWeightMatrix(GenericPositionMatrix):
             for prob in probs:
                 if prob == 0.0:
                     # Log(0) is negative infinity. Use a small epsilon to avoid math domain error.
-                    # Or, as is common in PSSMs, define a fixed minimum score
                     score = math.log2(1e-10 / bg_prob) # Using a tiny probability
                 else:
                     score = math.log2(prob / bg_prob)
@@ -314,7 +314,6 @@ class PositionSpecificScoringMatrix(GenericPositionMatrix):
         return scores
 
     # Omitted complex methods like "search" and "distribution" for brevity and core focus.
-    # The user's snippet for distribution is below.
     
     def distribution(self, background: Optional[Dict[str, float]] = None, precision: int = 10**3):
         """Calculate the distribution of the scores at the given precision."""
