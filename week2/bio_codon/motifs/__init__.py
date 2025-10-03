@@ -3,7 +3,7 @@
 from typing import List, Dict, Union, Optional, Tuple
 from collections import defaultdict
 
-import warnings # Codon compatible: using standard import
+from python import warnings 
 import numpy as np
 
 from Bio.Seq import Seq
