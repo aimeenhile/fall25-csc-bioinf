@@ -17,8 +17,8 @@ if CODON:
     # Codon environment
     try:
         from . import create, read, Motif 
-        from ..matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
-        from ..thresholds import ScoreDistribution
+        from . matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+        from . thresholds import ScoreDistribution
         
         from python import Bio as cBio
         Seq = cBio.Seq.Seq
