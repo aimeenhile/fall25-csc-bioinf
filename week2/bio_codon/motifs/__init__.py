@@ -24,6 +24,8 @@ _DEGENERATE_CODES: Dict[str, str] = {
 # Complement map for RC calculation (DNA/RNA, simplified IUPAC)
 _COMPLEMENT: Dict[str, str] = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'U': 'A', 'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V', 'D': 'H', 'H': 'D', 'V': 'B', 'N': 'N'}
 
+class Motif:
+    pass
 
 class Record:
     """
