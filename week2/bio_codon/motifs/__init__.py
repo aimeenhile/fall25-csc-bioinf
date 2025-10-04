@@ -30,11 +30,6 @@ class Record:
     A container for motifs read from a single file, replacing Bio.motifs.Record.
     It holds global file information (version, alphabet, background) and a list of motifs.
     """
-    version: str
-    alphabet: str
-    background: Dict[str, float]
-    motif: List['Motif']
-
     def __init__(self):
         self.version = ""
         self.alphabet = ""
