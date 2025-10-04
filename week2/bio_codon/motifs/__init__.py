@@ -11,7 +11,9 @@ from python import Bio.SeqRecord.SeqRecord as SeqRec
 from python import Bio.Align.Alignment as Alignment
 
 from .matrix import CountsMatrix
-# from .minimal import read as minimal_read, Record
+
+BioSeq = Seq
+BioAlignment = Alignment
 
 # Degenerate ambiguity codes for consensus sequences (IUPAC DNA)
 _DEGENERATE_CODES: Dict[str, str] = {
@@ -50,7 +52,7 @@ class Instances:
     """
     A container for the sequences used to create the motif.
     """
-    def __init__(self, sequences: List['Seq']):
+    def __init__(self, sequences: List[BioSeq]):
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
         self.alphabet = sequences[0].alphabet if sequences and hasattr(sequences[0], 'alphabet') else 'ACGT' # Default
@@ -76,7 +78,7 @@ class Motif:
     alphabet information, and providing properties for consensus,
     reverse complement, etc.
     """
-    def __init__(self, alignment: Optional['Alignment'], counts: Optional[CountsMatrix], alphabet: str, 
+    def __init__(self, alignment: Optional[BioAlignment], counts: Optional[CountsMatrix], alphabet: str, 
                  instances: Optional['Instances'], name: str, length: int, 
                  pwm_data: Optional[Dict[str, List[float]]] = None):
         self.alignment = alignment
@@ -164,7 +166,7 @@ class Motif:
                 instances=None, name=self.name + "_RC", length=self.length)
 
 
-def create(alignment: List[Seq], alphabet: Optional[str] = None) -> 'Motif':
+def create(alignment: List[BioSeq], alphabet: Optional[str] = None) -> 'Motif':
     """
     Create a Motif object from a list of sequences.
     """
