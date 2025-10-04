@@ -5,10 +5,10 @@ import sys
 from typing import List, Dict
 
 # Standard BioPython imports for the golden reference implementation
-from Bio import motifs
 from Bio.Seq import Seq
-from Bio.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
-from Bio.motifs.thresholds import ScoreDistribution
+from Bio.motifs import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+from Bio import motifs
+from Bio.motifs import ScoreDistribution
 
 # Alias imported BioPython functions/classes to match the names used in the tests
 create = motifs.create
