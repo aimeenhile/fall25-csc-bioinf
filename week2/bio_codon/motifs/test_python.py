@@ -5,10 +5,10 @@ import sys
 from typing import List, Dict
 
 # Standard BioPython imports for the golden reference implementation
-from Bio.Seq import Seq
-from Bio.motifs import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
-from Bio import motifs
-from Bio.motifs import ScoreDistribution
+from python.Bio import motifs
+from python.Bio.Seq import Seq
+from python.Bio.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+from python.Bio.motifs.thresholds import ScoreDistribution
 
 # Alias imported BioPython functions/classes to match the names used in the tests
 create = motifs.create
@@ -18,6 +18,36 @@ Motif = motifs.Motif
 # --- DATA PATHS (Relative to this file) ---
 minimal_dna_path = "../../data/minimal_test.meme"
 minimal_rna_path = "../../data/minimal_test_rna.meme"
+
+try:
+    # Create a minimal motif instance to discover class types
+    sequences_temp = [Seq("GATTACA"), Seq("TATTTTA")]
+    motif_temp = motifs.create(sequences_temp)
+    counts_temp = motif_temp.counts
+
+    # Dynamically assign the class types
+    CountsMatrix = type(counts_temp)
+    
+    # Get PWM type (returned by normalize)
+    pwm_temp = counts_temp.normalize(pseudocounts=0.1)
+    PositionWeightMatrix = type(pwm_temp)
+    
+    # Get PSSM type (returned by log_odds).
+    pssm_temp = pwm_temp.log_odds(background={"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25})
+    PositionSpecificScoringMatrix = type(pssm_temp)
+    
+    # Try importing ScoreDistribution from the usual location
+    from Bio.motifs import thresholds
+    ScoreDistribution = thresholds.ScoreDistribution
+    
+except Exception as e:
+    print(f"Error during dynamic class discovery (Biopython check): {e}", file=sys.stderr)
+    raise e
+
+# Re-map the names for the main motif functions
+Motif = motifs.Motif
+create = motifs.create
+read = motifs.read
 
 
 class TestMotifCreation(unittest.TestCase):
