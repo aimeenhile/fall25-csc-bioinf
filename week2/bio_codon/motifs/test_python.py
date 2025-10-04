@@ -5,15 +5,14 @@ import sys
 from typing import List, Dict
 
 # Standard BioPython imports for the golden reference implementation
-from python.Bio import motifs
-from python.Bio.Seq import Seq
-from python.Bio.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
-from python.Bio.motifs.thresholds import ScoreDistribution
+from Bio import motifs
+from Bio.Seq import Seq
 
 # Alias imported BioPython functions/classes to match the names used in the tests
-create = motifs.create
-read = motifs.read
-Motif = motifs.Motif
+CountsMatrix = None
+PositionSpecificScoringMatrix = None
+PositionWeightMatrix = None
+ScoreDistribution = None
 
 # --- DATA PATHS (Relative to this file) ---
 minimal_dna_path = "../../data/minimal_test.meme"
