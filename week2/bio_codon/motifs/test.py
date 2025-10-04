@@ -28,9 +28,11 @@ if CODON:
         raise e
 else:
     # Python environment 
-    from Bio import motifs
-    from Bio.Seq import Seq
-    
+    from python.Bio import motifs
+    from python.Bio.Seq import Seq
+    from python.Bio.motifs.matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
+    from python.Bio.motifs.thresholds import ScoreDistribution
+
     try:
         # Create a minimal motif instance to discover class types
         sequences_temp = [Seq("GATTACA"), Seq("TATTTTA")]
