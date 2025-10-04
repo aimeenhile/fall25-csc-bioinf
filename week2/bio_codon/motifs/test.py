@@ -3,12 +3,10 @@ import numpy as np
 import math
 import sys 
 
-# --- DATA PATHS (Corrected for new location: bio_codon/motifs/test.py) ---
-# We must go up two levels (../../) to reach the 'week2/' root, then down into 'data/'
+# --- DATA PATHS ---
 minimal_dna_path = "../../data/minimal_test.meme"
 minimal_rna_path = "../../data/minimal_test_rna.meme"
 
-# --- Dynamic Imports for Codon/Python Environment ---
 try:
     __codon__
     CODON = True
@@ -16,29 +14,23 @@ except NameError:
     CODON = False
 
 if CODON:
-    # Codon environment: Using standard relative imports for clarity and package structure adherence.
+    # Codon environment
     try:
-        # Import function/class from bio_codon/motifs/__init__.py (the current package root)
         from . import create, read, Motif 
-        
-        # Import classes from sibling modules (../matrix, ../thresholds)
         from ..matrix import CountsMatrix, PositionSpecificScoringMatrix, PositionWeightMatrix
         from ..thresholds import ScoreDistribution
         
-        # Use the Codon-wrapped version of BioPython's Seq
         from python import Bio as cBio
         Seq = cBio.Seq.Seq
-        # from ..seq import Seq # Alternate if using custom Seq class
         
     except ImportError as e:
         print(f"Codon import error. Check that create, read, Motif, etc., are correctly exposed in the 'bio_codon' package: {e}", file=sys.stderr)
         raise e
 else:
-    # Python environment (BioPython): Dynamic class discovery for comparison
+    # Python environment 
     from Bio import motifs
     from Bio.Seq import Seq
     
-    # --- DYNAMIC CLASS DISCOVERY (Biopython) ---
     try:
         # Create a minimal motif instance to discover class types
         sequences_temp = [Seq("GATTACA"), Seq("TATTTTA")]
@@ -86,7 +78,7 @@ class TestMotifBasic(unittest.TestCase):
             "AATGC",
             "AATGC",
         ]
-        # A set of RNA sequences (using U instead of T)
+        # A set of RNA sequences 
         self.sequences_rna = [
             "UACAA",
             "UACGC",
