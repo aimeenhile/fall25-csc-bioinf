@@ -23,7 +23,7 @@ if CODON:
         from python import Bio as cBio
         Seq = cBio.Seq.Seq
         
-    except ImportError as e:
+    except Exception as e:
         print(f"Codon import error. Check that create, read, Motif, etc., are correctly exposed in the 'bio_codon' package: {e}", file=sys.stderr)
         raise e
 else:
