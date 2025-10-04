@@ -166,7 +166,7 @@ class Motif:
                 instances=None, name=self.name + "_RC", length=self.length)
 
 
-def create(alignment: List[BioSeq], alphabet: Optional[str] = None) -> 'Motif':
+def create(alignment: 'List[BioSeq]', alphabet: Optional[str] = None) -> 'Motif':
     """
     Create a Motif object from a list of sequences.
     """
