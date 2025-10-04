@@ -2,26 +2,11 @@
 
 """Module for the support of MEME minimal motif format."""
 
-from typing import List, Optional, Dict, Tuple
-from . import Motif, Instances 
-from .matrix import PositionWeightMatrix, CountsMatrix
+from typing import List, Optional, Dict, Tuple, Union
+from . import Motif, Record
 from python import Bio.Seq.Seq
 from collections import defaultdict
 import re
-import sys
-
-
-# Define a placeholder/stub for the Record class structure, 
-class Record(List[Motif]):
-    """Container for multiple motifs read from a file."""
-    def __init__(self):
-        super().__init__()
-        self.version = ""
-        self.alphabet = ""
-        self.background = {}
-
-    def __str__(self) -> str:
-        return f"Motif Record ({self.version}) with {len(self)} motifs."
 
 
 def read(path: str) -> List[Motif]:
@@ -72,22 +57,20 @@ def read(path: str) -> List[Motif]:
             
             # Read the matrix data
             matrix_data, line_num = _read_matrix(lines, line_num, name, w, record.alphabet)
+
+            # Determine length, using 'w' if present, otherwise the actual number of rows read
+            motif_length = w if w is not None else len(list(matrix_data.values())[0])
             
-            # Create the Motif object (assume PWM data is read, not counts)
+            # Create the Motif object 
             motif = Motif(
                 alignment=None,
-                counts=None,
+                counts=None, 
                 alphabet=record.alphabet,
-                instances=None,
+                instances=None, 
                 name=name,
-                length=w,
+                length=motif_length,
                 pwm_data=matrix_data
             )
-            
-            # Post-processing to create internal counts/pssm from PWM
-            if motif.pwm_data:
-                # placeholder CountsMatrix that holds the PWM data
-                motif.counts = motif._pwm_to_counts(motif.pwm_data) 
             
             record.motifs.append(motif)
 
@@ -98,6 +81,7 @@ def read(path: str) -> List[Motif]:
     return record.motifs
 
 # --- PRIVATE functions ---
+
 def _read_version(record: Record, lines: List[str], line_num: int) -> int:
     # first line contains the version
     if line_num < len(lines):
@@ -110,7 +94,6 @@ def _read_version(record: Record, lines: List[str], line_num: int) -> int:
 
 def _read_alphabet(record: Record, lines: List[str], line_num: int) -> int:
     """Find and set the alphabet from the file (PRIVATE)."""
-    start_line_num = line_num
     while line_num < len(lines):
         line = lines[line_num].strip()
         line_num += 1
@@ -125,13 +108,20 @@ def _read_alphabet(record: Record, lines: List[str], line_num: int) -> int:
 
 def _read_background(record: Record, lines: List[str], line_num: int) -> int:
     """Find and set the background probabilities (PRIVATE)."""
-    start_line_num = line_num
     while line_num < len(lines):
         line = lines[line_num].strip()
         line_num += 1
-        
+            
         if line.startswith("Background letter frequencies"):
-            parts = line.split(":")[-1].strip().split()
+            if line_num >= len(lines):
+                return line_num
+                 
+            data_line = lines[line_num].strip()
+            line_num += 1 
+            
+            # Data line looks like: A 0.303 C 0.183 G 0.209 T 0.306
+            parts = data_line.split()
+            
             background: Dict[str, float] = {}
             for i in range(0, len(parts), 2):
                 base = parts[i]
@@ -142,8 +132,7 @@ def _read_background(record: Record, lines: List[str], line_num: int) -> int:
                     continue 
             record.background = background
             return line_num
-            
-    # Allow missing background and use default later if needed, but consume lines.
+
     return line_num
 
 

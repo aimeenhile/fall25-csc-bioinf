@@ -4,7 +4,7 @@
 
 import math
 import numpy as np
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Union
 from .matrix import PositionSpecificScoringMatrix
 from collections import defaultdict
 from .matrix import Background
