@@ -24,19 +24,12 @@ _DEGENERATE_CODES: Dict[str, str] = {
 # Complement map for RC calculation (DNA/RNA, simplified IUPAC)
 _COMPLEMENT: Dict[str, str] = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'U': 'A', 'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V', 'D': 'H', 'H': 'D', 'V': 'B', 'N': 'N'}
 
-class Motif:
-    pass
 
 class Record:
     """
     A container for motifs read from a single file, replacing Bio.motifs.Record.
     It holds global file information (version, alphabet, background) and a list of motifs.
     """
-    version: str
-    alphabet: str
-    background: Dict[str, float]
-    motif: List['Motif']
-
     def __init__(self):
         self.version = ""
         self.alphabet = ""
@@ -57,11 +50,6 @@ class Instances:
     """
     A container for the sequences used to create the motif.
     """
-
-    sequence: List['Seq']
-    length: int
-    alphabet: str
-
     def __init__(self, sequences: List['Seq']):
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
@@ -88,15 +76,9 @@ class Motif:
     alphabet information, and providing properties for consensus,
     reverse complement, etc.
     """
-
-    # alignment: Optional[Alignment]
-    # counts: Optinal[CountsMatrix]
-    alphabet: str
-    # instance: Optional[Instances]
-    name: str 
-    length: int
-
-    def __init__(self, alignment: Optional['Alignment'], counts: optinal[CountsMatrix], alphabet: str, instances: Optional['Instances'], name: str, length: int, pwm_data: Optional[Dict[str, List[float]]] = None):
+    def __init__(self, alignment: Optional['Alignment'], counts: Optional[CountsMatrix], alphabet: str, 
+                 instances: Optional['Instances'], name: str, length: int, 
+                 pwm_data: Optional[Dict[str, List[float]]] = None):
         self.alignment = alignment
         self.counts = counts
         self.alphabet = alphabet
