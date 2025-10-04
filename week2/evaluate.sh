@@ -13,7 +13,7 @@ echo "=========================================="
 echo "Running Python tests (BioPython)..."
 echo "=========================================="
 
-python bio_codon/motifs/test.py > python_output.txt 2>&1 || { 
+python bio_codon/motifs/test_python.py > python_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "PYTHON TEST FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
@@ -28,7 +28,7 @@ echo "=========================================="
 echo "Running Codon tests..."
 echo "=========================================="
 
-codon run bio_codon/motifs/test.py > codon_output.txt 2>&1 || { 
+codon run bio_codon/motifs/test_codon.py > codon_output.txt 2>&1 || { 
     echo "------------------------------------------"
     echo "CODON TEST FAILED - TRACEBACK BELOW:"
     echo "------------------------------------------"
