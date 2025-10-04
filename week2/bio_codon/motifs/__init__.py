@@ -6,9 +6,9 @@ from collections import defaultdict
 from python import warnings 
 import numpy as np
 
-from python import Bio.Seq.Seq as Seq
-from python import Bio.SeqRecord.SeqRecord as SeqRec
-from python import Bio.Align.Alignment as Alignment
+from python import Bio.Seq.Seq 
+from python import Bio.SeqRecord.SeqRecord 
+from python import Bio.Align.Alignment 
 
 from .matrix import CountsMatrix
 # from .minimal import read as minimal_read, Record
@@ -50,12 +50,11 @@ class Instances:
     """
     A container for the sequences used to create the motif.
     """
-
-    sequence: List[Seq]
+    sequence: List[Bio.Seq.Seq]
     length: int
     alphabet: str
 
-    def __init__(self, sequences: List[Seq]):
+    def __init__(self, sequences: List[Bio.Seq.Seq]):
         self.sequences = sequences
         self.length = len(sequences[0]) if sequences else 0
         self.alphabet = sequences[0].alphabet if sequences and hasattr(sequences[0], 'alphabet') else 'ACGT' # Default
@@ -82,14 +81,14 @@ class Motif:
     reverse complement, etc.
     """
 
-    # alignment: Optional[Alignment]
+    # alignment: Optional[Bio.Align.Alignment]
     # counts: Optinal[CountsMatrix]
     alphabet: str
     # instance: Optional[Instances]
     name: str 
     length: int
 
-    def __init__(self, alignment: Optional[Alignment], counts: optinal[CountsMatrix], alphabet: str, instances: Optional[Instances], name: str, length: int, pwm_data: Optional[Dict[str, List[float]]] = None):
+    def __init__(self, alignment: Optional[Bio.Align.Alignment], counts: optinal[CountsMatrix], alphabet: str, instances: Optional[Instances], name: str, length: int, pwm_data: Optional[Dict[str, List[float]]] = None):
         self.alignment = alignment
         self.counts = counts
         self.alphabet = alphabet
@@ -175,7 +174,7 @@ class Motif:
                 instances=None, name=self.name + "_RC", length=self.length)
 
 
-def create(alignment: List[Seq], alphabet: Optional[str] = None) -> 'Motif':
+def create(alignment: List[Bio.Seq.Seq], alphabet: Optional[str] = None) -> 'Motif':
     """
     Create a Motif object from a list of sequences.
     """
