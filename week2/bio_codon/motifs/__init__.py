@@ -60,7 +60,7 @@ class Instances:
     def __len__(self) -> int:
         return len(self.sequences)
 
-    def __getitem__(self, index: int) -> Seq:
+    def __getitem__(self, index: int):
         return self.sequences[index]
 
     def __iter__(self):
