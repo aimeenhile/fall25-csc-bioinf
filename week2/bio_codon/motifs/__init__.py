@@ -203,7 +203,7 @@ def create(alignment: 'List[BioSeq]', alphabet: Optional[str] = None) -> 'Motif'
 from .minimal import read as minimal_read
 
 
-def parse(path: str, fmt: str, strict: bool = True) -> List['Motif']:
+def parse(path: str, fmt: str, strict: bool = True) -> 'List[Motif]':
     """Parse an output file from a motif finding program.
 
     Currently supported formats (case is ignored):
