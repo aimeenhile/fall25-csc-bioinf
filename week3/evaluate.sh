@@ -2,11 +2,9 @@
 
 set -euo pipefail
 
-cd week3
-
 echo "=== Compiling Cython files in week3/biotite ==="
 python3 -m pip install --upgrade pip setuptools wheel cython > /dev/null 2>&1
-cythonize -i /biotite/*.pyx
+cythonize -i week3/biotite/*.pyx
 
 echo "============================="
 echo "🐍 Running Python tests"
