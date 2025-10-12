@@ -1,19 +1,21 @@
 from __future__ import annotations
-import os, sys
+import time
 import numpy as np
 
-IS_CODON = os.environ.get("CODON_RUNTIME", "") == "1"
+IS_CODON = False
 
 if IS_CODON:
     # Codon-compatible NumPy bridge
     from python import numpy as pnp
     import numpy.pybridge
-    import phylo as phylo
+    from week3.bio_codon.codon_phylo import Tree, TreeNode, upgma, neighbor_joining
     def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
 else:
     import numpy as pnp
-    import biotite.sequence.phylo as phylo
+    from week3.biotite.tree import Tree, TreeNode
+    from week3.biotite.upgma import upgma
+    from week3.biotite.nj import neighbor_joining
     def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
 
@@ -23,30 +25,42 @@ def compare_trees(tree1, tree2, tol=1e-3):
 
 def test_upgma():
     dist = loadtxt("/data/distances.txt")
-    tree = phylo.upgma(dist)
+    tree = upgma(dist)
     print("UPGMA tree:", tree.to_newick())
     assert len(tree.leaves) == dist.shape[0]
 
 
 def test_neighbor_joining():
     dist = loadtxt("/data/distances.txt")
-    tree = phylo.neighbor_joining(dist)
+    tree = neighbor_joining(dist)
     print("NJ tree:", tree.to_newick())
     assert len(tree.leaves) == dist.shape[0]
 
 
 def main():
     print("Running tests under", "Codon" if IS_CODON else "Python", "runtime...")
+
+    start_time = time.time()
+
     try:
         test_upgma()
         print("✅ UPGMA passed")
     except Exception as e:
         print("❌ UPGMA failed:", e)
+    upgma_time = int((time.time() - start_time) * 1000)
+
+    start_time = time.time()
     try:
         test_neighbor_joining()
         print("✅ Neighbor Joining passed")
     except Exception as e:
         print("❌ Neighbor Joining failed:", e)
+    nj_time = int((time.time() - start_time) * 1000)
+
+    print("----------------------------")
+    print(f"Language    Runtime")
+    print(f"-------------------")
+    print(f"{'Codon' if IS_CODON else 'Python'}      {upgma_time + nj_time}ms")
 
 
 if __name__ == "__main__":
