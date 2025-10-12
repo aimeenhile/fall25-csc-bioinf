@@ -4,7 +4,8 @@ set -euo pipefail
 
 echo "=== Compiling Cython files in week3/biotite ==="
 python3 -m pip install --upgrade pip setuptools wheel cython > /dev/null 2>&1
-cythonize -i week3/biotite/*.pyx
+python -c "import numpy; print(numpy.get_include())"
+python -m cythonize -i week3/biotite/*.pyx
 
 echo "============================="
 echo "🐍 Running Python tests"
