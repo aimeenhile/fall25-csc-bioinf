@@ -6,7 +6,7 @@ cd week3
 
 echo "=== Compiling Cython files in week3/biotite ==="
 python3 -m pip install --upgrade pip setuptools wheel cython > /dev/null 2>&1
-cythonize -i week3/biotite/*.pyx
+cythonize -i /biotite/*.pyx
 
 echo "============================="
 echo "🐍 Running Python tests"
