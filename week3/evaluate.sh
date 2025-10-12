@@ -3,7 +3,7 @@
 set -euo pipefail
 
 echo "=== Compiling Cython files in week3/biotite ==="
-python -m Cython.Build.cythonize -i week3/biotite/*.pyx
+cythonize -i week3/biotite/*.pyx
 
 echo "============================="
 echo "🐍 Running Python tests"
