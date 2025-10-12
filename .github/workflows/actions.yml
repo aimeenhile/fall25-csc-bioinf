@@ -9,6 +9,7 @@ jobs:
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Install Python dependencies
         run: |
+          pip install cython
           pip install numpy 
           pip install biotite 
           pip install pytest
