@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+cd week3
+
 echo "=== Compiling Cython files in week3/biotite ==="
 python - <<'EOF'
 import numpy
@@ -11,9 +13,9 @@ import sys
 import os
 
 extensions = [
-    Extension("biotite.tree", ["week3/biotite/tree.pyx"], include_dirs=[numpy.get_include()]),
-    Extension("biotite.nj", ["week3/biotite/nj.pyx"], include_dirs=[numpy.get_include()]),
-    Extension("biotite.upgma", ["week3/biotite/upgma.pyx"], include_dirs=[numpy.get_include()])
+    Extension("biotite.tree", ["biotite/tree.pyx"], include_dirs=[numpy.get_include()]),
+    Extension("biotite.nj", ["biotite/nj.pyx"], include_dirs=[numpy.get_include()]),
+    Extension("biotite.upgma", ["biotite/upgma.pyx"], include_dirs=[numpy.get_include()])
 ]
 
 setup(
