@@ -28,7 +28,6 @@ popular *UPGMA* (:func:`upgma()`) and *Neighbor-Joining*
 (:func:`neighbor_joining()`) algorithms.
 """
 
-__name__ = "biotite.sequence.phylo"
 __author__ = "Patrick Kunzmann"
 
 from .nj import *
