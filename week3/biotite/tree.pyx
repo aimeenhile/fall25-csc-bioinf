@@ -12,11 +12,9 @@ cimport numpy as np
 import copy
 import numpy as np
 import networkx as nx
-from ...file import InvalidFileError
-from ...copyable import Copyable
 
 
-class Tree(Copyable):
+cdef class Tree:
     """
     __init__(root)
     
@@ -322,7 +320,7 @@ class Tree(Copyable):
         """
         newick = newick.strip()
         if len(newick) == 0:
-            raise InvalidFileError("Newick string is empty")
+            raise Exception("Newick string is empty")
         # Remove terminal colon as required by 'TreeNode.from_newick()'
         if newick[-1] == ";":
             newick = newick[:-1]
@@ -869,14 +867,14 @@ cdef class TreeNode:
                 subnewick_start_i = i
                 break
             if char == ")":
-                raise InvalidFileError("Bracket closed before it was opened")
+                raise Exception("Bracket closed before it was opened")
         for i in reversed(range(len(newick))):
             char = newick[i]
             if char == ")":
                 subnewick_stop_i = i+1
                 break
             if char == "(":
-                raise InvalidFileError("Bracket was opened but not closed")
+                raise Exception("Bracket was opened but not closed")
         
         if subnewick_start_i == -1 and subnewick_stop_i == -1:
             # No brackets -> no sub-newwick -> Leaf node
@@ -911,7 +909,7 @@ cdef class TreeNode:
             
             subnewick = newick[subnewick_start_i+1 : subnewick_stop_i-1]
             if len(subnewick) == 0:
-                raise InvalidFileError(
+                raise Exception(
                     "Intermediate node must at least have one child"
                 )
             # Parse childs
@@ -927,7 +925,7 @@ cdef class TreeNode:
                     if level == 0:
                         comma_pos.append(i)
                 if level < 0:
-                    raise InvalidFileError(
+                    raise Exceptionr(
                         "Bracket closed before it was opened"
                     )
         
