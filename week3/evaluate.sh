@@ -10,12 +10,10 @@ from Cython.Build import cythonize
 import sys
 import os
 
-os.chdir("week3/biotite")
-
 extensions = [
-    Extension("nj", ["nj.pyx"], include_dirs=[numpy.get_include()]),
-    Extension("tree", ["tree.pyx"], include_dirs=[numpy.get_include()]),
-    Extension("upgma", ["upgma.pyx"], include_dirs=[numpy.get_include()])
+    Extension("biotite.tree", ["week3/biotite/tree.pyx"], include_dirs=[numpy.get_include()])
+    Extension("biotite.nj", ["week3/biotite/nj.pyx"], include_dirs=[numpy.get_include()])
+    Extension("biotite.upgma", ["week3/biotite/upgma.pyx"], include_dirs=[numpy.get_include()])
 ]
 
 setup(
