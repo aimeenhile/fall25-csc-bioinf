@@ -1,23 +1,17 @@
 from __future__ import annotations
+import numpy as np
 import time
-#import numpy as np
+from week3.bio_codon.codon_phylo import Tree, TreeNode, upgma, neighbor_joining
+from python import numpy as pnp
+import numpy.pybridge
 
-IS_CODON = False
+distances: np.ndarray[int,2] = pnp.loadtxt("tests/sequence/data/distances.txt", dtype=pnp.int64)
+# Now you can use distances
+tree = upgma(distances)
 
-if IS_CODON:
-    # Codon-compatible NumPy bridge
-    from python import numpy as pnp
-    import numpy.pybridge
-    from bio_codon.codon_phylo import Tree, TreeNode, upgma, neighbor_joining
-    def loadtxt(path: str) -> np.ndarray:
-        return pnp.loadtxt(path, dtype=pnp.float64)
-else:
-    import numpy as pnp
-    from biotite.tree import Tree, TreeNode
-    from biotite.upgma import upgma
-    from biotite.nj import neighbor_joining
-    def loadtxt(path: str) -> np.ndarray:
-        return pnp.loadtxt(path, dtype=pnp.float64)
+def loadtxt(path: str) -> np.ndarray:
+    return pnp.loadtxt(path, dtype=pnp.float64)
+    
 
 def compare_trees(tree1, tree2, tol=1e-3):
     return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol

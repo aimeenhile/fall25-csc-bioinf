@@ -5,6 +5,10 @@ import biotite
 import biotite.sequence.phylo as phylo
 from tests.util import data_dir
 
+import numpy as pnp
+from week3.biotite.tree import Tree, TreeNode
+from week3.biotite.upgma import upgma
+from week3.biotite.nj import neighbor_joining
 
 @pytest.fixture
 def distances():
