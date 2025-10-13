@@ -9,13 +9,23 @@ if IS_CODON:
     from python import numpy as pnp
     import numpy.pybridge
     from bio_codon.codon_phylo import Tree, TreeNode, upgma, neighbor_joining
+
+    distances: np.ndarray[int,2] = pnp.loadtxt("/data/distances.txt", dtype=pnp.int64)
+    with open("/data/newick_upgma.txt", "r") as f:
+        newick_upgma = f.read().strip()
+
     def loadtxt(path: str) -> np.ndarray:
-        return pnp.loadtxt(path, dtype=pnp.float64)
+        return distances
 else:
     import numpy as pnp
-    from biotite.sequence.phylo.tree import Tree, TreeNode
-    from biotite.sequence.phylo.upgma import upgma
-    from biotite.sequence.phylo.nj import neighbor_joining
+    from biotite.tree import Tree, TreeNode
+    from biotite.upgma import upgma
+    from biotite.nj import neighbor_joining
+
+    distances = loadtxt("/data/distances.txt")
+    with open("/data/newick_upgma.txt", "r") as f:
+        newick_upgma = f.read().strip()
+
     def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
 
