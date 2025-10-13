@@ -28,7 +28,7 @@ class set:
         return h
 
 
-class TreeError(Exception):
+class TreeError(Static[Exception]):
     """Exception used for tree topology related errors."""
     pass
 
@@ -52,8 +52,7 @@ class TreeNode:
         self._is_root = False
         self._distance = 0.0
         self._parent = None
-        # children stored as list (Codon-safe)
-        self._children = []  # type: ignore[assignment]
+        self._children = [] 
 
         if index is None:
             # intermediate node -> need children and distances
