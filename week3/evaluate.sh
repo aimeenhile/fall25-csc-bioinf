@@ -28,9 +28,9 @@ EOF
 echo "============================="
 echo "🐍 Running Python tests"
 echo "============================="
-python3 week3/test_phylo.py
+python3 test_phylo.py
 
 echo "============================="
 echo "🧬 Running Codon tests"
 echo "============================="
-codon run -release -D IS_CODON=true week3/test_phylo.py
+codon run -release -D IS_CODON=true test_phylo.py
