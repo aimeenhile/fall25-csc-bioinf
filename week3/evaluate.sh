@@ -11,8 +11,8 @@ import sys
 import os
 
 extensions = [
-    Extension("biotite.tree", ["week3/biotite/tree.pyx"], include_dirs=[numpy.get_include()])
-    Extension("biotite.nj", ["week3/biotite/nj.pyx"], include_dirs=[numpy.get_include()])
+    Extension("biotite.tree", ["week3/biotite/tree.pyx"], include_dirs=[numpy.get_include()]),
+    Extension("biotite.nj", ["week3/biotite/nj.pyx"], include_dirs=[numpy.get_include()]),
     Extension("biotite.upgma", ["week3/biotite/upgma.pyx"], include_dirs=[numpy.get_include()])
 ]
 
