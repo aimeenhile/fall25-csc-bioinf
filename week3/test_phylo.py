@@ -13,9 +13,9 @@ if IS_CODON:
         return pnp.loadtxt(path, dtype=pnp.float64)
 else:
     import numpy as pnp
-    from biotite.tree import Tree, TreeNode
-    from biotite.upgma import upgma
-    from biotite.nj import neighbor_joining
+    from biotite.sequence.phylo.tree import Tree, TreeNode
+    from biotite.sequence.phylo.upgma import upgma
+    from biotite.sequence.phylo.nj import neighbor_joining
     def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
 
