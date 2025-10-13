@@ -18,6 +18,9 @@ if IS_CODON:
         return distances
 else:
     import numpy as pnp
+    import sys, os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "biotite")))
+    
     from biotite.tree import Tree, TreeNode
     from biotite.upgma import upgma
     from biotite.nj import neighbor_joining

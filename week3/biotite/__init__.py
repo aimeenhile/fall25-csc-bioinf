@@ -30,6 +30,6 @@ popular *UPGMA* (:func:`upgma()`) and *Neighbor-Joining*
 
 __author__ = "Patrick Kunzmann"
 
-from .nj import *
 from .tree import *
 from .upgma import *
+from .nj import *
