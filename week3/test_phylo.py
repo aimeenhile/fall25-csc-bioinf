@@ -50,7 +50,25 @@ else:
         return pnp.loadtxt(path, dtype=pnp.float64)
     """
 
+if IS_CODON:
+    orig_from_newick = TreeNode.from_newick
 
+    @staticmethod
+    def safe_from_newick(newick: str) -> TreeNode:
+        # replace labels like '29.0' -> '29'
+        import re
+        def fix_label(match):
+            lbl = match.group(0)
+            try:
+                i = int(float(lbl))
+                return str(i)
+            except:
+                return lbl
+        newick_fixed = re.sub(r"[0-9]+\.[0-9]+", fix_label, newick)
+        return orig_from_newick(newick_fixed)
+
+    TreeNode.from_newick = safe_from_newic
+    
 
 def compare_trees(tree1, tree2, tol=1e-3):
     #return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol
