@@ -211,8 +211,19 @@ class TreeNode:
             except ValueError:
                 distance = 0.0
                 label = label_and_distance
-            idx = int(float(label)) if labels is None else labels.index(label)
+            #idx = int(float(label)) if labels is None else labels.index(label)
+            #return TreeNode(index=idx), distance
+            if labels is None:
+                try:
+                    idx = int(label)  # normal integer string
+                except std::invalid_argument:
+                    idx = int(float(label))  # handles "29.0"
+            else:
+                # lookup in labels list
+                idx = labels.index(label)
+
             return TreeNode(index=idx), distance
+        
         else:
             # intermediate node
             if substop == len(newick):
@@ -387,6 +398,7 @@ class Tree:
         if s.endswith(";"):
             s = s[:-1]
         root, _ = TreeNode.from_newick(s, labels)
+
         return Tree(root)
 
     def __str__(self) -> str:

@@ -68,7 +68,7 @@ if IS_CODON:
         return orig_from_newick(newick_fixed)
 
     TreeNode.from_newick = safe_from_newic
-    
+
 
 def compare_trees(tree1, tree2, tol=1e-3):
     #return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol
@@ -101,6 +101,29 @@ def main():
     print("Running tests under", "Codon" if IS_CODON else "Python", "runtime...")
 
     start_time1 = time.time()
+
+    # --- Build Python trees ---
+    start_time = time.time()
+    py_upgma_tree = upgma(distances)
+    py_nj_tree = neighbor_joining(distances)
+    py_runtime = int((time.time() - start_time) * 1000)
+
+    # --- Build Codon trees ---
+    if IS_CODON:
+        start_time = time.time()
+        codon_upgma_tree = upgma(distances)
+        codon_nj_tree = neighbor_joining(distances)
+        codon_runtime = int((time.time() - start_time) * 1000)
+
+        # Compare Codon trees against Python trees
+        assert compare_trees(codon_upgma_tree, py_upgma_tree)
+        assert compare_trees(codon_nj_tree, py_nj_tree)
+
+    print("----------------------------")
+    print(f"Language    Runtime")
+    print(f"-------------------")
+    print(f"{'python'}      {py_runtime}ms")
+    print(f"{'codon'}       {codon_runtime}ms")
 
     try:
         test_upgma()
