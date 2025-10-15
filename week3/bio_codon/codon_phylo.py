@@ -152,7 +152,7 @@ class TreeNode:
                   round_distance: Optional[int] = None) -> str:
         if self.is_leaf():
             if labels is not None:
-                lbls = List(labels)
+                lbls = list(labels)
                 label = lbls[self._index]
                 illegal_chars = [",", ":", ";", "(", ")"]
                 for ch in illegal_chars:
