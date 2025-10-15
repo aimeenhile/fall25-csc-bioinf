@@ -1,4 +1,4 @@
-from __future__ import annotations
+f#rom __future__ import annotations
 import time
 
 import os
