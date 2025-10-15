@@ -85,7 +85,7 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: "TreeNode", distance: float) -> None:
+    def _set_parent(self, parent: "TreeNode", distance: float):
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
@@ -104,22 +104,22 @@ class TreeNode:
         self._is_root = True
 
     @property
-    def index(self) -> Optional[int]:
+    def index(self):
         return None if self._index == -1 else self._index
 
     @property
-    def children(self) -> List["TreeNode"]:
+    def children(self):
         return self._children
 
     @property
-    def parent(self) -> Optional["TreeNode"]:
+    def parent(self):
         return self._parent
 
     @property
-    def distance(self) -> Optional[float]:
+    def distance(self):
         return None if self._parent is None else self._distance
 
-    def copy(self) -> "TreeNode":
+    def copy(self):
         if self.is_leaf():
             return TreeNode(index=self._index)
         else:
@@ -129,24 +129,24 @@ class TreeNode:
             distances_f = [float(d) if d is not None else 0.0 for d in distances]
             return TreeNode(children_clones, distances_f)
 
-    def get_leaves(self) -> List["TreeNode"]:
+    def get_leaves(self):
         """
         Return List of leaf nodes (direct or indirect).
         """
-        leaf_list: List["TreeNode"] = []
+        leaf_list: list[TreeNode] = []
         _get_leaves(self, leaf_list)
         return leaf_list
 
-    def get_indices(self) -> np.ndarray:
+    def get_indices(self):
         leaves = self.get_leaves()
         return np.array([leaf._index for leaf in leaves], dtype=np.int32)
 
-    def get_leaf_count(self) -> int:
+    def get_leaf_count(self):
         return _get_leaf_count(self)
 
-    def to_newick(self, labels: Optional[List[str]] = None,
+    def to_newick(self, labels: Optional[list[str]] = None,
                   include_distance: bool = True,
-                  round_distance: Optional[int] = None) -> str:
+                  round_distance: Optional[int] = None):
         if self.is_leaf():
             if labels is not None:
                 lbls = list(labels)
@@ -176,7 +176,7 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None) -> Tuple[TreeNode, float]:
+    def from_newick(newick: str, labels: Optional[List[str]] = None):
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
@@ -269,7 +269,7 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: "TreeNode") -> Optional["TreeNode"]:
+    def lowest_common_ancestor(self, node: "TreeNode"):
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
         lca: Optional["TreeNode"] = None
@@ -281,7 +281,7 @@ class TreeNode:
                 break
         return lca
 
-    def distance_to(self, node: "TreeNode", topological: bool = False) -> float:
+    def distance_to(self, node: "TreeNode", topological: bool = False):
         lca = self.lowest_common_ancestor(node)
         if lca is None:
             raise TreeError("The nodes do not have a common ancestor")
@@ -302,7 +302,7 @@ class TreeNode:
             current = current._parent  # type: ignore[assignment]
         return distance
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object):
         if not isinstance(other, TreeNode):
             return False
         node: TreeNode = other
@@ -314,14 +314,14 @@ class TreeNode:
             # order of children not important
             return set(self._children) == set(node._children)
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         children_set = set(self._children) if len(self._children) > 0 else None
         return hash((self._index, children_set, self._distance))
 
 
 # --- Helper functions ---
 
-def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]) -> None:
+def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]):
     if node._index == -1:
         for child in node._children:
             _get_leaves(child, leaf_list)
@@ -329,7 +329,7 @@ def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]) -> None:
         leaf_list.append(node)
 
 
-def _get_leaf_count(node: TreeNode) -> int:
+def _get_leaf_count(node: TreeNode):
     if node._index == -1:
         count = 0
         for child in node._children:
@@ -339,7 +339,7 @@ def _get_leaf_count(node: TreeNode) -> int:
         return 1
 
 
-def _create_path_to_root(node: TreeNode) -> List["TreeNode"]:
+def _create_path_to_root(node: TreeNode):
     path: List["TreeNode"] = []
     current: Optional["TreeNode"] = node
     while current is not None:
@@ -352,7 +352,7 @@ class Tree:
     _root: TreeNode
     _leaves: List["TreeNode"]
 
-    def __init__(self, root: TreeNode) -> None:
+    def __init__(self, root: TreeNode):
         root.as_root()
         self._root = root
         # gather leaves and place them at positions equal to leaf.index
@@ -366,29 +366,29 @@ class Tree:
                 raise TreeError("The tree's indices are out of range")
             self._leaves[idx] = leaves_unsorted[i]
 
-    def __copy_create__(self) -> "Tree":
+    def __copy_create__(self):
         return Tree(self._root.copy())
 
     @property
-    def root(self) -> TreeNode:
+    def root(self):
         return self._root
 
     @property
-    def leaves(self) -> List["TreeNode"]:
+    def leaves(self):
         return copy.copy(self._leaves)
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._leaves)
 
-    def get_distance(self, index1: int, index2: int, topological: bool = False) -> float:
+    def get_distance(self, index1: int, index2: int, topological: bool = False):
         return self._leaves[index1].distance_to(self._leaves[index2], topological)
 
     def to_newick(self, labels: Optional[List[str]] = None, include_distance: bool = True,
-                  round_distance: Optional[int] = None) -> str:
+                  round_distance: Optional[int] = None):
         return self._root.to_newick(labels, include_distance, round_distance) + ";"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None) -> "Tree":
+    def from_newick(newick: str, labels: Optional[List[str]] = None):
         s = newick.strip()
         if len(s) == 0:
             raise ValueError("Newick string is empty")
@@ -398,22 +398,22 @@ class Tree:
 
         return Tree(root)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.to_newick()
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object):
         if not isinstance(other, Tree):
             return False
         return self._root == other._root
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         return hash(self._root)
 
 
 MAX_FLOAT = np.finfo(np.float64).max
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> Tuple[int, int]:
+def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -437,7 +437,7 @@ def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> Tuple[int, i
 
 # --- UPGMA ---
 
-def upgma(distances: np.ndarray) -> Tree:
+def upgma(distances: np.ndarray):
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -513,7 +513,7 @@ def upgma(distances: np.ndarray) -> Tree:
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances: np.ndarray) -> Tree:
+def neighbor_joining(distances: np.ndarray):
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
