@@ -20,12 +20,12 @@ else:
     import numpy as pnp
     import sys, os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "biotite")))
-    
+
     from biotite.tree import Tree, TreeNode
     from biotite.upgma import upgma
     from biotite.nj import neighbor_joining
 
-    distances = loadtxt("/data/distances.txt")
+    distances = pnp.loadtxt("/data/distances.txt")
     with open("/data/newick_upgma.txt", "r") as f:
         newick_upgma = f.read().strip()
 
