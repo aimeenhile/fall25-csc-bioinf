@@ -1,4 +1,5 @@
 import time
+import numpy as np
 
 import os
 IS_CODON = ("IS_CODON" in os.environ) and os.environ["IS_CODON"].lower() == "true"
