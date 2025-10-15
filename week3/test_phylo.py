@@ -45,13 +45,13 @@ def compare_trees(tree1, tree2, tol=1e-3):
 def test_upgma():
     tree = upgma(distances)
     print("UPGMA tree:", tree.to_newick())
-    assert len(tree.leaves) == dist.shape[0]
+    assert len(tree.leaves) == distance.shape[0]
 
 
 def test_neighbor_joining():
     tree = neighbor_joining(distances)
     print("NJ tree:", tree.to_newick())
-    assert len(tree.leaves) == dist.shape[0]
+    assert len(tree.leaves) == distance.shape[0]
 
 
 def main():

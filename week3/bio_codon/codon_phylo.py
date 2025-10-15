@@ -211,7 +211,7 @@ class TreeNode:
             except ValueError:
                 distance = 0.0
                 label = label_and_distance
-            idx = int(label) if labels is None else labels.index(label)
+            idx = int(float(label)) if labels is None else labels.index(label)
             return TreeNode(index=idx), distance
         else:
             # intermediate node
@@ -439,11 +439,13 @@ def upgma(distances: np.ndarray) -> Tree:
         raise ValueError("Distance matrix contains NaN values")
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
+
     n0 = distances.shape[0]
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
     D = distances.astype(np.float64, copy=True)
+
     # nodes: current nodes (TreeNode)
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     # cluster sizes
@@ -459,8 +461,10 @@ def upgma(distances: np.ndarray) -> Tree:
         i_min, j_min = _find_min_pair_triangular(D, active)
         if i_min == -1 or j_min == -1:
             break
+
         dist_min = float(D[i_min, j_min])
         height = dist_min / 2.0
+
         # create new node at i_min, mark j_min inactive
         child_i = nodes[i_min]
         child_j = nodes[j_min]
@@ -468,8 +472,9 @@ def upgma(distances: np.ndarray) -> Tree:
         child_dist_j = float(height - node_heights[j_min])
         nodes[i_min] = TreeNode(children=[child_i, child_j], distances=[child_dist_i, child_dist_j])
         node_heights[i_min] = height
-        nodes[j_min] = None  # type: ignore[assignment]
+        nodes[j_min] = None  
         active[j_min] = False
+
         # update distances: arithmetic mean weighted by cluster sizes
         for k in range(n0):
             if not active[k] or k == i_min:
@@ -477,13 +482,12 @@ def upgma(distances: np.ndarray) -> Tree:
             left = float(D[i_min, k]) * float(cluster_size[i_min])
             right = float(D[j_min, k]) * float(cluster_size[j_min])
             denom = float(cluster_size[i_min] + cluster_size[j_min])
-            mean = left + right
+            mean = 0.0
             if denom != 0.0:
-                mean = mean / denom
-            else:
-                mean = 0.0
+                mean = (left + right) / denom
             D[i_min, k] = mean
             D[k, i_min] = mean
+
         # update cluster size
         cluster_size[i_min] = cluster_size[i_min] + cluster_size[j_min]
         remaining -= 1
@@ -493,6 +497,7 @@ def upgma(distances: np.ndarray) -> Tree:
         if active[idx]:
             root_node = nodes[idx]
             return Tree(root_node)
+
     # fallback
     raise RuntimeError("UPGMA failed to construct a tree")
 
@@ -510,17 +515,18 @@ def upgma(distances: np.ndarray) -> Tree:
         raise ValueError("Distance matrix contains NaN values")
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
+
     n0 = distances.shape[0]
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
     D = distances.astype(np.float64, copy=True)
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    active: List[bool] = [True] * n0
+    active: List[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 3:
-        # total distances per row (only active considered)
+        # total distances per row 
         total = np.zeros(D.shape[0], dtype=np.float64)
         for i in range(D.shape[0]):
             if not active[i]:
@@ -532,7 +538,8 @@ def upgma(distances: np.ndarray) -> Tree:
                     continue
                 s += float(D[i, j])
             total[i] = s
-        # compute Q-matrix (we'll store full symmetric for simplicity)
+
+        # compute Q-matrix 
         Q = np.full(D.shape, float(MAX_FLOAT), dtype=np.float64)
         for i in range(D.shape[0]):
             if not active[i]:
@@ -542,10 +549,12 @@ def upgma(distances: np.ndarray) -> Tree:
                     continue
                 Q[i, j] = (remaining - 2) * D[i, j] - total[i] - total[j]
                 Q[j, i] = Q[i, j]
+
         # find min pair in Q
         i_min, j_min = _find_min_pair_triangular(Q, active)
         if i_min == -1 or j_min == -1:
             break
+
         dist_ij = float(D[i_min, j_min])
         denom = float(remaining - 2)
         if denom == 0.0:
@@ -554,10 +563,11 @@ def upgma(distances: np.ndarray) -> Tree:
             delta = (total[i_min] - total[j_min]) / denom
         limb_i = 0.5 * (dist_ij + delta)
         limb_j = 0.5 * (dist_ij - delta)
+
         # create new node at i_min, mark j_min inactive
         new_node = TreeNode(children=[nodes[i_min], nodes[j_min]], distances=[float(limb_i), float(limb_j)])
         nodes[i_min] = new_node
-        nodes[j_min] = None  # type: ignore[assignment]
+        nodes[j_min] = None  
         active[j_min] = False
 
         # compute new distances to replace row/col i_min
@@ -580,10 +590,12 @@ def upgma(distances: np.ndarray) -> Tree:
     # collect active nodes
     final_nodes: List[TreeNode] = []
     final_idx: List[int] = []
+
     for idx in range(D.shape[0]):
         if active[idx]:
             final_nodes.append(nodes[idx])
             final_idx.append(idx)
+
     if len(final_nodes) == 2:
         d = float(D[final_idx[0], final_idx[1]])
         root = TreeNode(children=[final_nodes[0], final_nodes[1]], distances=[d/2.0, d/2.0])
@@ -595,4 +607,5 @@ def upgma(distances: np.ndarray) -> Tree:
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
         root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
+
     return Tree(root)
