@@ -34,11 +34,6 @@ class TreeError(Static[Exception]):
 
 
 class TreeNode:
-    _index: int
-    _distance: float
-    _is_root: bool
-    _parent: "TreeNode | None"
-    _children: list["TreeNode"]
 
     def __init__(self,
                  children: list["TreeNode"] | None = None,
@@ -48,6 +43,12 @@ class TreeNode:
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
+        _index: int
+        _distance: float
+        _is_root: bool
+        _parent: "TreeNode | None"
+        _children: list["TreeNode"]
+
         self._is_root = False
         self._distance = 0.0
         self._parent = None
