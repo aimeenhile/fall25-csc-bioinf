@@ -1,5 +1,5 @@
 import numpy as np
-#from typing import List, Tuple
+from typing import List, Tuple, Optional
 import math
 import copy
 import numpy as np
@@ -36,9 +36,9 @@ class TreeError(Static[Exception]):
 class TreeNode:
 
     def __init__(self,
-                 children: list["TreeNode"] | None = None,
-                 distances: list[float] | None = None,
-                 index: int | None = None) -> None:
+                 children: Optional[list["TreeNode"]] = None,
+                 distances: Optional[list[float]] = None,
+                 index: Optional[int] = None) -> None:
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
@@ -46,7 +46,7 @@ class TreeNode:
         _index: int
         _distance: float
         _is_root: bool
-        _parent: "TreeNode | None"
+        _parent: Optional["TreeNode"]
         _children: list["TreeNode"]
 
         self._is_root = False
@@ -107,7 +107,7 @@ class TreeNode:
         self._is_root = True
 
     @property
-    def index(self) -> int | None:
+    def index(self) -> Optional[int]:
         return None if self._index == -1 else self._index
 
     @property
@@ -115,11 +115,11 @@ class TreeNode:
         return self._children
 
     @property
-    def parent(self) -> "TreeNode" | None:
+    def parent(self) -> Optional["TreeNode"]:
         return self._parent
 
     @property
-    def distance(self) -> float | None:
+    def distance(self) -> Optional[float]:
         return None if self._parent is None else self._distance
 
     def copy(self) -> "TreeNode":
@@ -147,9 +147,9 @@ class TreeNode:
     def get_leaf_count(self) -> int:
         return _get_leaf_count(self)
 
-    def to_newick(self, labels: list[str] | None = None,
+    def to_newick(self, labels: Optional[list[str]] = None,
                   include_distance: bool = True,
-                  round_distance: int | None = None) -> str:
+                  round_distance: Optional[int] = None) -> str:
         if self.is_leaf():
             if labels is not None:
                 lbls = list(labels)
@@ -179,7 +179,7 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: list[str] | None = None) -> "tuple[TreeNode, float]":
+    def from_newick(newick: str, labels: Optional[list[str]] = None) -> "tuple[TreeNode, float]":
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
@@ -272,10 +272,10 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: "TreeNode") -> "TreeNode | None":
+    def lowest_common_ancestor(self, node: "TreeNode") -> Optional["TreeNode"]:
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
-        lca: "TreeNode | None" = None
+        lca: Optional["TreeNode"] = None
         min_len = min(len(self_path), len(other_path))
         for i in range(1, min_len + 1):
             if self_path[-i] is other_path[-i]:
@@ -344,7 +344,7 @@ def _get_leaf_count(node: TreeNode) -> int:
 
 def _create_path_to_root(node: TreeNode) -> list["TreeNode"]:
     path: list["TreeNode"] = []
-    current: "TreeNode | None" = node
+    current: Optional["TreeNode"] = node
     while current is not None:
         path.append(current)
         current = current._parent
@@ -386,12 +386,12 @@ class Tree:
     def get_distance(self, index1: int, index2: int, topological: bool = False) -> float:
         return self._leaves[index1].distance_to(self._leaves[index2], topological)
 
-    def to_newick(self, labels: list[str] | None = None, include_distance: bool = True,
-                  round_distance: int | None = None) -> str:
+    def to_newick(self, labels: Optional[list[str]] = None, include_distance: bool = True,
+                  round_distance: Optional[int] = None) -> str:
         return self._root.to_newick(labels, include_distance, round_distance) + ";"
 
     @staticmethod
-    def from_newick(newick: str, labels: list[str] | None = None) -> "Tree":
+    def from_newick(newick: str, labels: Optional[list[str]] = None) -> "Tree":
         s = newick.strip()
         if len(s) == 0:
             raise ValueError("Newick string is empty")
