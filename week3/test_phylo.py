@@ -10,6 +10,8 @@ if IS_CODON:
     import numpy.pybridge
     from bio_codon.codon_phylo import Tree, TreeNode, upgma, neighbor_joining
 
+    data_dir = "fall25-csc-bioinf/week3/"
+
     distances: np.ndarray[int,2] = pnp.loadtxt("/data/distances.txt", dtype=pnp.int64)
     with open("/data/newick_upgma.txt", "r") as f:
         newick_upgma = f.read().strip()

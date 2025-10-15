@@ -73,6 +73,9 @@ cdef class Tree:
     >>> print([objects[node.index] for node in tree.leaves])
     ['An object', 'Another object', 'Yet another one']
     """
+
+    cdef TreeNode _root
+    cdef list _leaves
     
     def __init__(self, TreeNode root not None):
         root.as_root()
