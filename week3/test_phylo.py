@@ -16,8 +16,18 @@ if IS_CODON:
     with open("/data/newick_upgma.txt", "r") as f:
         newick_upgma = f.read().strip()
 
-    def loadtxt(path: str) -> np.ndarray:
-        return distances
+    """
+    
+    def loadtxt(path: str) -> pnp.ndarray:
+        with open(path, "r") as f:
+            lines = f.readlines()
+        mat = []
+        for line in lines:
+            row = [float(x) for x in line.strip().split()]
+            mat.append(row)
+        return pnp.array(mat, dtype=pnp.float64)
+    """
+
 else:
     import numpy as pnp
     import sys, os
@@ -31,48 +41,63 @@ else:
     dist_path = os.path.join(data_dir, "distances.txt")
     newick_path = os.path.join(data_dir, "newick_upgma.txt")
 
-    distances = pnp.loadtxt(dist_path)
+    distances = pnp.loadtxt(dist_path, dtype=pnp.int64)
     with open(newick_path, "r") as f:
         newick_upgma = f.read().strip()
 
-    def loadtxt(path: str) -> np.ndarray:
+    """
+        def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
+    """
+
+
 
 def compare_trees(tree1, tree2, tol=1e-3):
-    return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol
+    #return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol
+    n = len(tree1.leaves)
+    for i in range(n):
+        for j in range(n):
+            if abs(tree1.get_distance(i, j) - tree2.get_distance(i, j)) > tol:
+                return False
+            if tree1.get_distance(i, j, topological=True) != tree2.get_distance(i, j, topological=True):
+                return False
+    return True
 
 
 def test_upgma():
     tree = upgma(distances)
     print("UPGMA tree:", tree.to_newick())
-    assert len(tree.leaves) == distance.shape[0]
+    assert len(tree.leaves) == distances.shape[0]
+
+    ref_tree = Tree.from_newick(newick_upgma)
+    assert compare_trees(tree, ref_tree)
 
 
 def test_neighbor_joining():
     tree = neighbor_joining(distances)
     print("NJ tree:", tree.to_newick())
-    assert len(tree.leaves) == distance.shape[0]
+    assert len(tree.leaves) == distances.shape[0]
 
 
 def main():
     print("Running tests under", "Codon" if IS_CODON else "Python", "runtime...")
 
-    start_time = time.time()
+    start_time1 = time.time()
 
     try:
         test_upgma()
         print("✅ UPGMA passed")
     except Exception as e:
         print("❌ UPGMA failed:", e)
-    upgma_time = int((time.time() - start_time) * 1000)
+    upgma_time = int((time.time() - start_time1) * 1000)
 
-    start_time = time.time()
+    start_time2 = time.time()
     try:
         test_neighbor_joining()
         print("✅ Neighbor Joining passed")
     except Exception as e:
         print("❌ Neighbor Joining failed:", e)
-    nj_time = int((time.time() - start_time) * 1000)
+    nj_time = int((time.time() - start_time2) * 1000)
 
     print("----------------------------")
     print(f"Language    Runtime")
