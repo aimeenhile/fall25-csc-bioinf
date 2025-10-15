@@ -1,8 +1,8 @@
-
 import time
 
 import os
-IS_CODON = os.environ.get("IS_CODON", "false").lower() == "true"
+IS_CODON = ("IS_CODON" in os.environ) and os.environ["IS_CODON"].lower() == "true"
+
 
 if IS_CODON:
     # Codon-compatible NumPy bridge
