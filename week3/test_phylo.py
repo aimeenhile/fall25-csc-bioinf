@@ -1,8 +1,8 @@
 from __future__ import annotations
 import time
-#import numpy as np
 
-IS_CODON = False
+import os
+IS_CODON = os.environ.get("IS_CODON", "false").lower() == "true"
 
 if IS_CODON:
     # Codon-compatible NumPy bridge

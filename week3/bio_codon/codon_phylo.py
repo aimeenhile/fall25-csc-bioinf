@@ -216,7 +216,7 @@ class TreeNode:
             if labels is None:
                 try:
                     idx = int(label)  # normal integer string
-                except std::invalid_argument:
+                except:
                     idx = int(float(label))  # handles "29.0"
             else:
                 # lookup in labels list
