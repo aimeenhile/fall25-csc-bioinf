@@ -29,10 +29,12 @@ if IS_CODON:
         return pnp.array(mat, dtype=pnp.float64)
     """
 
-else:
+if not IS_CODON: 
     import numpy as pnp
-    import sys, os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "biotite")))
+    import sys
+    import os
+    biotite_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "biotite"))
+    sys.path.insert(0, biotite_path)
 
     from biotite.tree import Tree, TreeNode
     from biotite.upgma import upgma
