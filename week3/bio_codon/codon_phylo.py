@@ -35,10 +35,7 @@ class TreeError(Static[Exception]):
 
 class TreeNode:
 
-    def __init__[T](self,
-                 children: Optional[list["TreeNode"]] = None,
-                 distances: Optional[list[float]] = None,
-                 index: Optional[int] = None):
+    def __init__(self, children: Optional[list[TreeNode]] = None, distances: Optional[list[float]] = None, index: Optional[int] = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
@@ -47,7 +44,7 @@ class TreeNode:
         _distance: float
         _is_root: bool
         _parent: Optional["TreeNode"]
-        _children: List["TreeNode"]
+        _children: list["TreeNode"]
 
         self._is_root = False
         self._distance = 0.0
