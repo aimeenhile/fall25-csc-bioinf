@@ -349,17 +349,15 @@ def _create_path_to_root(node: TreeNode):
 
 
 class Tree:
-    _root: TreeNode
-    _leaves: list[TreeNode]
 
     def __init__(self, root: TreeNode):
         root.as_root()
-        self._root = root
+        self._root: TreeNode = root
         # gather leaves and place them at positions equal to leaf.index
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
         indices = np.array([leaf._index for leaf in leaves_unsorted], dtype=np.int32)
-        self._leaves = [None] * leaf_count  # type: ignore[assignment]
+        self._leaves: list[TreeNode] = [None] * leaf_count  # type: ignore[assignment]
         for i in range(len(indices)):
             idx = int(indices[i])
             if idx >= leaf_count or idx < 0:
