@@ -25,8 +25,11 @@ else:
     from biotite.upgma import upgma
     from biotite.nj import neighbor_joining
 
-    distances = pnp.loadtxt("/data/distances.txt")
-    with open("/data/newick_upgma.txt", "r") as f:
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    distances = pnp.loadtxt(os.path.join(data_dir, "distances.txt"))
+    newick_path = os.path.join(data_dir, "newick_upgma.txt")
+
+    with open(newick_path, "r") as f:
         newick_upgma = f.read().strip()
 
     def loadtxt(path: str) -> np.ndarray:
