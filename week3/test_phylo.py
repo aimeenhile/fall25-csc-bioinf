@@ -119,11 +119,11 @@ def main():
         assert compare_trees(codon_upgma_tree, py_upgma_tree)
         assert compare_trees(codon_nj_tree, py_nj_tree)
 
-    print("----------------------------")
-    print(f"Language    Runtime")
-    print(f"-------------------")
-    print(f"{'python'}      {py_runtime}ms")
-    print(f"{'codon'}       {codon_runtime}ms")
+        print("----------------------------")
+        print(f"Language    Runtime")
+        print(f"-------------------")
+        print(f"{'python'}      {py_runtime}ms")
+        print(f"{'codon'}       {codon_runtime}ms")
 
     try:
         test_upgma()
