@@ -26,9 +26,10 @@ else:
     from biotite.nj import neighbor_joining
 
     data_dir = os.path.join(os.path.dirname(__file__), "data")
-    distances = pnp.loadtxt(os.path.join(data_dir, "distances.txt"))
+    dist_path = os.path.join(data_dir, "distances.txt")
     newick_path = os.path.join(data_dir, "newick_upgma.txt")
 
+    distances = pnp.loadtxt(dist_path)
     with open(newick_path, "r") as f:
         newick_upgma = f.read().strip()
 
@@ -40,15 +41,13 @@ def compare_trees(tree1, tree2, tol=1e-3):
 
 
 def test_upgma():
-    dist = loadtxt("/data/distances.txt")
-    tree = upgma(dist)
+    tree = upgma(distances)
     print("UPGMA tree:", tree.to_newick())
     assert len(tree.leaves) == dist.shape[0]
 
 
 def test_neighbor_joining():
-    dist = loadtxt("/data/distances.txt")
-    tree = neighbor_joining(dist)
+    tree = neighbor_joining(distances)
     print("NJ tree:", tree.to_newick())
     assert len(tree.leaves) == dist.shape[0]
 

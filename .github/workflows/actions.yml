@@ -37,6 +37,9 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v5
 
+      - name: Create data symlink for tests
+        run: ln -s "$PWD/week3/data" /data
+
       - name: Set up Codon Python bridge
         run: |
           pip install find_libpython
