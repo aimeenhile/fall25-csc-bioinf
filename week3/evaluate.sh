@@ -33,4 +33,4 @@ python3 test_phylo.py
 echo "============================="
 echo "🧬 Running Codon tests"
 echo "============================="
-codon run -release IS_CODON=true test_phylo.py
+codon run -release -D IS_CODON=true test_phylo.py
