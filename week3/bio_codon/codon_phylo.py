@@ -514,9 +514,9 @@ def upgma(distances: np.ndarray) -> Tree:
     raise RuntimeError("UPGMA failed to construct a tree")
 
 
-    # --- NEIGHBOUR JOINING ---
+# --- NEIGHBOUR JOINING ---
 
-    def neighbor_joining(distances: np.ndarray) -> Tree:
+def neighbor_joining(distances: np.ndarray) -> Tree:
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
