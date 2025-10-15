@@ -350,7 +350,7 @@ def _create_path_to_root(node: TreeNode):
 
 class Tree:
     _root: TreeNode
-    _leaves: List["TreeNode"]
+    _leaves: list[TreeNode]
 
     def __init__(self, root: TreeNode):
         root.as_root()
