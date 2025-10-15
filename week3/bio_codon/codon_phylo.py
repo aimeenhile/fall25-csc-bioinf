@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Optional, Iterable, Tuple
+#from typing import List, Tuple
 import math
 import copy
 import numpy as np
@@ -37,18 +37,17 @@ class TreeNode:
     _index: int
     _distance: float
     _is_root: bool
-    _parent: Optional["TreeNode"]
-    _children: List["TreeNode"]
+    _parent: "TreeNode | None"
+    _children: list["TreeNode"]
 
     def __init__(self,
-                 children: Optional[Iterable["TreeNode"]] = None,
-                 distances: Optional[Iterable[float]] = None,
-                 index: Optional[int] = None) -> None:
+                 children: list["TreeNode"] | None = None,
+                 distances: list[float] | None = None,
+                 index: int | None = None) -> None:
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
-        # initialize internal fields
         self._is_root = False
         self._distance = 0.0
         self._parent = None
@@ -107,19 +106,19 @@ class TreeNode:
         self._is_root = True
 
     @property
-    def index(self) -> Optional[int]:
+    def index(self) -> int | None:
         return None if self._index == -1 else self._index
 
     @property
-    def children(self) -> List["TreeNode"]:
+    def children(self) -> list["TreeNode"]:
         return self._children
 
     @property
-    def parent(self) -> Optional["TreeNode"]:
+    def parent(self) -> "TreeNode" | None:
         return self._parent
 
     @property
-    def distance(self) -> Optional[float]:
+    def distance(self) -> float | None:
         return None if self._parent is None else self._distance
 
     def copy(self) -> "TreeNode":
@@ -132,11 +131,11 @@ class TreeNode:
             distances_f = [float(d) if d is not None else 0.0 for d in distances]
             return TreeNode(children_clones, distances_f)
 
-    def get_leaves(self) -> List["TreeNode"]:
+    def get_leaves(self) -> list["TreeNode"]:
         """
         Return list of leaf nodes (direct or indirect).
         """
-        leaf_list: List["TreeNode"] = []
+        leaf_list: list["TreeNode"] = []
         _get_leaves(self, leaf_list)
         return leaf_list
 
@@ -147,9 +146,9 @@ class TreeNode:
     def get_leaf_count(self) -> int:
         return _get_leaf_count(self)
 
-    def to_newick(self, labels: Optional[Iterable[str]] = None,
+    def to_newick(self, labels: list[str] | None = None,
                   include_distance: bool = True,
-                  round_distance: Optional[int] = None) -> str:
+                  round_distance: int | None = None) -> str:
         if self.is_leaf():
             if labels is not None:
                 lbls = list(labels)
@@ -179,7 +178,7 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None) -> Tuple["TreeNode", float]:
+    def from_newick(newick: str, labels: list[str] | None = None) -> "tuple[TreeNode, float]":
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
@@ -239,7 +238,7 @@ class TreeNode:
             if len(sub) == 0:
                 raise ValueError("Intermediate node must at least have one child")
             # split top-level commas
-            comma_pos: List[int] = []
+            comma_pos: list[int] = []
             level = 0
             for i, ch in enumerate(sub):
                 if ch == "(":
@@ -251,8 +250,8 @@ class TreeNode:
                         comma_pos.append(i)
                 if level < 0:
                     raise ValueError("Bracket closed before it was opened")
-            children: List[TreeNode] = []
-            distances: List[float] = []
+            children: list[TreeNode] = []
+            distances: list[float] = []
             if len(comma_pos) != 0:
                 start = 0
                 for pos in comma_pos:
@@ -272,10 +271,10 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: "TreeNode") -> Optional["TreeNode"]:
+    def lowest_common_ancestor(self, node: "TreeNode") -> "TreeNode | None":
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
-        lca: Optional["TreeNode"] = None
+        lca: "TreeNode | None" = None
         min_len = min(len(self_path), len(other_path))
         for i in range(1, min_len + 1):
             if self_path[-i] is other_path[-i]:
@@ -324,7 +323,7 @@ class TreeNode:
 
 # --- Helper functions ---
 
-def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]) -> None:
+def _get_leaves(node: TreeNode, leaf_list: list[TreeNode]) -> None:
     if node._index == -1:
         for child in node._children:
             _get_leaves(child, leaf_list)
@@ -342,9 +341,9 @@ def _get_leaf_count(node: TreeNode) -> int:
         return 1
 
 
-def _create_path_to_root(node: TreeNode) -> List[TreeNode]:
-    path: List[TreeNode] = []
-    current: Optional[TreeNode] = node
+def _create_path_to_root(node: TreeNode) -> list["TreeNode"]:
+    path: list["TreeNode"] = []
+    current: "TreeNode | None" = node
     while current is not None:
         path.append(current)
         current = current._parent
@@ -353,7 +352,7 @@ def _create_path_to_root(node: TreeNode) -> List[TreeNode]:
 
 class Tree:
     _root: TreeNode
-    _leaves: List[TreeNode]
+    _leaves: list["TreeNode"]
 
     def __init__(self, root: TreeNode) -> None:
         root.as_root()
@@ -377,7 +376,7 @@ class Tree:
         return self._root
 
     @property
-    def leaves(self) -> List[TreeNode]:
+    def leaves(self) -> list["TreeNode"]:
         return copy.copy(self._leaves)
 
     def __len__(self) -> int:
@@ -386,12 +385,12 @@ class Tree:
     def get_distance(self, index1: int, index2: int, topological: bool = False) -> float:
         return self._leaves[index1].distance_to(self._leaves[index2], topological)
 
-    def to_newick(self, labels: Optional[Iterable[str]] = None, include_distance: bool = True,
-                  round_distance: Optional[int] = None) -> str:
+    def to_newick(self, labels: list[str] | None = None, include_distance: bool = True,
+                  round_distance: int | None = None) -> str:
         return self._root.to_newick(labels, include_distance, round_distance) + ";"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None) -> "Tree":
+    def from_newick(newick: str, labels: list[str] | None = None) -> "Tree":
         s = newick.strip()
         if len(s) == 0:
             raise ValueError("Newick string is empty")
@@ -416,7 +415,7 @@ class Tree:
 MAX_FLOAT = np.finfo(np.float64).max
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> Tuple[int, int]:
+def _find_min_pair_triangular(mat: np.ndarray, mask: list[bool]) -> "tuple[int, int]":
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -459,13 +458,13 @@ def upgma(distances: np.ndarray) -> Tree:
     D = distances.astype(np.float64, copy=True)
 
     # nodes: current nodes (TreeNode)
-    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    nodes: list["TreeNode"] = [TreeNode(index=i) for i in range(n0)]
     # cluster sizes
-    cluster_size: List[int] = [1 for _ in range(n0)]
+    cluster_size: list[int] = [1 for _ in range(n0)]
     # node heights
-    node_heights: List[float] = [0.0 for _ in range(n0)]
+    node_heights: list[float] = [0.0 for _ in range(n0)]
     # track whether position is active
-    active: List[bool] = [True for _ in range(n0)]
+    active: list[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 1:
@@ -533,8 +532,8 @@ def neighbor_joining(distances: np.ndarray) -> Tree:
         raise ValueError("At least 3 nodes are required")
 
     D = distances.astype(np.float64, copy=True)
-    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    active: List[bool] = [True for _ in range(n0)]
+    nodes: list["TreeNode"] = [TreeNode(index=i) for i in range(n0)]
+    active: list[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 3:
@@ -600,8 +599,8 @@ def neighbor_joining(distances: np.ndarray) -> Tree:
 
     # final combine remaining nodes into a root
     # collect active nodes
-    final_nodes: List[TreeNode] = []
-    final_idx: List[int] = []
+    final_nodes: list["TreeNode"] = []
+    final_idx: list[int] = []
 
     for idx in range(D.shape[0]):
         if active[idx]:
