@@ -40,7 +40,14 @@ if not IS_CODON:
     from biotite.upgma import upgma
     from biotite.nj import neighbor_joining
 
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    data_dir = "fall25-csc-bioinf/week3/"
+
+    distances: np.ndarray[int,2] = pnp.loadtxt("/data/distances.txt", dtype=pnp.int64)
+    with open("/data/newick_upgma.txt", "r") as f:
+        newick_upgma = f.read().strip()
+
+    """
+            data_dir = os.path.join(os.path.dirname(__file__), "data")
     dist_path = os.path.join(data_dir, "distances.txt")
     newick_path = os.path.join(data_dir, "newick_upgma.txt")
 
@@ -48,7 +55,6 @@ if not IS_CODON:
     with open(newick_path, "r") as f:
         newick_upgma = f.read().strip()
 
-    """
         def loadtxt(path: str) -> np.ndarray:
         return pnp.loadtxt(path, dtype=pnp.float64)
     """
