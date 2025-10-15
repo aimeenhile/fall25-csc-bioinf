@@ -925,7 +925,7 @@ cdef class TreeNode:
                     if level == 0:
                         comma_pos.append(i)
                 if level < 0:
-                    raise Exceptionr(
+                    raise Exception(
                         "Bracket closed before it was opened"
                     )
         
