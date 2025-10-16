@@ -444,7 +444,10 @@ def upgma(distances):
 
     D = pnp.array(distances, dtype=pnp.float64)
 
-    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    #nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    nodes: List[TreeNode] = []
+    for i in range(n0):
+        nodes.append(TreeNode(index=i))
     cluster_size: List[int] = [1 for _ in range(n0)]
     node_heights: List[float] = [0.0 for _ in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
