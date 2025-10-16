@@ -79,7 +79,7 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: "TreeNode", distance: float) -> None:
+    def _set_parent(self, parent: TreeNode, distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
@@ -133,14 +133,14 @@ class TreeNode:
 
     def get_indices(self):
         leaves = self.get_leaves()
-        return np.array([leaf._index for leaf in leaves], dtype=np.int32)
+        return np.array([leaf._index for leaf in leaves], dtype=np.int64)
 
     def get_leaf_count(self):
         return _get_leaf_count(self)
 
-    def to_newick(self, labels: Optional[list[str]] = None,
+    def to_newick(self, labels: list[str] = None,
                   include_distance: bool = True,
-                  round_distance: Optional[int] = None):
+                  round_distance: int = None):
         if self.is_leaf():
             if labels is not None:
                 lbls = list(labels)
@@ -448,13 +448,13 @@ def upgma(distances: np.ndarray):
     D = distances.astype(np.float64, copy=True)
 
     # nodes: current nodes (TreeNode)
-    nodes: list[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    nodes: List[Optional[TreeNode]] = [TreeNode(index=i) for i in range(n0)]
     # cluster sizes
-    cluster_size: list[int] = [1 for _ in range(n0)]
+    cluster_size: List[int] = [1 for _ in range(n0)]
     # node heights
-    node_heights: list[float] = [0.0 for _ in range(n0)]
+    node_heights: List[float] = [0.0 for _ in range(n0)]
     # track whether position is active
-    active: list[bool] = [True for _ in range(n0)]
+    active: List[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 1:
