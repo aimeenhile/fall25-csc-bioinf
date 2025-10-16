@@ -473,7 +473,7 @@ def upgma(distances: np.ndarray):
         )
         node_heights[i_min] = height
         active[j_min] = False
-        nodes[j_min] = None
+        #nodes[j_min] = None
 
         remaining -= 1
 
@@ -561,12 +561,12 @@ def neighbor_joining(distances: np.ndarray):
         # update nodes and active array
         nodes[i_min] = new_node
         active[j_min] = False
-        nodes[j_min] = None  
+        #nodes[j_min] = None  
 
         remaining -= 1
 
-        # update distances for new cluster i_min
-        mask = [k for k in range(D.shape[0]) if active[k] and k != i_min]
+        # update distances for new cluster i_min 
+        mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
             D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
 
