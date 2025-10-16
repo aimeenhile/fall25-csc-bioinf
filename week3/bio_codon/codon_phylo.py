@@ -42,7 +42,7 @@ class TreeNode:
     _children: List[Optional[TreeNode]]
     _index: int
 
-    def __init__(self, children: List[Optional[TreeNode]] = [], distances: List[float] = None, index: int = None):
+    def __init__(self, children: List[Optional[TreeNode]] = None, distances: List[float] = None, index: int = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
@@ -50,36 +50,32 @@ class TreeNode:
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent = None
+        self._children = [] 
 
-        """
         if index is not None and index >= 0:
             # Leaf node
             self._index = index
-            self._children = []
-        else:
-            # Internal node
-            if children is None or distances is None or len(children) == 0 or len(children) != len(distances):
-                raise ValueError("Internal node requires children and distances of same nonzero length")
-            self._index = -1
-            self._children = [i for i in children]
-            for c, d in zip(children, distances):
-                c._set_parent(self, float(d))        
-        """
+            #self._children = []
+        elif children is not None and distances is not None:
+            if len(children) != len(distances):
+                raise ValueError("Children and distances must have same length")
+            self._children = [c for c in children]  # ensure type List[TreeNode]
+            for c, d in zip(self._children, distances):
+                if c is None:
+                    raise ValueError("Child cannot be None")
+                c._set_parent(self, float(d)) 
+        
     @staticmethod
     def leaf(index: int) -> TreeNode:
-        node = TreeNode()
-        node._index = index
+        node = TreeNode(index=index)
         return node
 
     @staticmethod
     def internal(children: List[Optional[TreeNode]], distances: List[float]) -> TreeNode:
         if len(children) != len(distances):
             raise ValueError("Children and distances must match in length")
-        node = TreeNode()
+        node = TreeNode(children=children, distances=distances)
         node._index = -1
-        node._children = [c for c in children] 
-        for c, d in zip(node._children, distances):
-            c._set_parent(node, float(d))
         return node
 
     def _set_parent(self, parent: TreeNode, distance: float) -> None:
