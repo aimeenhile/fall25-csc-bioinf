@@ -11,7 +11,8 @@ MAX_FLOAT = pnp.finfo(pnp.float64).max
 @extend
 class set:
     def __hash__(self):
-        MAX = int.MAX
+        #MAX = int.MAX
+        MAX = 2**63 - 1
         MASK = 2 * MAX + 1
         n = len(self)
         h = 1927868237 * (n + 1)
@@ -61,7 +62,7 @@ class TreeNode:
             if len(children) != len(distances):
                 raise ValueError("Number of children must match number of distances")
             self._children = [c for c in children]
-            for child, d in zip(children, distances):
+            for child, d in zip(self._children, distances):
                 child._set_parent(self, float(d))
 
     def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
@@ -394,7 +395,7 @@ class Tree:
         self._root: TreeNode = root
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
-        indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
+        indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.float64)
         self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
         for i in range(len(indices)):
             idx = int(indices[i])
@@ -488,7 +489,9 @@ def upgma(distances): # type: distances: pnp.ndarray
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
+    #D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
+    data = [[float(distances[i, j]) for j in range(n0)] for i in range(n0)]
+    D = pnp.array(data, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -623,14 +626,14 @@ def neighbor_joining(distances): # type: distances: pnp.ndarray
     if len(final_nodes) == 2:
         a, b = final_nodes
         ia, ib = final_idx
-        d = float(D[ia, ib])
+        d = D[ia, ib]
         root = TreeNode(children=[a, b], distances=[d/2.0, d/2.0])
     elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
-        da = 0.5 * (float(D[ia, ic]) + float(D[ia, ib]) - float(D[ib, ic]))
-        db = 0.5 * (float(D[ib, ia]) + float(D[ib, ic]) - float(D[ia, ic]))
-        dc = 0.5 * (float(D[ic, ia]) + float(D[ic, ib]) - float(D[ia, ib]))
+        da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
+        db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
+        dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
         root = TreeNode(children=[a, b, c], distances=[da, db, dc])
     else:
         raise RuntimeError("Neighbor-Joining failed")
