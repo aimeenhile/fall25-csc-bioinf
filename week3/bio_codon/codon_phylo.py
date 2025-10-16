@@ -561,8 +561,7 @@ def neighbor_joining(distances: np.ndarray):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    data = [[float(distances[i, j]) for j in range(n0)] for i in range(n0)]
-    D = pnp.array(data, dtype=pnp.float64)
+    D: np.ndarray[float, 2] = np.array(distances, dtype=np.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
