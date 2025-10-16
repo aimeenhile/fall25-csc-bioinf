@@ -11,8 +11,7 @@ distances: np.ndarray[int,2] = pnp.loadtxt("/data/distances.txt", dtype=pnp.int6
 with open("/data/newick_upgma.txt", "r") as f:
     newick_upgma = f.read().strip()
         
-
-
+"""
 orig_from_newick = TreeNode.from_newick
 
 @staticmethod
@@ -30,6 +29,9 @@ def safe_from_newick(newick: str) -> TreeNode:
     return orig_from_newick(newick_fixed)
 
 TreeNode.from_newick = safe_from_newic
+"""
+
+
 
 
 def compare_trees(tree1, tree2, tol=1e-3):
