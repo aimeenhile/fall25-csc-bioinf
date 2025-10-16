@@ -61,18 +61,17 @@ class TreeNode:
             self._parent = None
         else:
             # Internal node
-            if children is None:
-                children = []
+            if children is None or len(children) == 0:
+                self._children = []
+                self._distance = 0.0
             if distances is None:
-                distances = []
+                distances = [0.0 for _ in children]
             if len(children) != len(distances):
                 raise ValueError("Children and distances must be same length")
             if len(children) == 0:
                 raise ValueError("Internal node must have at least one child")
             self._children = children
             self._distance = 0.0
-            self._parent = None
-            self._index = -1
             for child, d in zip(self._children, distances):
                 child._set_parent(self, float(d))
         self._is_root = False
@@ -483,10 +482,7 @@ def upgma(distances):
 
         # --- Merge nodes ---
         print(f"Merging nodes {i_min} and {j_min} with distance {dist_min}")
-        new_node = TreeNode(
-            children=[child_i, child_j],
-            distances=[h_i, h_j]
-        )
+        new_node = TreeNode(children=[child_i, child_j], distances=[h_i, h_j])
 
         nodes[i_min] = new_node
         node_heights[i_min] = height
@@ -498,7 +494,7 @@ def upgma(distances):
         for k in range(n0):
             if k == i_min or not active[k]:
                 continue
-            D[i_min, k] = (D[i_min, k] * cluster_size[i_min] + D[j_min, k] * cluster_size[j_min]) / (cluster_size[i_min] + cluster_size[j_min])
+            D[i_min, k] = float((D[i_min, k] * cluster_size[i_min] + D[j_min, k] * cluster_size[j_min]) / (cluster_size[i_min] + cluster_size[j_min]))
             D[k, i_min] = D[i_min, k]
 
         # update cluster size
@@ -590,8 +586,8 @@ def neighbor_joining(distances):
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
-            D[i_min, k] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
-            D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
+            D[i_min, k] = float(0.5 * (D[i_min, k] + D[j_min, k] - dist_ij))
+            D[k, i_min] = D[i_min, k]
 
     # final combine remaining nodes into a root
     # collect active nodes
