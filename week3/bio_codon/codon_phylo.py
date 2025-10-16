@@ -117,10 +117,8 @@ class TreeNode:
         if self.is_leaf():
             return TreeNode(index=self._index)
         else:
-            distances = [child.distance for child in self._children]
-            children_clones = [child.copy() for child in self._children]
-            # distances might contain None if parent's distance missing; ensure floats
-            distances_f = [float(d) if d is not None else 0.0 for d in distances]
+            children_clones = [child.copy() for child in self._children if child is not None]
+            distances_f = [float(child.distance) if child is not None else 0.0 for child in self._children]
             return TreeNode(children_clones, distances_f)
 
     def get_leaves(self):
