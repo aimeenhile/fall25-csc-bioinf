@@ -459,7 +459,7 @@ def _find_min_pair_triangular(mat, mask: list[bool]):
 
 # --- UPGMA ---
 
-def upgma(distances: pnp.ndarray): 
+def upgma(distances): 
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -534,7 +534,7 @@ def upgma(distances: pnp.ndarray):
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances: pnp.ndarray): 
+def neighbor_joining(distances): 
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
