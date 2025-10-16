@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple, Optional
+from typing import List, Optional
 import math
 import copy
 from python import numpy as pnp
@@ -159,7 +159,7 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[list[str]] = None):
+    def from_newick(newick: str, labels: List[str] = None):
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
@@ -231,8 +231,8 @@ class TreeNode:
                         comma_pos.append(i)
                 if level < 0:
                     raise ValueError("Bracket closed before it was opened")
-            children: list["TreeNode"] = []
-            distances: list[float] = []
+            children: List[TreeNode] = []
+            distances: List[float] = []
             if len(comma_pos) != 0:
                 start = 0
                 for pos in comma_pos:
@@ -264,7 +264,7 @@ class TreeNode:
                 break
         return lca
 
-    def distance_to(self, node: "TreeNode", topological: bool = False) -> float:
+    def distance_to(self, node: TreeNode, topological: bool = False) -> float:
         lca = self.lowest_common_ancestor(node)
         if lca is None:
             raise TreeError("The nodes do not have a common ancestor")
@@ -288,7 +288,7 @@ class TreeNode:
     def __eq__(self, other: object):
         if not isinstance(other, TreeNode):
             return False
-        node: "TreeNode" = other
+        node: TreeNode = other
         if self._distance != node._distance:
             return False
         if self._index != -1:
@@ -364,12 +364,12 @@ class Tree:
     def get_distance(self, index1: int, index2: int, topological: bool = False):
         return self._leaves[index1].distance_to(self._leaves[index2], topological)
 
-    def to_newick(self, labels: Optional[list[str]] = None, include_distance: bool = True,
-                  round_distance: Optional[int] = None):
+    def to_newick(self, labels: List[str] = None, include_distance: bool = True,
+                  round_distance: int = None):
         return self._root.to_newick(labels, include_distance, round_distance) + ";"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[list[str]] = None):
+    def from_newick(newick: str, labels: List[str] = None):
         s = newick.strip()
         if len(s) == 0:
             raise ValueError("Newick string is empty")
