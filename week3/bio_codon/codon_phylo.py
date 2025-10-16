@@ -50,25 +50,32 @@ class TreeNode:
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent: Optional[TreeNode] = None
-        self._children: List[TreeNode] = children if children is not None else []
+        self._children: List[TreeNode] = []
         self._index: int = -1
 
         if index is not None:
             # Leaf node
             self._index = int(index)
-            if children is not None or distances is not None:
-                raise TypeError("Leaf node cannot have children or distances")
+            self._children = []
+            self._distance = 0.0
+            self._parent = None
         else:
             # Internal node
-            if children is None or distances is None:
-                raise TypeError("Internal node requires children and distances")
+            if children is None:
+                children = []
+            if distances is None:
+                distances = []
+            if len(children) != len(distances):
+                raise ValueError("Children and distances must be same length")
             if len(children) == 0:
                 raise ValueError("Internal node must have at least one child")
-            if len(children) != len(distances):
-                raise ValueError("Number of children must match number of distances")
-            self._children = [c for c in children]
+            self._children = children
+            self._distance = 0.0
+            self._parent = None
+            self._index = -1
             for child, d in zip(self._children, distances):
                 child._set_parent(self, float(d))
+        self._is_root = False
 
     def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
         if self._parent is not None or self._is_root:
@@ -173,7 +180,7 @@ class TreeNode:
                 return f"({joined_children})"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None):
+    def from_newick(newick: str, labels: Optional[List[str]] = None) -> TreeNode:
         # remove whitespace
         s = "".join(newick.split())
         if len(newick) == 0:
@@ -218,7 +225,7 @@ class TreeNode:
                             end += 1
                         dist_val = float(s[j:end])
                         i = end - 1
-                    node = TreeNode(parent_children, parent_distances)
+                    node = TreeNode(children=parent_children, distances=parent_distances)
                     distances.append(dist_val)
                     children.append(node)
             i += 1
@@ -233,7 +240,14 @@ class TreeNode:
 
         if len(children) != 1:
             raise ValueError("Malformed Newick string")
-        return children[0], distances[0] if distances else 0.0
+        
+        # final root node
+        root = children[0]
+        # assign final distance to root (0 if none)
+        if distances:
+            root._distance = distances[0]
+            
+        return root
 
     @staticmethod
     def _parse_leaf(s: str, labels: Optional[List[str]]):
