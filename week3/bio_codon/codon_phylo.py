@@ -2,7 +2,6 @@ import numpy as np
 from typing import List, Tuple, Optional
 import math
 import copy
-import numpy as np
 from python import numpy as pnp
 
 
@@ -444,7 +443,7 @@ def upgma(distances: np.ndarray):
     """
     if distances.shape[0] != distances.shape[1] or not pnp.allclose(distances.T, distances):
         raise ValueError("Distance matrix must be symmetric")
-    if np.isnan(distances).any():
+    if pnp.isnan(distances).any():
         raise ValueError("Distance matrix contains NaN values")
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
@@ -518,9 +517,9 @@ def neighbor_joining(distances: np.ndarray):
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
     """
-    if distances.shape[0] != distances.shape[1] or not np.allclose(distances.T, distances):
+    if distances.shape[0] != distances.shape[1] or not pnp.allclose(distances.T, distances):
         raise ValueError("Distance matrix must be symmetric")
-    if np.isnan(distances).any():
+    if pnp.isnan(distances).any():
         raise ValueError("Distance matrix contains NaN values")
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
