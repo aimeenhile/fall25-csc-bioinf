@@ -42,7 +42,7 @@ class TreeNode:
         """
         self._is_root: bool = False
         self._distance: float = 0.0
-        self._parent: TreeNode = None
+        self._parent: Optional[TreeNode] = None
         self._children: List[TreeNode] = []
         self._index: int = -1
 
@@ -79,7 +79,7 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: TreeNode, distance: float) -> None:
+    def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
