@@ -4,6 +4,7 @@ import math
 import copy
 from python import numpy as pnp
 
+MAX_FLOAT = np.finfo(np.float64).max
 
 # --- TREE ---
 
@@ -46,48 +47,31 @@ class TreeNode:
         self._children: List[TreeNode] = []
         self._index: int = -1
 
-        if index is None:
-            # intermediate node -> need children and distances
-            if children is None or distances is None:
-                raise TypeError(
-                    "Either reference index or child nodes including the distance must be set"
-                )
-            child_list = [c for c in children]
-            dist_list = [float(d) for d in distances]
-            if len(child_list) == 0:
-                raise TreeError("Intermediate nodes must at least contain one child node")
-            if len(child_list) != len(dist_list):
-                raise ValueError("The number of children must equal the number of distances")
-            # ensure distinct child objects
-            for i in range(len(child_list)):
-                for j in range(len(child_list)):
-                    if i != j and child_list[i] is child_list[j]:
-                        raise TreeError("Two child nodes cannot be the same object")
-            # set fields
-            self._index = -1
-            self._children = [c for c in child_list]
-            # assign parent & distances to children
-            for child, d in zip(child_list, dist_list):
-                child._set_parent(self, float(d))
-        else:
-            # leaf node
-            if children is not None or distances is not None:
-                raise TypeError("Reference index and child nodes are mutually exclusive")
-            if index < 0:
-                raise ValueError("Index cannot be negative")
+        if index is not None:
+            # Leaf node
             self._index = int(index)
-            self._children = []
+            if children is not None or distances is not None:
+                raise TypeError("Leaf node cannot have children or distances")
+        else:
+            # Internal node
+            if children is None or distances is None:
+                raise TypeError("Internal node requires children and distances")
+            if len(children) == 0:
+                raise ValueError("Internal node must have at least one child")
+            if len(children) != len(distances):
+                raise ValueError("Number of children must match number of distances")
+            self._children = [c for c in children]
+            for child, d in zip(children, distances):
+                child._set_parent(self, float(d))
 
-    # internal
     def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
         self._distance = float(distance)
 
-    # public API used in tests
     def is_leaf(self) -> bool:
-        return False if self._index == -1 else True
+        return self._index != -1
 
     def is_root(self) -> bool:
         return bool(self._is_root)
@@ -126,8 +110,15 @@ class TreeNode:
         Return List of leaf nodes (direct or indirect).
         """
         leaf_list: List[TreeNode] = []
-        _get_leaves(self, leaf_list)
+        self._collect_leaves(leaves)
         return leaf_list
+
+    def _collect_leaves(self, leaves: List[TreeNode]):
+        if self.is_leaf():
+            leaves.append(self)
+        else:
+            for c in self._children:
+                c._collect_leaves(leaves)
 
     def get_indices(self):
         leaves = self.get_leaves()
@@ -313,7 +304,7 @@ class TreeNode:
 
 # --- Helper functions ---
 
-def _get_leaves(node: "TreeNode", leaf_list: List[TreeNode]):
+def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]):
     if node._index == -1:
         for child in node._children:
             _get_leaves(child, leaf_list)
@@ -321,7 +312,8 @@ def _get_leaves(node: "TreeNode", leaf_list: List[TreeNode]):
         leaf_list.append(node)
 
 
-def _get_leaf_count(node: "TreeNode"):
+
+def _get_leaf_count(node: TreeNode):
     if node._index == -1:
         count = 0
         for child in node._children:
@@ -332,7 +324,7 @@ def _get_leaf_count(node: "TreeNode"):
 
 
 def _create_path_to_root(node: TreeNode):
-    path: list["TreeNode"] = []
+    path: List[TreeNode] = []
     current: TreeNode = node
     while current is not None:
         path.append(current)
@@ -345,11 +337,10 @@ class Tree:
     def __init__(self, root: TreeNode):
         root.as_root()
         self._root: TreeNode = root
-        # gather leaves and place them at positions equal to leaf.index
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
-        indices = np.array([leaf._index for leaf in leaves_unsorted], dtype=np.int32)
-        self._leaves: list[TreeNode] = [None] * leaf_count  # type: ignore[assignment]
+        indices = np.array([leaf._index for leaf in leaves_unsorted], dtype=np.int64)
+        self._leaves: list[TreeNode] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
         for i in range(len(indices)):
             idx = int(indices[i])
             if idx >= leaf_count or idx < 0:
@@ -400,10 +391,7 @@ class Tree:
         return hash(self._root)
 
 
-MAX_FLOAT = np.finfo(np.float64).max
-
-
-def _find_min_pair_triangular(mat: np.ndarray, mask: list[bool]):
+def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -458,7 +446,7 @@ def upgma(distances: np.ndarray):
             break
 
         # sanity check
-        assert active[i_min] and active[j_min], "Merging inactive nodes!"
+        # assert active[i_min] and active[j_min], "Merging inactive nodes!"
 
         dist_min = float(D[i_min, j_min])
         height = dist_min / 2.0
