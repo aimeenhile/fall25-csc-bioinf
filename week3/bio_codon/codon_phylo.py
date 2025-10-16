@@ -263,10 +263,10 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: "TreeNode"):
+    def lowest_common_ancestor(self, node: TreeNode):
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
-        lca: Optional["TreeNode"] = None
+        lca: TreeNode = None
         min_len = min(len(self_path), len(other_path))
         for i in range(1, min_len + 1):
             if self_path[-i] is other_path[-i]:
@@ -333,9 +333,9 @@ def _get_leaf_count(node: "TreeNode"):
         return 1
 
 
-def _create_path_to_root(node: "TreeNode"):
+def _create_path_to_root(node: TreeNode):
     path: list["TreeNode"] = []
-    current: Optional["TreeNode"] = node
+    current: TreeNode = node
     while current is not None:
         path.append(current)
         current = current._parent
@@ -448,7 +448,7 @@ def upgma(distances: np.ndarray):
     D = distances.astype(np.float64, copy=True)
 
     # nodes: current nodes (TreeNode)
-    nodes: List[Optional[TreeNode]] = [TreeNode(index=i) for i in range(n0)]
+    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     # cluster sizes
     cluster_size: List[int] = [1 for _ in range(n0)]
     # node heights
@@ -473,7 +473,7 @@ def upgma(distances: np.ndarray):
         child_dist_j = float(height - node_heights[j_min])
         nodes[i_min] = TreeNode(children=[child_i, child_j], distances=[child_dist_i, child_dist_j])
         node_heights[i_min] = height
-        nodes[j_min] = None  
+        # nodes[j_min] = None  
         active[j_min] = False
 
         # update distances: arithmetic mean weighted by cluster sizes
