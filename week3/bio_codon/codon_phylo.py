@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import math
 import copy
 from python import numpy as pnp
 
-MAX_FLOAT = pnp.finfo(pnp.float64).max
+MAX_FLOAT = pnp.info(pnp.float64).max
 
 
 # --- TREE ---
@@ -100,14 +100,14 @@ class TreeNode:
 
     def copy(self, visited=None):
         if visited is None:
-            visited = set()
+            visited: list[TreeNode] = []
         if self in visited:
             raise TreeError("Cycle detected in tree")
-        visited.add(self)
+        visited.append(self)
         if self.is_leaf():
             return TreeNode(index=self._index)
-        children_clones = [child.copy(visited) for child in self._children]
-        distances_f = [float(child.distance) for child in self._children]
+        children_clones: list[TreeNode] = [child.copy(visited) for child in self._children]
+        distances_f: list[float] = [float(child.distance) for child in self._children]
         return TreeNode(children_clones, distances_f)
 
     def get_leaves(self):
@@ -310,8 +310,6 @@ class TreeNode:
             return TreeNode(children, distances), distance
         """
 
-
-
     def lowest_common_ancestor(self, node: TreeNode):
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
@@ -384,9 +382,9 @@ class Tree:
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
         indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
-        self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
+        self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  
         for i in range(len(indices)):
-            idx = indices[i].item()
+            idx: int = int(indices[i])
             if idx >= leaf_count or idx < 0:
                 raise TreeError("The tree's indices are out of range")
             self._leaves[idx] = leaves_unsorted[i]
@@ -426,23 +424,15 @@ class Tree:
     def __str__(self):
         return self.to_newick()
 
-    def __eq__(self, other: object):
-        if not isinstance(other, Tree):
-            return False
-        return self._root == other._root
 
-    def __hash__(self):
-        return hash(self._root)
-
-
-def _find_min_pair_triangular(mat, mask: list[bool]): 
+def _find_min_pair_triangular(mat, mask: list[bool]) -> Tuple[int, int]: 
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
-    dist_min = float(MAX_FLOAT)
-    i_min = -1
-    j_min = -1
-    n = mat.shape[0]
+    dist_min: float = MAX_FLOAT
+    i_min: int = -1
+    j_min: int = -1
+    n: int = mat.shape[0]
     for i in range(n):
         if not mask[i]:
             continue
@@ -471,7 +461,7 @@ def upgma(distances):
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
 
-    n0 = distances.shape[0]
+    n0: int = distances.shape[0]
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
@@ -481,7 +471,7 @@ def upgma(distances):
     cluster_size: List[int] = [1 for _ in range(n0)]
     node_heights: List[float] = [0.0 for _ in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
-    remaining = n0
+    remaining: int = n0
 
     while remaining > 1:
         # find min pair
@@ -489,14 +479,11 @@ def upgma(distances):
         if i_min == -1 or j_min == -1:
             break
 
-        # sanity check
-        # assert active[i_min] and active[j_min], "Merging inactive nodes!"
+        dist_min: float = D[i_min, j_min]
+        height: float = dist_min / 2.0
 
-        dist_min = D[i_min, j_min]
-        height = dist_min / 2.0
-
-        child_i = nodes[i_min].copy()
-        child_j = nodes[j_min].copy()
+        child_i = nodes[i_min]
+        child_j = nodes[j_min]
 
         nodes[i_min] = TreeNode(
         children=[child_i, child_j],
@@ -505,7 +492,6 @@ def upgma(distances):
         )
         node_heights[i_min] = height
         active[j_min] = False
-        #nodes[j_min] = None
 
         remaining -= 1
 
@@ -544,7 +530,7 @@ def neighbor_joining(distances):
     if (distances < 0).any():
         raise ValueError("Distances must be positive")
 
-    n0 = distances.shape[0]
+    n0: int = distances.shape[0]
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
@@ -552,7 +538,7 @@ def neighbor_joining(distances):
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
-    remaining = n0
+    remaining: int = n0
 
     while remaining > 3:
         # total distances per row 
@@ -562,7 +548,7 @@ def neighbor_joining(distances):
                 total[i] = sum((D[i, j]) for j in range(D.shape[0]) if active[j])
 
         # compute Q-matrix 
-        Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
+        Q = pnp.full(D.shape, MAX_FLOAT, dtype=pnp.float64)
         for i in range(D.shape[0]):
             if not active[i]:
                 continue
@@ -578,22 +564,21 @@ def neighbor_joining(distances):
             break
 
         dist_ij = D[i_min, j_min]
-        delta = 0.0
+        delta: float = 0.0
         if remaining > 2:
             delta = (total[i_min] - total[j_min]) / (remaining - 2)
-        limb_i = 0.5 * (dist_ij + delta)
-        limb_j = 0.5 * (dist_ij - delta)
+        limb_i: float = 0.5 * (dist_ij + delta)
+        limb_j: float = 0.5 * (dist_ij - delta)
 
-        child_i = nodes[i_min].copy()
-        child_j = nodes[j_min].copy()
+        child_i = nodes[i_min]
+        child_j = nodes[j_min]
 
         # create new node 
-        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
+        new_node = TreeNode(children=[child_i, child_j], distances=[limb_i, limb_j])
 
         # update nodes and active array
         nodes[i_min] = new_node
         active[j_min] = False
-        #nodes[j_min] = None  
 
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
