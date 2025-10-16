@@ -43,8 +43,8 @@ class TreeNode:
         _index: int
         _distance: float
         _is_root: bool
-        _parent: Optional["TreeNode"]
-        _children: list["TreeNode"]
+        _parent: Optional[TreeNode]
+        _children: list[TreeNode]
 
         self._is_root = False
         self._distance = 0.0
@@ -85,7 +85,7 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: "TreeNode", distance: float):
+    def _set_parent(self, parent: TreeNode, distance: float):
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
@@ -176,7 +176,7 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None):
+    def from_newick(newick: str, labels: Optional[list[str]] = None):
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
