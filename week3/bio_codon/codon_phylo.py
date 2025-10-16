@@ -453,7 +453,7 @@ def upgma(distances):
     D = pnp.array(distances, dtype=pnp.float64)
 
     #nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    nodes: List[TreeNode] = []
+    nodes: List[Optional[TreeNode]] = []
     for i in range(n0):
         nodes.append(TreeNode.leaf(i))
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -535,7 +535,7 @@ def neighbor_joining(distances):
     D = pnp.array(distances, dtype=pnp.float64)
 
     #nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    nodes: List[TreeNode] = []
+    nodes: List[Optional[TreeNode]] = []
     for i in range(n0):
         nodes.append(TreeNode.leaf(i))
     active: List[bool] = [True for _ in range(n0)]
