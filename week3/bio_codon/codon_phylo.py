@@ -3,7 +3,7 @@ import math
 import copy
 from python import numpy as pnp
 
-MAX_FLOAT = pnp.info(pnp.float64).max
+MAX_FLOAT: float = 1.7976931348623157e+308 
 
 
 # --- TREE ---
