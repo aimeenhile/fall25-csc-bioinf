@@ -42,12 +42,17 @@ class TreeNode:
     _children:List[TreeNode]
     _index: int
 
-    def __init__(self, children: List[TreeNode] = [], distances: List[float] = None, index: int = None):
+    def __init__(self, children: Optional[List["TreeNode"]] = None, distances: List[float] = None, index: int = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
-        self._children = []
+        if children is None:
+            self._children = []
+        else:
+            # Copy to ensure correct Codon typing
+            self._children = [c for c in children]
+
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent = None
@@ -83,11 +88,11 @@ class TreeNode:
             c._set_parent(node, float(d))
         return node
 
-    def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
+    def _set_parent(self, parent: TreeNode, distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
-        self._distance = float(distance)
+        self._distance = distance
 
     def is_leaf(self) -> bool:
         return self._index != -1
