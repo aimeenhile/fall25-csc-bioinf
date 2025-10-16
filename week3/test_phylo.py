@@ -12,7 +12,7 @@ data_dir = os.path.join(os.path.dirname(__file__), "data")
 dist_path = os.path.join(data_dir, "distances.txt")
 newick_path = os.path.join(data_dir, "newick_upgma.txt")
 
-distances = pnp.loadtxt(dist_path, dtype=pnp.int64)
+distances = np.loadtxt(dist_path, dtype=np.int64)
 with open(newick_path, "r") as f:
     newick_upgma = f.read().strip()
 
