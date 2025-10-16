@@ -31,9 +31,6 @@ def safe_from_newick(newick: str) -> TreeNode:
 TreeNode.from_newick = safe_from_newic
 """
 
-
-
-
 def compare_trees(tree1, tree2, tol=1e-3):
     #return tree1 == tree2 or abs(tree1.get_distance(0, 1) - tree2.get_distance(0, 1)) < tol
     n = len(tree1.leaves)

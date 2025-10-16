@@ -98,12 +98,13 @@ class TreeNode:
     def distance(self):
         return None if self._parent is None else self._distance
 
+    visited = set()
     def copy(self, visited=None):
         if visited is None:
-            visited: list[TreeNode] = []
-        if self in visited:
+            visited = set()
+        if id(self) in visited:
             raise TreeError("Cycle detected in tree")
-        visited.append(self)
+        visited.add(id(self))
         if self.is_leaf():
             return TreeNode(index=self._index)
         children_clones: list[TreeNode] = [child.copy(visited) for child in self._children]
@@ -169,7 +170,81 @@ class TreeNode:
         s = "".join(newick.split())
         if len(newick) == 0:
             raise ValueError("Newick string is empty")
+        if s.endswith(";"):
+            s = s[:-1]
 
+        stack: List[Tuple[List[TreeNode], List[float]]] = []
+        children: List[TreeNode] = []
+        distances: List[float] = []
+        i = 0
+        start = 0
+        while i < len(s):
+            c = s[i]
+            if c == "(":
+                # start new subtree
+                stack.append((children, distances))
+                children = []
+                distances = []
+                start = i + 1
+            elif c == "," or c == ")":
+                # parse node between start:i
+                if start < i:
+                    node_str = s[start:i]
+                    if node_str != "":
+                        node, dist = TreeNode._parse_leaf(node_str, labels)
+                        children.append(node)
+                        distances.append(dist)
+                start = i + 1
+                if c == ")":
+                    # finish current subtree
+                    parent_children = children
+                    parent_distances = distances
+                    children, distances = stack.pop()
+                    # parse distance after ')' if any
+                    j = i + 1
+                    dist_val = 0.0
+                    if j < len(s) and s[j] == ":":
+                        j += 1
+                        end = j
+                        while end < len(s) and (s[end].isdigit() or s[end] in ".eE-"):
+                            end += 1
+                        dist_val = float(s[j:end])
+                        i = end - 1
+                    node = TreeNode(parent_children, parent_distances)
+                    distances.append(dist_val)
+                    children.append(node)
+            i += 1
+
+        # handle final leaf if any
+        if start < len(s):
+            node_str = s[start:]
+            if node_str != "":
+                node, dist = TreeNode._parse_leaf(node_str, labels)
+                children.append(node)
+                distances.append(dist)
+
+        if len(children) != 1:
+            raise ValueError("Malformed Newick string")
+        return children[0], distances[0] if distances else 0.0
+
+    @staticmethod
+    def _parse_leaf(s: str, labels: Optional[List[str]]):
+        if ":" in s:
+            label, dist_s = s.split(":")
+            dist = float(dist_s)
+        else:
+            label = s
+            dist = 0.0
+        if labels is None:
+            try:
+                idx = int(label)
+            except:
+                idx = int(float(label))
+        else:
+            idx = labels.index(label)
+        return TreeNode(index=idx), dist
+
+        """
         if s[0] != "(":
             # Leaf node
             if ":" in s:
@@ -220,6 +295,9 @@ class TreeNode:
             distance = 0.0
 
         return TreeNode(children=children, distances=distances), distance
+        """
+
+
 
         """
         substart = -1
