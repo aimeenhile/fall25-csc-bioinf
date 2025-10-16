@@ -1,11 +1,11 @@
 #import numpy as np
-from typing import List, Optional, TypeAlias
+from typing import List, Optional
 import math
 import copy
 from python import numpy as pnp
 
 MAX_FLOAT = pnp.finfo(pnp.float64).max
-FloatMatrix2D: TypeAlias = pnp.ndarray[float, 2]
+FloatMatrix2D = pnp.ndarray[float, 2]
 
 # --- TREE ---
 
@@ -448,11 +448,10 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: FloatMatrix2D, mask: List[bool]) -> tuple[int, int]:
+def _find_min_pair_triangular(mat: FloatMatrix2D, mask: List[bool]) -> tuple[int, int]: # mat: pnp.ndarray[float,2]
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
-    # mat: pnp.ndarray[float,2]
 
     dist_min = float(MAX_FLOAT)
     i_min = -1
