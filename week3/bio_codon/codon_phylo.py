@@ -205,10 +205,11 @@ class TreeNode:
                 # parse node between start:i
                 if start < i:
                     node_str = s[start:i]
-                    node, dist = TreeNode._parse_leaf(node_str, labels)
-                    children.append(node)
-                    distances.append(dist)
-                    start = i + 1
+                    if node_str != "":
+                        node, dist = TreeNode._parse_leaf(node_str, labels)
+                        children.append(node)
+                        distances.append(dist)
+                start = i + 1
                 if c == ")":
                     # finish current subtree
                     parent_children = children
@@ -232,8 +233,8 @@ class TreeNode:
 
                     # create internal node, children/distances must be lists
                     node = TreeNode(
-                        children=parent_children if parent_children else [],
-                        distances=parent_distances if parent_distances else []
+                        children=parent_children,
+                        distances=parent_distances
                     )
                     children.append(node)
                     distances.append(dist_val)
