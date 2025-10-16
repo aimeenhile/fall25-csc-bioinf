@@ -49,17 +49,8 @@ def main():
 
     start_time = time.time()
 
-    try:
-        test_upgma()
-        print("✅ UPGMA passed")
-    except Exception as e:
-        print("❌ UPGMA failed:", e)
-
-    try:
-        test_neighbor_joining()
-        print("✅ Neighbor Joining passed")
-    except Exception as e:
-        print("❌ Neighbor Joining failed:", e)
+    test_upgma()
+    test_neighbor_joining()
 
     py_runtime = int((time.time() - start_time) * 1000)
 
