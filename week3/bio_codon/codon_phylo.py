@@ -3,6 +3,7 @@ from typing import List, Tuple, Optional
 import math
 import copy
 import numpy as np
+from python import numpy as pnp
 
 
 # --- TREE ---
@@ -46,10 +47,11 @@ class TreeNode:
         _parent: Optional[TreeNode]
         _children: list[TreeNode]
 
-        self._is_root = False
-        self._distance = 0.0
-        self._parent = None
-        self._children = [] 
+        self._is_root: bool = False
+        self._distance float = 0.0
+        self._parent: Optional[TreeNode] = None
+        self._children: list[TreeNode] = [] 
+        self._index: int = -1
 
         if index is None:
             # intermediate node -> need children and distances
@@ -440,7 +442,7 @@ def upgma(distances: np.ndarray):
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
     """
-    if distances.shape[0] != distances.shape[1] or not np.allclose(distances.T, distances):
+    if distances.shape[0] != distances.shape[1] or not pnp.allclose(distances.T, distances):
         raise ValueError("Distance matrix must be symmetric")
     if np.isnan(distances).any():
         raise ValueError("Distance matrix contains NaN values")
