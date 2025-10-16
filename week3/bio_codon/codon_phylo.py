@@ -53,31 +53,18 @@ class TreeNode:
         self._children: List[TreeNode] = []
         self._index: int = -1
 
-    # Leaf constructor
-    @staticmethod
-    def leaf(index: int) -> TreeNode:
-        node = TreeNode.__new__(TreeNode)
-        node._index = index
-        node._children = []
-        node._parent = None
-        node._distance = 0.0
-        node._is_root = False
-        return node
-
-    # Internal node constructor
-    @staticmethod
-    def internal(children: List[TreeNode], distances: List[float]) -> TreeNode:
-        if len(children) != len(distances):
-            raise ValueError("Children and distances must have same length")
-        node = TreeNode.__new__(TreeNode)
-        node._index = -1
-        node._children = children
-        node._parent = None
-        node._distance = 0.0
-        node._is_root = False
-        for c, d in zip(children, distances):
-            c._set_parent(node, float(d))
-        return node
+        if index >= 0:
+            # Leaf node
+            self._index = index
+            self._children = []
+        else:
+            # Internal node
+            if children is None or distances is None or len(children) == 0 or len(children) != len(distances):
+                raise ValueError("Internal node requires children and distances of same nonzero length")
+            self._index = -1
+            self._children = children
+            for c, d in zip(children, distances):
+                c._set_parent(self, float(d))
 
     def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
         if self._parent is not None or self._is_root:
@@ -458,7 +445,7 @@ def upgma(distances):
 
     D = pnp.array(distances, dtype=pnp.float64)
 
-    nodes: List[TreeNode] = [TreeNode.leaf(i) for i in range(n0)]
+    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
     node_heights: List[float] = [0.0 for _ in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
@@ -485,7 +472,7 @@ def upgma(distances):
 
         # --- Merge nodes ---
         print(f"Merging nodes {i_min} and {j_min} with distance {dist_min}")
-        new_node = TreeNode.internal([child_i, child_j], [h_i, h_j])
+        new_node = TreeNode(children=[child_i, child_j], distances=[h_i, h_j])
 
         nodes[i_min] = new_node
         node_heights[i_min] = height
@@ -512,7 +499,7 @@ def upgma(distances):
 
     # If the root is a leaf (only 1 leaf in tree), wrap in a dummy root
     if root_node.is_leaf():
-        root_node = TreeNode.internal([root_node], [0.0])
+        root_node = TreeNode(children=[root_node], distances=[0.0])
 
     return Tree(root_node)
 
@@ -537,7 +524,7 @@ def neighbor_joining(distances):
 
     D = pnp.array(distances, dtype=pnp.float64)
 
-    nodes: List[TreeNode] = [TreeNode.leaf(i) for i in range(n0)]
+    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
     remaining: int = n0
 
@@ -580,7 +567,7 @@ def neighbor_joining(distances):
 
         # create new node 
         print(f"Merging nodes {i_min} and {j_min} with distance {dist_ij}")
-        new_node = TreeNode.internal([child_i, child_j], [float(limb_i), float(limb_j)])
+        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
         nodes[i_min] = new_node
         active[j_min] = False
 
@@ -604,14 +591,14 @@ def neighbor_joining(distances):
         a, b = final_nodes
         ia, ib = final_idx
         d = D[ia, ib]
-        root = TreeNode.internal([a, b], [float(max(d/2.0, 0.0)), float(max(d/2.0, 0.0))])
+        root = TreeNode(children=[a, b], distances=[float(max(d/2.0, 0.0)), float(max(d/2.0, 0.0))])
     elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
         da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
-        root = TreeNode.internal([a, b, c], [float(max(da, 0.0)), float(max(db, 0.0)), float(max(dc, 0.0))])
+        root = TreeNode(children=[a, b, c], distances=[float(max(da, 0.0)), float(max(db, 0.0)), float(max(dc, 0.0))])
     else:
         raise RuntimeError("Neighbor-Joining failed")
 
