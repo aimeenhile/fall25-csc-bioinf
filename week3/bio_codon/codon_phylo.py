@@ -63,16 +63,14 @@ class TreeNode:
             # Internal node
             if children is None or len(children) == 0:
                 self._children = []
-                self._distance = 0.0
             if distances is None:
                 distances = [0.0 for _ in children]
             if len(children) != len(distances):
                 raise ValueError("Children and distances must be same length")
-            if len(children) == 0:
-                raise ValueError("Internal node must have at least one child")
             self._children = children
-            self._distance = 0.0
             for child, d in zip(self._children, distances):
+                if child is None:
+                    raise ValueError("Child cannot be None")
                 child._set_parent(self, float(d))
         self._is_root = False
 
