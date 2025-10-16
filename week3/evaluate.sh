@@ -33,5 +33,4 @@ python3 test_phylo.py
 echo "============================="
 echo "🧬 Running Codon tests"
 echo "============================="
-export IS_CODON=true
 codon run -release bio_codon/test_phylo_codon.py

@@ -3,7 +3,7 @@ import numpy as np
 from python import numpy as pnp
 import numpy.pybridge
 
-from . import Tree, TreeNode, upgma, neighbor_joining
+from codon_phylo import Tree, TreeNode, upgma, neighbor_joining
 
 data_dir = "fall25-csc-bioinf/week3/"
 
