@@ -15,6 +15,9 @@ Estimated time: 12h
 - Modify the codon code, add typehints
 
 ## 4. Modify CI and evaluate.sh file 
+### CI
 - Add system dependencies so that CPython files are compiled 
 - Add Python dependencies so that the source files are compiled and run correctly
+### evaluate.sh
+- Compile Cython files inside evaluate.sh and save the build files into the working directory
 

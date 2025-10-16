@@ -446,7 +446,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat, mask: List[bool]):
+def _find_min_pair_triangular(mat, mask):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -569,7 +569,7 @@ def neighbor_joining(distances):
         total = pnp.zeros(D.shape[0], dtype=pnp.float64)
         for i in range(D.shape[0]):
             if active[i]:
-                total[i] = sum(D[i, j] for j in range(D.shape[0]) if active[j])
+                total[i] = sum(float(D[i, j]) for j in range(D.shape[0]) if active[j])
 
         # compute Q-matrix 
         Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
@@ -608,7 +608,7 @@ def neighbor_joining(distances):
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
-            D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
+            D[i_min, k] = D[k, i_min] = 0.5 * (float(D[i_min, k]) + float(D[j_min, k]) - dist_ij)
 
         remaining -= 1
 
@@ -625,10 +625,10 @@ def neighbor_joining(distances):
     elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
-        da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
-        db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
-        dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
-        root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
+        da = 0.5 * (float(D[ia, ic]) + float(D[ia, ib]) - float(D[ib, ic]))
+        db = 0.5 * (float(D[ib, ia]) + float(D[ib, ic]) - float(D[ia, ic]))
+        dc = 0.5 * (float(D[ic, ia]) + float(D[ic, ib]) - float(D[ia, ib]))
+        root = TreeNode(children=[a, b, c], distances=[da, db, dc])
     else:
         raise RuntimeError("Neighbor-Joining failed")
 
