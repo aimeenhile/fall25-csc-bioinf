@@ -162,13 +162,15 @@ class TreeNode:
         else:
             child_strings: List[str] = [child.to_newick(labels, include_distance, round_distance)
                              for child in self._children]
+            joined_children = ",".join(child_strings)
             if include_distance:
                 if round_distance is None:
-                    return f"({','.join(child_strings)}):{self._distance}"
+                    return f"({joined_children}):{self._distance}"
                 else:
-                    return f"({','.join(child_strings)}):{self._distance:.{round_distance}f}"
+                    distance_str = str(round(self._distance, round_distance))
+                    return f"({joined_children}):{distance_str}"
             else:
-                return f"({','.join(child_strings)})"
+                return f"({joined_children})"
 
     @staticmethod
     def from_newick(newick: str, labels: Optional[List[str]] = None):
