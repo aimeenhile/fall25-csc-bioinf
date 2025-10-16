@@ -39,20 +39,14 @@ class TreeNode:
     _is_root: bool
     _distance: float
     _parent: Optional[TreeNode]
-    _children:List[TreeNode]
+    _children: List[Optional[TreeNode]]
     _index: int
 
-    def __init__(self, children: Optional[List[TreeNode]] = None, distances: List[float] = None, index: int = None):
+    def __init__(self, children: List[Optional[TreeNode]] = [], distances: List[float] = None, index: int = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
-        if children is None:
-            self._children = []
-        else:
-            # Copy to ensure correct Codon typing
-            self._children = [c for c in children]
-
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent = None
@@ -78,12 +72,12 @@ class TreeNode:
         return node
 
     @staticmethod
-    def internal(children: List[TreeNode], distances: List[float]) -> TreeNode:
+    def internal(children: List[Optional[TreeNode]], distances: List[float]) -> TreeNode:
         if len(children) != len(distances):
             raise ValueError("Children and distances must match in length")
         node = TreeNode()
         node._index = -1
-        node._children = [c for c in children]  # Copy list to satisfy Codon
+        node._children = [c for c in children] 
         for c, d in zip(node._children, distances):
             c._set_parent(node, float(d))
         return node
@@ -111,7 +105,7 @@ class TreeNode:
 
     @property
     def children(self):
-        return self._children
+        return c for c in self._children
 
     @property
     def parent(self):
@@ -138,11 +132,11 @@ class TreeNode:
         """
         Return List of leaf nodes (direct or indirect).
         """
-        leaf_list: List[TreeNode] = []
+        leaf_list: List[Optional[TreeNode]] = []
         self._collect_leaves(leaf_list)
         return leaf_list
 
-    def _collect_leaves(self, leaves: List[TreeNode]):
+    def _collect_leaves(self, leaves: List[Optional[TreeNode]]):
         if self.is_leaf():
             leaves.append(self)
         else:
@@ -199,8 +193,8 @@ class TreeNode:
         if s.endswith(";"):
             s = s[:-1]
 
-        stack: List[Tuple[List[TreeNode], List[float]]] = []
-        children: List[TreeNode] = []
+        stack: List[Tuple[List[Optional[TreeNode]], List[float]]] = []
+        children: List[Optional[TreeNode]] = []
         distances: List[float] = []
         i = 0
         start = 0
@@ -243,10 +237,7 @@ class TreeNode:
                         i = end - 1
 
                     # create internal node, children/distances must be lists
-                    node = TreeNode(
-                        children=parent_children,
-                        distances=parent_distances
-                    )
+                    node = TreeNode(children=parent_children, distances=parent_distances)
                     children.append(node)
                     distances.append(dist_val)
             i += 1
