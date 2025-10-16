@@ -47,7 +47,7 @@ class TreeNode:
         _children: list[TreeNode]
 
         self._is_root: bool = False
-        self._distance float = 0.0
+        self._distance: float = 0.0
         self._parent: Optional[TreeNode] = None
         self._children: list[TreeNode] = [] 
         self._index: int = -1
