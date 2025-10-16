@@ -35,23 +35,22 @@ class TreeError(Static[Exception]):
 
 class TreeNode:
 
-    def __init__(self, children: Optional[List[TreeNode]] = None, distances: Optional[List[float]] = None, index: Optional[int] = None):
+    def __init__(self, children: Optional[List["TreeNode"]] = None, distances: Optional[List[float]] = None, index: Optional[int] = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
         self._is_root: bool = False
         self._distance: float = 0.0
-        self._parent: Optional[TreeNode] = None
-        self._children: Optional[List[TreeNode]] = None 
+        self._parent: "TreeNode" = None
+        self._children: [List["TreeNode"]] =[]
         self._index: int = -1
 
         if index is None:
             # intermediate node -> need children and distances
             if children is None or distances is None:
                 raise TypeError(
-                    "Either reference index (for terminal node) or "
-                    "child nodes including the distance (for intermediate node) must be set"
+                    "Either reference index or child nodes including the distance must be set"
                 )
             child_list = [c for c in children]
             dist_list = [float(d) for d in distances]
@@ -80,12 +79,11 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
+    def _set_parent(self, parent: "TreeNode", distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
         self._distance = float(distance)
-        return None
 
     # public API used in tests
     def is_leaf(self) -> bool:
