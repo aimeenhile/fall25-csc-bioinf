@@ -51,7 +51,7 @@ class TreeNode:
         self._distance: float = 0.0
         self._parent = None
 
-        if index >= 0:
+        if index is not None and index >= 0:
             # Leaf node
             self._index = index
             self._children = []
