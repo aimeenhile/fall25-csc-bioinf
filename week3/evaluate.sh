@@ -33,4 +33,4 @@ python3 test_phylo.py
 echo "============================="
 echo "🧬 Running Codon tests"
 echo "============================="
-codon run bio_codon/test_phylo_codon.py
+codon run -release bio_codon/test_phylo_codon.py
