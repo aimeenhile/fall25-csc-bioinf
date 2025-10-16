@@ -297,149 +297,6 @@ class TreeNode:
         leaf = TreeNode(index=idx)
         return leaf, dist
 
-        """
-        if s[0] != "(":
-            # Leaf node
-            if ":" in s:
-                parts = s.split(":")
-                label = parts[0]
-                distance = float(parts[1])
-            else:
-                label = s
-                distance = 0.0
-            if labels is None:
-                try:
-                    idx = int(label)
-                except:
-                    idx = int(float(label))
-            else:
-                idx = labels.index(label)
-            return TreeNode(index=idx), distance
-
-        # Internal node
-        # Find matching parentheses for top-level split
-        level = 0
-        split_indices: List[int] = []
-        for i, ch in enumerate(s):
-            if ch == "(":
-                level += 1
-            elif ch == ")":
-                level -= 1
-            elif ch == "," and level == 1:
-                split_indices.append(i)
-            if level < 0:
-                raise ValueError("Mismatched parentheses")
-
-        children: List[TreeNode] = []
-        distances: List[float] = []
-        start = 1
-        for idx in split_indices + [len(s)-1]:
-            sub = s[start:idx]
-            child, d = TreeNode.from_newick(sub, labels)
-            children.append(child)
-            distances.append(d)
-            start = idx + 1
-
-        # Parse distance after closing parenthesis
-        remaining = s[len(s)-1:]
-        if remaining.startswith(":"):
-            distance = float(remaining[1:])
-        else:
-            distance = 0.0
-
-        return TreeNode(children=children, distances=distances), distance
-        """
-
-
-
-        """
-        substart = -1
-        substop = -1
-        # find first '(' and last ')'
-        for i, ch in enumerate(newick):
-            if ch == "(":
-                substart = i
-                break
-            if ch == ")":
-                raise ValueError("Bracket closed before it was opened")
-        for i in range(len(newick)-1, -1, -1):
-            ch = newick[i]
-            if ch == ")":
-                substop = i + 1
-                break
-            if ch == "(":
-                raise ValueError("Bracket was opened but not closed")
-
-        if substart == -1 and substop == -1:
-            # leaf
-            label_and_distance = newick
-            try:
-                label, dist_s = label_and_distance.split(":")
-                distance = float(dist_s)
-            except ValueError:
-                distance = 0.0
-                label = label_and_distance
-            #idx = int(float(label)) if labels is None else labels.index(label)
-            #return TreeNode(index=idx), distance
-            if labels is None:
-                try:
-                    idx = int(label)  # normal integer string
-                except:
-                    idx = int(float(label))  # handles "29.0"
-            else:
-                # lookup in labels List
-                idx = labels.index(label)
-
-            return TreeNode(index=idx), distance
-        
-        else:
-            # intermediate node
-            if substop == len(newick):
-                distance = 0.0
-            else:
-                label_and_distance = newick[substop:]
-                try:
-                    _, dist_s = label_and_distance.split(":")
-                    distance = float(dist_s)
-                except ValueError:
-                    distance = 0.0
-            sub = newick[substart+1:substop-1]
-            if len(sub) == 0:
-                raise ValueError("Intermediate node must at least have one child")
-            # split top-level commas
-            comma_pos: List[int] = []
-            level = 0
-            for i, ch in enumerate(sub):
-                if ch == "(":
-                    level += 1
-                elif ch == ")":
-                    level -= 1
-                elif ch == ",":
-                    if level == 0:
-                        comma_pos.append(i)
-                if level < 0:
-                    raise ValueError("Bracket closed before it was opened")
-            children: List[TreeNode] = []
-            distances: List[float] = []
-            if len(comma_pos) != 0:
-                start = 0
-                for pos in comma_pos:
-                    child_s = sub[start:pos]
-                    child, d = TreeNode.from_newick(child_s, labels=labels)
-                    children.append(child)
-                    distances.append(d)
-                    start = pos + 1
-                # last
-                child_s = sub[start:]
-                child, d = TreeNode.from_newick(child_s, labels=labels)
-                children.append(child)
-                distances.append(d)
-            else:
-                child, d = TreeNode.from_newick(sub, labels=labels)
-                children.append(child)
-                distances.append(d)
-            return TreeNode(children, distances), distance
-        """
 
     def lowest_common_ancestor(self, node: TreeNode):
         self_path = _create_path_to_root(self)
@@ -609,7 +466,7 @@ def upgma(distances):
         # find min pair
         i_min, j_min = _find_min_pair_triangular(D, active)
         if i_min == -1 or j_min == -1:
-            break
+            raise RuntimeError("UPGMA failed: no valid pair found")
 
         dist_min: float = D[i_min, j_min]
         height: float = dist_min / 2.0
@@ -617,11 +474,12 @@ def upgma(distances):
         child_i = nodes[i_min]
         child_j = nodes[j_min]
 
-        nodes[i_min] = TreeNode(
+        new_node = TreeNode(
         children=[child_i, child_j],
         distances=[float(height - node_heights[i_min]),
                    float(height - node_heights[j_min])]
         )
+        nodes[i_min] = new_node
         node_heights[i_min] = height
         active[j_min] = False
 
@@ -634,18 +492,18 @@ def upgma(distances):
             mean = ((D[i_min, k] * cluster_size[i_min] +
                  D[j_min, k] * cluster_size[j_min]) /
                 (cluster_size[i_min] + cluster_size[j_min]))
-            D[i_min, k] = D[k, i_min] = mean
+            D[i_min, k] = mean
+            D[k, i_min] = mean
 
         # update cluster size
         cluster_size[i_min] += cluster_size[j_min]
 
-    # find the last active node to be root
-    for idx in range(n0-1, -1, -1):
-        if active[idx]:
-            return Tree(nodes[idx])
+    # Get the last active node to be the root
+    last_active_nodes = [nodes[i] for i, act in enumerate(active) if act]
+    if len(last_active_nodes) != 1:
+        raise RuntimeError(f"UPGMA failed: expected 1 active node, found {len(last_active_nodes)}")
 
-    # fallback
-    raise RuntimeError("UPGMA failed")
+    return Tree(last_active_nodes[0])
 
 
 # --- NEIGHBOUR JOINING ---
