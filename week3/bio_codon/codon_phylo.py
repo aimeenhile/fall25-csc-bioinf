@@ -99,13 +99,17 @@ class TreeNode:
     def distance(self):
         return None if self._parent is None else self._distance
 
-    def copy(self):
+    def copy(self, visited=None):
+        if visited is None:
+            visited = set()
+        if self in visited:
+            raise TreeError("Cycle detected in tree")
+        visited.add(self)
         if self.is_leaf():
             return TreeNode(index=self._index)
-        else:
-            children_clones = [child.copy() for child in self._children if child is not None]
-            distances_f = [float(child.distance) if child is not None else 0.0 for child in self._children]
-            return TreeNode(children_clones, distances_f)
+        children_clones = [child.copy(visited) for child in self._children]
+        distances_f = [float(child.distance) for child in self._children]
+        return TreeNode(children_clones, distances_f)
 
     def get_leaves(self):
         """
@@ -341,22 +345,6 @@ class TreeNode:
                 distance += float(current._distance)
             current = current._parent  # type: ignore[assignment]
         return distance
-
-    def __eq__(self, other: object):
-        if not isinstance(other, TreeNode):
-            return False
-        node: TreeNode = other
-        if self._distance != node._distance:
-            return False
-        if self._index != -1:
-            return self._index == node._index
-        else:
-            # order of children not important
-            return set(self._children) == set(node._children)
-
-    def __hash__(self):
-        children_set = set(self._children) if len(self._children) > 0 else None
-        return hash((self._index, children_set, self._distance))
 
 
 # --- Helper functions ---
