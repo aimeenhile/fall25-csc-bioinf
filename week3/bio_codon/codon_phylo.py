@@ -205,16 +205,20 @@ class TreeNode:
                 # parse node between start:i
                 if start < i:
                     node_str = s[start:i]
-                    if node_str != "":
-                        node, dist = TreeNode._parse_leaf(node_str, labels)
-                        children.append(node)
-                        distances.append(dist)
-                start = i + 1
+                    node, dist = TreeNode._parse_leaf(node_str, labels)
+                    children.append(node)
+                    distances.append(dist)
+                    start = i + 1
                 if c == ")":
                     # finish current subtree
                     parent_children = children
                     parent_distances = distances
-                    children, distances = stack.pop()
+                    if stack:
+                        children, distances = stack.pop()
+                    else:
+                        children = []
+                        distances = []
+
                     # parse distance after ')' if any
                     j = i + 1
                     dist_val = 0.0
@@ -225,9 +229,14 @@ class TreeNode:
                             end += 1
                         dist_val = float(s[j:end])
                         i = end - 1
-                    node = TreeNode(children=parent_children, distances=parent_distances)
-                    distances.append(dist_val)
+
+                    # create internal node, children/distances must be lists
+                    node = TreeNode(
+                        children=parent_children if parent_children else [],
+                        distances=parent_distances if parent_distances else []
+                    )
                     children.append(node)
+                    distances.append(dist_val)
             i += 1
 
         # handle final leaf if any
@@ -241,13 +250,11 @@ class TreeNode:
         if len(children) != 1:
             raise ValueError("Malformed Newick string")
         
-        # final root node
-        root = children[0]
         # assign final distance to root (0 if none)
         if distances:
             root._distance = distances[0]
 
-        return root
+        return children[0]
 
     @staticmethod
     def _parse_leaf(s: str, labels: Optional[List[str]]):
