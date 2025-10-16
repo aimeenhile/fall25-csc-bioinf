@@ -161,18 +161,18 @@ class TreeNode:
     @staticmethod
     def from_newick(newick: str, labels: Optional[List[str]] = None):
         # remove whitespace
-        newick = "".join(newick.split())
+        s = "".join(newick.split())
         if len(newick) == 0:
             raise ValueError("Newick string is empty")
 
-        if newick[0] != "(":
+        if s[0] != "(":
             # Leaf node
-            if ":" in newick:
+            if ":" in s:
                 parts = s.split(":")
                 label = parts[0]
                 distance = float(parts[1])
             else:
-                label = newick
+                label = s
                 distance = 0.0
             if labels is None:
                 try:
@@ -187,7 +187,7 @@ class TreeNode:
         # Find matching parentheses for top-level split
         level = 0
         split_indices: List[int] = []
-        for i, ch in enumerate(newick):
+        for i, ch in enumerate(s):
             if ch == "(":
                 level += 1
             elif ch == ")":
@@ -200,15 +200,15 @@ class TreeNode:
         children: List[TreeNode] = []
         distances: List[float] = []
         start = 1
-        for idx in split_indices + [len(newick)-1]:
-            sub = newick[start:idx]
+        for idx in split_indices + [len(s)-1]:
+            sub = s[start:idx]
             child, d = TreeNode.from_newick(sub, labels)
             children.append(child)
             distances.append(d)
             start = idx + 1
 
         # Parse distance after closing parenthesis
-        remaining = newick[len(newick)-1:]
+        remaining = s[len(s)-1:]
         if remaining.startswith(":"):
             distance = float(remaining[1:])
         else:
