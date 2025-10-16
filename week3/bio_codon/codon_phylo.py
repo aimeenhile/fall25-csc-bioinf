@@ -42,7 +42,7 @@ class TreeNode:
     _children:List[TreeNode]
     _index: int
 
-    def __init__(self, children: Optional[List["TreeNode"]] = None, distances: List[float] = None, index: int = None):
+    def __init__(self, children: Optional[List[TreeNode]] = None, distances: List[float] = None, index: int = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
