@@ -85,6 +85,7 @@ class TreeNode:
             raise TreeError("Node already has a parent")
         self._parent = parent
         self._distance = float(distance)
+        return None
 
     # public API used in tests
     def is_leaf(self) -> bool:
