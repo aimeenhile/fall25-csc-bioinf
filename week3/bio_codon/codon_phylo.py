@@ -39,7 +39,7 @@ class TreeNode:
     _is_root: bool
     _distance: float
     _parent: Optional[TreeNode]
-    _children: List[TreeNode] 
+    _children: List[Optional[TreeNode]] 
     _index: int
 
     def __init__(self, children: List[Optional[TreeNode]] = None, distances: List[float] = None, index: int = None):
