@@ -453,7 +453,7 @@ def _find_min_pair_triangular(mat, mask: List[bool]):
     """
     # mat: pnp.ndarray[float,2]
 
-    dist_min = MAX_FLOAT
+    dist_min = float(MAX_FLOAT)
     i_min = -1
     j_min = -1
     n = mat.shape[0]
