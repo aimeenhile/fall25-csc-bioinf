@@ -1,10 +1,10 @@
-import numpy as np
+#import numpy as np
 from typing import List, Optional
 import math
 import copy
 from python import numpy as pnp
 
-MAX_FLOAT = np.finfo(np.float64).max
+MAX_FLOAT = pnp.finfo(pnp.float64).max
 
 # --- TREE ---
 
@@ -110,7 +110,7 @@ class TreeNode:
         Return List of leaf nodes (direct or indirect).
         """
         leaf_list: List[TreeNode] = []
-        self._collect_leaves(leaves)
+        self._collect_leaves(leaf_list)
         return leaf_list
 
     def _collect_leaves(self, leaves: List[TreeNode]):
@@ -122,7 +122,7 @@ class TreeNode:
 
     def get_indices(self):
         leaves = self.get_leaves()
-        return np.array([leaf._index for leaf in leaves], dtype=np.int64)
+        return pnp.array([leaf._index for leaf in leaves], dtype=pnp.int64)
 
     def get_leaf_count(self):
         return _get_leaf_count(self)
@@ -165,14 +165,14 @@ class TreeNode:
         if len(newick) == 0:
             raise ValueError("Newick string is empty")
 
-        if s[0] != "(":
+        if newick[0] != "(":
             # Leaf node
-            if ":" in s:
+            if ":" in newick:
                 parts = s.split(":")
                 label = parts[0]
                 distance = float(parts[1])
             else:
-                label = s
+                label = newick
                 distance = 0.0
             if labels is None:
                 try:
@@ -187,7 +187,7 @@ class TreeNode:
         # Find matching parentheses for top-level split
         level = 0
         split_indices: List[int] = []
-        for i, ch in enumerate(s):
+        for i, ch in enumerate(newick):
             if ch == "(":
                 level += 1
             elif ch == ")":
@@ -200,15 +200,15 @@ class TreeNode:
         children: List[TreeNode] = []
         distances: List[float] = []
         start = 1
-        for idx in split_indices + [len(s)-1]:
-            sub = s[start:idx]
+        for idx in split_indices + [len(newick)-1]:
+            sub = newick[start:idx]
             child, d = TreeNode.from_newick(sub, labels)
             children.append(child)
             distances.append(d)
             start = idx + 1
 
         # Parse distance after closing parenthesis
-        remaining = s[len(s)-1:]
+        remaining = newick[len(newick)-1:]
         if remaining.startswith(":"):
             distance = float(remaining[1:])
         else:
@@ -394,8 +394,8 @@ class Tree:
         self._root: TreeNode = root
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
-        indices = np.array([leaf._index for leaf in leaves_unsorted], dtype=np.int64)
-        self._leaves: list[TreeNode] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
+        indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
+        self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
         for i in range(len(indices)):
             idx = int(indices[i])
             if idx >= leaf_count or idx < 0:
@@ -446,7 +446,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]):
+def _find_min_pair_triangular(mat: pnp.ndarray, mask: List[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -470,7 +470,7 @@ def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]):
 
 # --- UPGMA ---
 
-def upgma(distances: np.ndarray):
+def upgma(distances: pnp.ndarray):
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -486,7 +486,7 @@ def upgma(distances: np.ndarray):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D = distances.astype(np.float64, copy=True)
+    D = distances.astype(pnp.float64, copy=True)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -543,7 +543,7 @@ def upgma(distances: np.ndarray):
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances: np.ndarray):
+def neighbor_joining(distances: pnp.ndarray):
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
@@ -559,14 +559,14 @@ def neighbor_joining(distances: np.ndarray):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D = distances.astype(np.float64, copy=True)
+    D = distances.astype(pnp.float64, copy=True)
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 3:
         # total distances per row 
-        total = np.zeros(D.shape[0], dtype=np.float64)
+        total = pnp.zeros(D.shape[0], dtype=pnp.float64)
         for i in range(D.shape[0]):
             if active[i]:
                 total[i] = sum(D[i, j] for j in range(D.shape[0]) if active[j])
@@ -598,8 +598,7 @@ def neighbor_joining(distances: np.ndarray):
         child_j = nodes[j_min].copy()
 
         # create new node 
-        new_node = TreeNode(children=[nodes[i_min], nodes[j_min]], distances=[float(limb_i), float(limb_j)])
-        #new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
+        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
 
         # update nodes and active array
         nodes[i_min] = new_node
