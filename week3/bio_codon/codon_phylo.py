@@ -446,7 +446,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: pnp.ndarray[float, 2], mask: List[bool]):
+def _find_min_pair_triangular(mat, mask: List[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -470,7 +470,7 @@ def _find_min_pair_triangular(mat: pnp.ndarray[float, 2], mask: List[bool]):
 
 # --- UPGMA ---
 
-def upgma(distances: pnp.ndarray):
+def upgma(distances):
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -543,7 +543,7 @@ def upgma(distances: pnp.ndarray):
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances: pnp.ndarray):
+def neighbor_joining(distances):
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
