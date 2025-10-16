@@ -35,15 +35,15 @@ class TreeError(Static[Exception]):
 
 class TreeNode:
 
-    def __init__(self, children: Optional[list[TreeNode]] = None, distances: Optional[list[float]] = None, index: Optional[int] = None):
+    def __init__(self, children: Optional[list["TreeNode"]] = None, distances: Optional[list[float]] = None, index: Optional[int] = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
         self._is_root: bool = False
         self._distance: float = 0.0
-        self._parent: Optional[TreeNode] = None
-        self._children: list[TreeNode] = [] 
+        self._parent: Optional["TreeNode"] = None
+        self._children: list["TreeNode"] = [] 
         self._index: int = -1
 
         if index is None:
@@ -80,7 +80,7 @@ class TreeNode:
             self._children = []
 
     # internal
-    def _set_parent(self, parent: TreeNode, distance: float) -> None:
+    def _set_parent(self, parent: "TreeNode", distance: float) -> None:
         if self._parent is not None or self._is_root:
             raise TreeError("Node already has a parent")
         self._parent = parent
@@ -129,7 +129,7 @@ class TreeNode:
         """
         Return List of leaf nodes (direct or indirect).
         """
-        leaf_list: list[TreeNode] = []
+        leaf_list: list["TreeNode"] = []
         _get_leaves(self, leaf_list)
         return leaf_list
 
@@ -244,8 +244,8 @@ class TreeNode:
                         comma_pos.append(i)
                 if level < 0:
                     raise ValueError("Bracket closed before it was opened")
-            children: List[TreeNode] = []
-            distances: List[float] = []
+            children: list["TreeNode"] = []
+            distances: list[float] = []
             if len(comma_pos) != 0:
                 start = 0
                 for pos in comma_pos:
@@ -265,10 +265,10 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: TreeNode):
+    def lowest_common_ancestor(self, node: "TreeNode"):
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
-        lca: Optional[TreeNode] = None
+        lca: Optional["TreeNode"] = None
         min_len = min(len(self_path), len(other_path))
         for i in range(1, min_len + 1):
             if self_path[-i] is other_path[-i]:
@@ -277,7 +277,7 @@ class TreeNode:
                 break
         return lca
 
-    def distance_to(self, node: TreeNode, topological: bool = False) -> float:
+    def distance_to(self, node: "TreeNode", topological: bool = False) -> float:
         lca = self.lowest_common_ancestor(node)
         if lca is None:
             raise TreeError("The nodes do not have a common ancestor")
@@ -301,7 +301,7 @@ class TreeNode:
     def __eq__(self, other: object):
         if not isinstance(other, TreeNode):
             return False
-        node: TreeNode = other
+        node: "TreeNode" = other
         if self._distance != node._distance:
             return False
         if self._index != -1:
@@ -317,7 +317,7 @@ class TreeNode:
 
 # --- Helper functions ---
 
-def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]):
+def _get_leaves(node: "TreeNode", leaf_list: list["TreeNode"]):
     if node._index == -1:
         for child in node._children:
             _get_leaves(child, leaf_list)
@@ -325,7 +325,7 @@ def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]):
         leaf_list.append(node)
 
 
-def _get_leaf_count(node: TreeNode):
+def _get_leaf_count(node: "TreeNode"):
     if node._index == -1:
         count = 0
         for child in node._children:
@@ -335,8 +335,8 @@ def _get_leaf_count(node: TreeNode):
         return 1
 
 
-def _create_path_to_root(node: TreeNode):
-    path: List["TreeNode"] = []
+def _create_path_to_root(node: "TreeNode"):
+    path: list["TreeNode"] = []
     current: Optional["TreeNode"] = node
     while current is not None:
         path.append(current)
