@@ -486,8 +486,6 @@ def upgma(distances):
     while remaining > 1:
         # find min pair
         i_min, j_min = _find_min_pair_triangular(D, active)
-        i_min = int(i_min.item())
-        j_min = int(j_min.item())
         if i_min == -1 or j_min == -1:
             break
 
