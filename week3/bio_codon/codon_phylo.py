@@ -476,8 +476,8 @@ def upgma(distances):
 
         if child_i is None or child_j is None:
             raise RuntimeError(f"UPGMA failed: invalid child nodes {i_min}, {j_min}")
-        h_i = float(height - node_heights[i_min])
-        h_j = float(height - node_heights[j_min])
+        h_i = max(0.0, float(height - node_heights[i_min]))
+        h_j = max(0.0, float(height - node_heights[j_min]))
         if h_i < 0 or h_j < 0:
             raise RuntimeError(f"UPGMA failed: negative branch length {h_i}, {h_j}")
 
@@ -509,7 +509,13 @@ def upgma(distances):
     if len(last_active_nodes) != 1 or last_active_nodes[0] is None:
         raise RuntimeError(f"UPGMA failed: expected 1 active node, found {len(last_active_nodes)}")
 
-    return Tree(last_active_nodes[0])
+    root_node = last_active_nodes[0]
+
+    # If the root is a leaf (only 1 leaf in tree), wrap in a dummy root
+    if root_node.is_leaf():
+        root_node = TreeNode(children=[root_node], distances=[0.0])
+
+    return Tree(root_node)
 
 
 # --- NEIGHBOUR JOINING ---
@@ -596,14 +602,15 @@ def neighbor_joining(distances):
         a, b = final_nodes
         ia, ib = final_idx
         d = D[ia, ib]
-        root = TreeNode(children=[a, b], distances=[float(d/2.0), float(d/2.0)])
+        root = TreeNode(children=[a, b], distances=[float(max(d/2.0, 0.0)), float(max(d/2.0, 0.0))])
     elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
         da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
-        root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
+        distances = [max(da,0.0), max(db,0.0), max(dc,0.0)]
+        root = TreeNode(children=[a, b, c], distances=distances)
     else:
         raise RuntimeError("Neighbor-Joining failed")
 
