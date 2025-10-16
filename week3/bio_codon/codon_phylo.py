@@ -127,14 +127,14 @@ class TreeNode:
     def get_leaf_count(self):
         return _get_leaf_count(self)
 
-    def to_newick(self, labels: list[str] = None,
+    def to_newick(self, labels: Optional[List[str]] = None,
                   include_distance: bool = True,
-                  round_distance: int = None):
+                  round_distance: int = None) -> str:
         if self.is_leaf():
             if labels is not None:
-                lbls = list(labels)
-                label = lbls[self._index]
-                illegal_chars = [",", ":", ";", "(", ")"]
+                #lbls = list(labels)
+                label = labels[self._index]
+                illegal_chars: List[str] = [",", ":", ";", "(", ")"]
                 for ch in illegal_chars:
                     if ch in label:
                         raise ValueError(f"Label '{label}' contains illegal character '{ch}'")
@@ -148,7 +148,7 @@ class TreeNode:
             else:
                 return f"{label}"
         else:
-            child_strings = [child.to_newick(labels, include_distance, round_distance)
+            child_strings: List[str] = [child.to_newick(labels, include_distance, round_distance)
                              for child in self._children]
             if include_distance:
                 if round_distance is None:
@@ -159,12 +159,64 @@ class TreeNode:
                 return f"({','.join(child_strings)})"
 
     @staticmethod
-    def from_newick(newick: str, labels: List[str] = None):
+    def from_newick(newick: str, labels: Optional[List[str]] = None):
         # remove whitespace
         newick = "".join(newick.split())
         if len(newick) == 0:
             raise ValueError("Newick string is empty")
 
+        if s[0] != "(":
+            # Leaf node
+            if ":" in s:
+                parts = s.split(":")
+                label = parts[0]
+                distance = float(parts[1])
+            else:
+                label = s
+                distance = 0.0
+            if labels is None:
+                try:
+                    idx = int(label)
+                except:
+                    idx = int(float(label))
+            else:
+                idx = labels.index(label)
+            return TreeNode(index=idx), distance
+
+        # Internal node
+        # Find matching parentheses for top-level split
+        level = 0
+        split_indices: List[int] = []
+        for i, ch in enumerate(s):
+            if ch == "(":
+                level += 1
+            elif ch == ")":
+                level -= 1
+            elif ch == "," and level == 1:
+                split_indices.append(i)
+            if level < 0:
+                raise ValueError("Mismatched parentheses")
+
+        children: List[TreeNode] = []
+        distances: List[float] = []
+        start = 1
+        for idx in split_indices + [len(s)-1]:
+            sub = s[start:idx]
+            child, d = TreeNode.from_newick(sub, labels)
+            children.append(child)
+            distances.append(d)
+            start = idx + 1
+
+        # Parse distance after closing parenthesis
+        remaining = s[len(s)-1:]
+        if remaining.startswith(":"):
+            distance = float(remaining[1:])
+        else:
+            distance = 0.0
+
+        return TreeNode(children=children, distances=distances), distance
+
+        """
         substart = -1
         substop = -1
         # find first '(' and last ')'
@@ -251,6 +303,9 @@ class TreeNode:
                 children.append(child)
                 distances.append(d)
             return TreeNode(children, distances), distance
+        """
+
+
 
     def lowest_common_ancestor(self, node: TreeNode):
         self_path = _create_path_to_root(self)
