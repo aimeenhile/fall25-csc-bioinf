@@ -7,9 +7,13 @@ Estimated time: 12h
 
 ## 2. Set up test file:
 - Find the relevant test under test_phylo.py in the source GitHub: def test_upgma(tree, upgma_newick), def test_neighbor_joining()
+- Set up test file for Python tests and test files for Codon tests
 
 ## 3. Set up the Codon codes:
 - Copy the source code to the Codon folders
 - Set up working directory
 - Modify the codon code, add typehints
+
+## 4. Modify CI and evaluate.sh file 
+- Add system dependencies and Python dependencies so that CPython files are compiled 
 

@@ -449,11 +449,8 @@ def upgma(distances: np.ndarray):
 
     # nodes: current nodes (TreeNode)
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    # cluster sizes
     cluster_size: List[int] = [1 for _ in range(n0)]
-    # node heights
     node_heights: List[float] = [0.0 for _ in range(n0)]
-    # track whether position is active
     active: List[bool] = [True for _ in range(n0)]
     remaining = n0
 
@@ -463,44 +460,40 @@ def upgma(distances: np.ndarray):
         if i_min == -1 or j_min == -1:
             break
 
+        # sanity check
+        assert active[i_min] and active[j_min], "Merging inactive nodes!"
+
         dist_min = float(D[i_min, j_min])
         height = dist_min / 2.0
 
-        # create new node at i_min, mark j_min inactive
-        child_i = nodes[i_min]
-        child_j = nodes[j_min]
-        child_dist_i = float(height - node_heights[i_min])
-        child_dist_j = float(height - node_heights[j_min])
-        nodes[i_min] = TreeNode(children=[child_i, child_j], distances=[child_dist_i, child_dist_j])
+        nodes[i_min] = TreeNode(
+        children=[child_i, child_j],
+        distances=[float(height - node_heights[i_min]),
+                   float(height - node_heights[j_min])]
+        )
         node_heights[i_min] = height
-        # nodes[j_min] = None  
         active[j_min] = False
 
         # update distances: arithmetic mean weighted by cluster sizes
         for k in range(n0):
-            if not active[k] or k == i_min:
+            if k == i_min or not active[k]:
                 continue
-            left = float(D[i_min, k]) * float(cluster_size[i_min])
-            right = float(D[j_min, k]) * float(cluster_size[j_min])
-            denom = float(cluster_size[i_min] + cluster_size[j_min])
-            mean = 0.0
-            if denom != 0.0:
-                mean = (left + right) / denom
-            D[i_min, k] = mean
-            D[k, i_min] = mean
+            mean = ((D[i_min, k] * cluster_size[i_min] +
+                 D[j_min, k] * cluster_size[j_min]) /
+                (cluster_size[i_min] + cluster_size[j_min]))
+            D[i_min, k] = D[k, i_min] = mean
 
         # update cluster size
-        cluster_size[i_min] = cluster_size[i_min] + cluster_size[j_min]
+        cluster_size[i_min] += cluster_size[j_min]
         remaining -= 1
 
     # find the last active node to be root
     for idx in range(n0-1, -1, -1):
         if active[idx]:
-            root_node = nodes[idx]
-            return Tree(root_node)
+            return Tree(nodes[idx])
 
     # fallback
-    raise RuntimeError("UPGMA failed to construct a tree")
+    raise RuntimeError("UPGMA failed")
 
 
 # --- NEIGHBOUR JOINING ---
