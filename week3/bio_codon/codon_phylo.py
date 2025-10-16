@@ -257,21 +257,48 @@ class TreeNode:
         return children[0]
 
     @staticmethod
-    def _parse_leaf(s: str, labels: Optional[List[str]]):
+    def _parse_leaf(s: str, labels: Optional[List[str]]) -> Tuple[TreeNode, float]:
+        """
+        Parse a leaf string from Newick format.
+        Returns a TreeNode (leaf) and its distance.
+        """
+        s = s.strip()
+        if len(s) == 0:
+            raise ValueError("Empty leaf string")
+
         if ":" in s:
-            label, dist_s = s.split(":")
-            dist = float(dist_s)
+        parts = s.split(":")
+        if len(parts) != 2:
+            raise ValueError(f"Malformed leaf: {s}")
+        label_str, dist_str = parts
+        try:
+            dist = float(dist_str)
+        except:
+            raise ValueError(f"Invalid distance '{dist_str}' in leaf '{s}'")
         else:
-            label = s
+            label_str = s
             dist = 0.0
+
+        label_str = label_str.strip()
+
+        # determine index
         if labels is None:
             try:
-                idx = int(label)
+                idx = int(label_str)  # normal integer
             except:
-                idx = int(float(label))
+                try:
+                    idx = int(float(label_str))  # handles "12.0"
+                except:
+                    raise ValueError(f"Invalid numeric leaf label: '{label_str}'")
         else:
-            idx = labels.index(label)
-        return TreeNode(index=idx), dist
+            try:
+                idx = labels.index(label_str)
+            except ValueError:
+                raise ValueError(f"Label '{label_str}' not found in labels list")
+
+        # create leaf node
+        leaf = TreeNode(index=idx)
+        return leaf, dist
 
         """
         if s[0] != "(":
