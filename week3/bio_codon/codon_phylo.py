@@ -246,7 +246,7 @@ class TreeNode:
         # assign final distance to root (0 if none)
         if distances:
             root._distance = distances[0]
-            
+
         return root
 
     @staticmethod
@@ -518,8 +518,8 @@ class Tree:
             raise ValueError("Newick string is empty")
         if s.endswith(";"):
             s = s[:-1]
-        root, _ = TreeNode.from_newick(s, labels)
 
+        root = TreeNode.from_newick(s, labels) 
         return Tree(root)
 
     def __str__(self):
