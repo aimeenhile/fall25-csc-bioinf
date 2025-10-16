@@ -5,9 +5,9 @@ import numpy.pybridge
 
 from codon_phylo import Tree, TreeNode, upgma, neighbor_joining
 
-data_dir = "fall25-csc-bioinf/week3/"
+data_dir = "fall25-csc-bioinf/week3/data/"
 
-distances: np.ndarray[float,2] = pnp.loadtxt(data_dir + "distances.txt", dtype=pnp.float64)
+distances: np.ndarray[float, 2] = pnp.loadtxt(data_dir + "distances.txt", dtype=pnp.float64)
 with open(data_dir + "newick_upgma.txt", "r") as f:
     newick_upgma = f.read().strip()
         
