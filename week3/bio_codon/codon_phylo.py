@@ -5,7 +5,7 @@ import copy
 from python import numpy as pnp
 
 MAX_FLOAT = pnp.finfo(pnp.float64).max
-FloatMatrix2D = pnp.ndarray[float, 2]
+FloatMatrix2D = "pnp.ndarray[float, 2]"
 
 # --- TREE ---
 
