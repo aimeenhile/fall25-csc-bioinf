@@ -466,6 +466,9 @@ def upgma(distances: np.ndarray):
         dist_min = float(D[i_min, j_min])
         height = dist_min / 2.0
 
+        child_i = nodes[i_min]
+        child_j = nodes[j_min]
+
         nodes[i_min] = TreeNode(
         children=[child_i, child_j],
         distances=[float(height - node_heights[i_min]),

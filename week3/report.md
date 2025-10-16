@@ -15,5 +15,6 @@ Estimated time: 12h
 - Modify the codon code, add typehints
 
 ## 4. Modify CI and evaluate.sh file 
-- Add system dependencies and Python dependencies so that CPython files are compiled 
+- Add system dependencies so that CPython files are compiled 
+- Add Python dependencies so that the source files are compiled and run correctly
 
