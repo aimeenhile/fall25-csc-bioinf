@@ -317,7 +317,7 @@ class TreeNode:
 
 # --- Helper functions ---
 
-def _get_leaves(node: "TreeNode", leaf_list: list["TreeNode"]):
+def _get_leaves(node: "TreeNode", leaf_list: List[TreeNode]):
     if node._index == -1:
         for child in node._children:
             _get_leaves(child, leaf_list)
