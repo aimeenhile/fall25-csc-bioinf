@@ -1,10 +1,11 @@
 #import numpy as np
-from typing import List, Optional
+from typing import List, Optional, TypeAlias
 import math
 import copy
 from python import numpy as pnp
 
 MAX_FLOAT = pnp.finfo(pnp.float64).max
+FloatMatrix2D: TypeAlias = pnp.ndarray[float, 2]
 
 # --- TREE ---
 
@@ -447,7 +448,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat, mask: List[bool]):
+def _find_min_pair_triangular(mat: FloatMatrix2D, mask: List[bool]) -> tuple[int, int]:
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -468,7 +469,7 @@ def _find_min_pair_triangular(mat, mask: List[bool]):
                 dist_min = d
                 i_min = i
                 j_min = j
-    return i_min, j_min
+    return int(i_min), int(j_min)
 
 
 # --- UPGMA ---
@@ -491,7 +492,7 @@ def upgma(distances): # type: distances: pnp.ndarray
 
     #D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
     data = [[float(distances[i, j]) for j in range(n0)] for i in range(n0)]
-    D = pnp.array(data, dtype=pnp.float64)
+    D: FloatMatrix2D = pnp.array(data, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -564,7 +565,8 @@ def neighbor_joining(distances): # type: distances: pnp.ndarray
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
+    data = [[float(distances[i, j]) for j in range(n0)] for i in range(n0)]
+    D: FloatMatrix2D = pnp.array(data, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
