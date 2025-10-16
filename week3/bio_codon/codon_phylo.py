@@ -486,10 +486,7 @@ def upgma(distances):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D: pnp.ndarray[float, 2] = pnp.zeros((n0, n0), dtype=pnp.float64)
-    for i in range(n0):
-        for j in range(n0):
-            D[i, j] = float(distances[i, j])
+    D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -506,7 +503,7 @@ def upgma(distances):
         # sanity check
         # assert active[i_min] and active[j_min], "Merging inactive nodes!"
 
-        dist_min = float(D[i_min, j_min])
+        dist_min = D[i_min, j_min]
         height = dist_min / 2.0
 
         child_i = nodes[i_min].copy()
@@ -562,10 +559,7 @@ def neighbor_joining(distances):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D: pnp.ndarray[float, 2] = pnp.zeros((n0, n0), dtype=pnp.float64)
-    for i in range(n0):
-        for j in range(n0):
-            D[i, j] = float(distances[i, j])
+    D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
@@ -576,7 +570,7 @@ def neighbor_joining(distances):
         total = pnp.zeros(D.shape[0], dtype=pnp.float64)
         for i in range(D.shape[0]):
             if active[i]:
-                total[i] = sum(float(D[i, j]) for j in range(D.shape[0]) if active[j])
+                total[i] = sum((D[i, j]) for j in range(D.shape[0]) if active[j])
 
         # compute Q-matrix 
         Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
@@ -594,7 +588,7 @@ def neighbor_joining(distances):
         if i_min == -1 or j_min == -1:
             break
 
-        dist_ij = float(D[i_min, j_min])
+        dist_ij = D[i_min, j_min]
         delta = 0.0
         if remaining > 2:
             delta = (total[i_min] - total[j_min]) / (remaining - 2)
@@ -615,7 +609,7 @@ def neighbor_joining(distances):
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
-            D[i_min, k] = D[k, i_min] = 0.5 * (float(D[i_min, k]) + float(D[j_min, k]) - dist_ij)
+            D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
 
         remaining -= 1
 
