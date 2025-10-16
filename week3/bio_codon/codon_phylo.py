@@ -598,6 +598,9 @@ def neighbor_joining(distances):
     final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i]]
     final_idx = [i for i in range(D.shape[0]) if active[i]]
 
+    if any(child is None for child in final_nodes):
+        raise RuntimeError("NJ failed: some final nodes are None")
+
     if len(final_nodes) == 2:
         a, b = final_nodes
         ia, ib = final_idx
