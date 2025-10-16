@@ -447,7 +447,6 @@ def upgma(distances: np.ndarray):
 
     D = distances.astype(np.float64, copy=True)
 
-    # nodes: current nodes (TreeNode)
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
     node_heights: List[float] = [0.0 for _ in range(n0)]
@@ -466,8 +465,8 @@ def upgma(distances: np.ndarray):
         dist_min = float(D[i_min, j_min])
         height = dist_min / 2.0
 
-        child_i = nodes[i_min]
-        child_j = nodes[j_min]
+        child_i = nodes[i_min].copy()
+        child_j = nodes[j_min].copy()
 
         nodes[i_min] = TreeNode(
         children=[child_i, child_j],
@@ -476,6 +475,9 @@ def upgma(distances: np.ndarray):
         )
         node_heights[i_min] = height
         active[j_min] = False
+        nodes[j_min] = None
+
+        remaining -= 1
 
         # update distances: arithmetic mean weighted by cluster sizes
         for k in range(n0):
@@ -488,7 +490,6 @@ def upgma(distances: np.ndarray):
 
         # update cluster size
         cluster_size[i_min] += cluster_size[j_min]
-        remaining -= 1
 
     # find the last active node to be root
     for idx in range(n0-1, -1, -1):
@@ -553,8 +554,8 @@ def neighbor_joining(distances: np.ndarray):
         limb_i = 0.5 * (dist_ij + delta)
         limb_j = 0.5 * (dist_ij - delta)
 
-        child_i = nodes[i_min]
-        child_j = nodes[j_min]
+        child_i = nodes[i_min].copy()
+        child_j = nodes[j_min].copy()
 
         # create new node 
         new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
@@ -564,10 +565,17 @@ def neighbor_joining(distances: np.ndarray):
         active[j_min] = False
         nodes[j_min] = None  
 
+        remaining -= 1
+
+        # update distances for new cluster i_min
+        mask = [k for k in range(D.shape[0]) if active[k] and k != i_min]
+        for k in mask:
+            D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
+
     # final combine remaining nodes into a root
     # collect active nodes
-    final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i]]
-    final_idx = [i for i in range(D.shape[0]) if active[i]]
+    final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i] and nodes[i] is not None]
+    final_idx = [i for i in range(D.shape[0]) if active[i] and nodes[i] is not None]
 
     if len(final_nodes) == 2:
         a, b = final_nodes
@@ -582,6 +590,6 @@ def neighbor_joining(distances: np.ndarray):
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
         root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
     else:
-        raise RuntimeError("Neighbor-Joining failed: unexpected number of remaining nodes")
+        raise RuntimeError("Neighbor-Joining failed")
 
     return Tree(root)
