@@ -263,14 +263,14 @@ class TreeNode:
             raise ValueError("Empty leaf string")
 
         if ":" in s:
-        parts = s.split(":")
-        if len(parts) != 2:
-            raise ValueError(f"Malformed leaf: {s}")
-        label_str, dist_str = parts
-        try:
-            dist = float(dist_str)
-        except:
-            raise ValueError(f"Invalid distance '{dist_str}' in leaf '{s}'")
+            parts = s.split(":")
+            if len(parts) != 2:
+                raise ValueError(f"Malformed leaf: {s}")
+            label_str, dist_str = parts
+            try:
+                dist = float(dist_str)
+            except:
+                raise ValueError(f"Invalid distance '{dist_str}' in leaf '{s}'")
         else:
             label_str = s
             dist = 0.0
