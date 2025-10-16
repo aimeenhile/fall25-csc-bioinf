@@ -486,7 +486,7 @@ def upgma(distances):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D: pnp.ndarray = pnp.zeros((n0, n0), dtype=pnp.float64)
+    D: pnp.ndarray[float, 2] = pnp.zeros((n0, n0), dtype=pnp.float64)
     for i in range(n0):
         for j in range(n0):
             D[i, j] = float(distances[i, j])
@@ -562,11 +562,11 @@ def neighbor_joining(distances):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D: pnp.ndarray = pnp.zeros((n0, n0), dtype=pnp.float64)
+    D: pnp.ndarray[float, 2] = pnp.zeros((n0, n0), dtype=pnp.float64)
     for i in range(n0):
         for j in range(n0):
             D[i, j] = float(distances[i, j])
-            
+
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
     remaining = n0
