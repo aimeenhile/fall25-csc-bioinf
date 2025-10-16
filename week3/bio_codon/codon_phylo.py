@@ -526,7 +526,10 @@ def neighbor_joining(distances):
 
     D = pnp.array(distances, dtype=pnp.float64)
 
-    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    #nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    nodes: List[TreeNode] = []
+    for i in range(n0):
+        nodes.append(TreeNode(index=i))
     active: List[bool] = [True for _ in range(n0)]
     remaining: int = n0
 
