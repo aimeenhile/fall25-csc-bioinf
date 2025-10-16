@@ -104,8 +104,8 @@ class TreeNode:
         return None if self._index == -1 else self._index
 
     @property
-    def children(self):
-        return c for c in self._children
+    def children(self) -> List[TreeNode]:
+        return [c for c in self._children]
 
     @property
     def parent(self):
