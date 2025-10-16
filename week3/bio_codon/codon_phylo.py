@@ -518,8 +518,8 @@ def neighbor_joining(distances: np.ndarray):
         raise ValueError("At least 3 nodes are required")
 
     D = distances.astype(np.float64, copy=True)
-    nodes: list[TreeNode] = [TreeNode(index=i) for i in range(n0)]
-    active: list[bool] = [True for _ in range(n0)]
+    nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    active: List[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 3:
@@ -527,14 +527,8 @@ def neighbor_joining(distances: np.ndarray):
         total = np.zeros(D.shape[0], dtype=np.float64)
         for i in range(D.shape[0]):
             if not active[i]:
-                total[i] = 0.0
                 continue
-            s = 0.0
-            for j in range(D.shape[0]):
-                if not active[j]:
-                    continue
-                s += float(D[i, j])
-            total[i] = s
+            total[i] = sum(D[i, j] for j in range(D.shape[0]) if active[j])
 
         # compute Q-matrix 
         Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
@@ -553,56 +547,41 @@ def neighbor_joining(distances: np.ndarray):
             break
 
         dist_ij = float(D[i_min, j_min])
-        denom = float(remaining - 2)
-        if denom == 0.0:
-            delta = 0.0
-        else:
-            delta = (total[i_min] - total[j_min]) / denom
+        delta = 0.0
+        if remaining > 2:
+            delta = (total[i_min] - total[j_min]) / (remaining - 2)
         limb_i = 0.5 * (dist_ij + delta)
         limb_j = 0.5 * (dist_ij - delta)
 
-        # create new node at i_min, mark j_min inactive
-        new_node = TreeNode(children=[nodes[i_min], nodes[j_min]], distances=[float(limb_i), float(limb_j)])
+        child_i = nodes[i_min]
+        child_j = nodes[j_min]
+
+        # create new node 
+        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
+
+        # update nodes and active array
         nodes[i_min] = new_node
-        nodes[j_min] = None  
         active[j_min] = False
-
-        # compute new distances to replace row/col i_min
-        # mask of remaining indices excluding i_min and j_min
-        mask = [k for k in range(D.shape[0]) if active[k] and k != i_min]
-        new_row = []
-        for k in mask:
-            d = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
-            new_row.append(d)
-
-        # build new D' matrix in-place: set distances for i_min to masked entries
-        # and set symmetric counterparts
-        for idx_k, k in enumerate(mask):
-            D[i_min, k] = new_row[idx_k]
-            D[k, i_min] = new_row[idx_k]
-
-        remaining -= 1
+        nodes[j_min] = None  
 
     # final combine remaining nodes into a root
     # collect active nodes
-    final_nodes: list[TreeNode] = []
-    final_idx: list[int] = []
-
-    for idx in range(D.shape[0]):
-        if active[idx]:
-            final_nodes.append(nodes[idx])
-            final_idx.append(idx)
+    final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i]]
+    final_idx = [i for i in range(D.shape[0]) if active[i]]
 
     if len(final_nodes) == 2:
-        d = float(D[final_idx[0], final_idx[1]])
-        root = TreeNode(children=[final_nodes[0], final_nodes[1]], distances=[d/2.0, d/2.0])
-    else:
-        # len == 3
+        a, b = final_nodes
+        ia, ib = final_idx
+        d = float(D[ia, ib])
+        root = TreeNode(children=[a, b], distances=[d/2.0, d/2.0])
+    elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
         da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
         root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
+    else:
+        raise RuntimeError("Neighbor-Joining failed: unexpected number of remaining nodes")
 
     return Tree(root)
