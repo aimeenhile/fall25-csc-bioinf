@@ -437,7 +437,6 @@ def _get_leaves(node: TreeNode, leaf_list: List[TreeNode]):
         leaf_list.append(node)
 
 
-
 def _get_leaf_count(node: TreeNode):
     if node._index == -1:
         count = 0
@@ -458,6 +457,7 @@ def _create_path_to_root(node: TreeNode):
 
 
 class Tree:
+    _root: TreeNode
 
     def __init__(self, root: TreeNode):
         root.as_root()
@@ -465,7 +465,7 @@ class Tree:
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
         indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
-        self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  
+        self._leaves: List[Optional[TreeNode]] = [None for _ in range(leaf_count)]  
         for i in range(len(indices)):
             idx: int = int(indices[i])
             if idx >= leaf_count or idx < 0:
