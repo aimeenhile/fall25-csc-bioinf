@@ -39,10 +39,10 @@ class TreeNode:
     _is_root: bool
     _distance: float
     _parent: Optional[TreeNode]
-    _children: List[Optional[TreeNode]]
+    _children: List[TreeNode]
     _index: int
 
-    def __init__(self, children: List[Optional[TreeNode]] = None, distances: List[float] = None, index: int = -1):
+    def __init__(self, children, distances: List[float] = None, index: int = -1):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
@@ -51,7 +51,7 @@ class TreeNode:
         self._distance: float = 0.0
         self._parent = None
         self._children = [] 
-        #self._index = index
+        self._index = index
 
         if children is not None and distances is not None:
             if len(children) != len(distances):
@@ -66,9 +66,7 @@ class TreeNode:
         return node
 
     @staticmethod
-    def internal(children: List[Optional[TreeNode]], distances: List[float]) -> TreeNode:
-        if len(children) != len(distances):
-            raise ValueError("Children and distances must match in length")
+    def internal(children: List[TreeNode], distances: List[float]) -> TreeNode:
         node = TreeNode(children=children, distances=distances)
         node._index = -1
         node._children = [c for c in children]  
