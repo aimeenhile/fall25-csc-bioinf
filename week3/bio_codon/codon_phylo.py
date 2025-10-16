@@ -525,9 +525,8 @@ def neighbor_joining(distances: np.ndarray):
         # total distances per row 
         total = np.zeros(D.shape[0], dtype=np.float64)
         for i in range(D.shape[0]):
-            if not active[i]:
-                continue
-            total[i] = sum(D[i, j] for j in range(D.shape[0]) if active[j])
+            if active[i]:
+                total[i] = sum(D[i, j] for j in range(D.shape[0]) if active[j])
 
         # compute Q-matrix 
         Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
@@ -556,24 +555,25 @@ def neighbor_joining(distances: np.ndarray):
         child_j = nodes[j_min].copy()
 
         # create new node 
-        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
+        new_node = TreeNode(children=[nodes[i_min], nodes[j_min]], distances=[float(limb_i), float(limb_j)])
+        #new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
 
         # update nodes and active array
         nodes[i_min] = new_node
         active[j_min] = False
         #nodes[j_min] = None  
 
-        remaining -= 1
-
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
             D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
 
+        remaining -= 1
+
     # final combine remaining nodes into a root
     # collect active nodes
-    final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i] and nodes[i] is not None]
-    final_idx = [i for i in range(D.shape[0]) if active[i] and nodes[i] is not None]
+    final_nodes = [nodes[i] for i in range(D.shape[0]) if active[i]]
+    final_idx = [i for i in range(D.shape[0]) if active[i]]
 
     if len(final_nodes) == 2:
         a, b = final_nodes
