@@ -609,8 +609,7 @@ def neighbor_joining(distances):
         da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
-        distances = [max(da,0.0), max(db,0.0), max(dc,0.0)]
-        root = TreeNode(children=[a, b, c], distances=distances)
+        root = TreeNode(children=[a, b, c], distances=[float(max(da, 0.0)), float(max(db, 0.0)), float(max(dc, 0.0))])
     else:
         raise RuntimeError("Neighbor-Joining failed")
 
