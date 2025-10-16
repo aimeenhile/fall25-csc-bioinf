@@ -557,7 +557,7 @@ def neighbor_joining(distances):
         # find min pair in Q
         i_min, j_min = _find_min_pair_triangular(Q, active)
         if i_min == -1 or j_min == -1:
-            break
+            raise RuntimeError("Neighbor-Joining failed: no valid pair found")
 
         dist_ij = D[i_min, j_min]
         delta: float = 0.0
@@ -568,21 +568,24 @@ def neighbor_joining(distances):
 
         child_i = nodes[i_min]
         child_j = nodes[j_min]
+        if child_i is None or child_j is None:
+            raise RuntimeError(f"NJ failed: invalid nodes {i_min}, {j_min}")
+        if limb_i < 0 or limb_j < 0:
+            raise RuntimeError(f"NJ failed: negative limb lengths {limb_i}, {limb_j}")
 
         # create new node 
-        new_node = TreeNode(children=[child_i, child_j], distances=[limb_i, limb_j])
-
-        # update nodes and active array
+        print(f"Merging nodes {i_min} and {j_min} with distance {dist_ij}")
+        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
         nodes[i_min] = new_node
         active[j_min] = False
+
+        remaining -= 1
 
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
             D[i_min, k] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
             D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
-
-        remaining -= 1
 
     # final combine remaining nodes into a root
     # collect active nodes
