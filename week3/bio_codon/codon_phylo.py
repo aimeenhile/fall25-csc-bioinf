@@ -66,22 +66,22 @@ class TreeNode:
             for c, d in zip(children, distances):
                 c._set_parent(self, float(d))        
         """
-        @staticmethod
-        def leaf(index: int) -> TreeNode:
-            node = TreeNode()
-            node._index = index
-            return node
+    @staticmethod
+    def leaf(index: int) -> TreeNode:
+        node = TreeNode()
+        node._index = index
+        return node
 
-        @staticmethod
-        def internal(children: List[TreeNode], distances: List[float]) -> TreeNode:
-            if len(children) != len(distances):
-                raise ValueError("Children and distances must match in length")
-            node = TreeNode()
-            node._index = -1
-            node._children = [c for c in children]  # Copy list to satisfy Codon
-            for c, d in zip(node._children, distances):
-                c._set_parent(node, float(d))
-            return node
+    @staticmethod
+    def internal(children: List[TreeNode], distances: List[float]) -> TreeNode:
+        if len(children) != len(distances):
+            raise ValueError("Children and distances must match in length")
+        node = TreeNode()
+        node._index = -1
+        node._children = [c for c in children]  # Copy list to satisfy Codon
+        for c, d in zip(node._children, distances):
+            c._set_parent(node, float(d))
+        return node
 
     def _set_parent(self, parent: Optional[TreeNode], distance: float) -> None:
         if self._parent is not None or self._is_root:
