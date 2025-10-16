@@ -58,7 +58,7 @@ class TreeNode:
                 raise ValueError("Children and distances must have same length")
             for c, d in zip(children, distances):
                 c._set_parent(self, float(d))
-                self._children.append(c)
+                self._children.append(c) 
         
     @staticmethod
     def leaf(index: int) -> TreeNode:
