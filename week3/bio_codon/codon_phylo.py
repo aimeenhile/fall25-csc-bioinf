@@ -446,7 +446,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: pnp.ndarray, mask: List[bool]):
+def _find_min_pair_triangular(mat:  pnp.ndarray[float, 2], mask: List[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
