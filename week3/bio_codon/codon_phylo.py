@@ -39,7 +39,7 @@ class TreeNode:
     _is_root: bool
     _distance: float
     _parent: Optional[TreeNode]
-    _children: List[TreeNode]
+    _children: List[TreeNode] 
     _index: int
 
     def __init__(self, children: List[TreeNode] = None, distances: List[float] = None, index: int = None):
@@ -50,7 +50,7 @@ class TreeNode:
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent: Optional[TreeNode] = None
-        self._children: List[TreeNode] = []
+        self._children: List[TreeNode] = children if children is not None else []
         self._index: int = -1
 
         if index is not None:
