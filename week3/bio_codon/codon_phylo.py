@@ -484,7 +484,7 @@ def upgma(distances):
 
         # --- Merge nodes ---
         print(f"Merging nodes {i_min} and {j_min} with distance {dist_min}")
-        new_node = TreeNode(children=[child_i, child_j], distances=[h_i, h_j])
+        new_node = TreeNode.internal([child_i, child_j], [h_i, h_j])
 
         nodes[i_min] = new_node
         node_heights[i_min] = height
@@ -582,7 +582,7 @@ def neighbor_joining(distances):
 
         # create new node 
         print(f"Merging nodes {i_min} and {j_min} with distance {dist_ij}")
-        new_node = TreeNode(children=[child_i, child_j], distances=[float(limb_i), float(limb_j)])
+        new_node = TreeNode.internal([child_i, child_j], [float(limb_i), float(limb_j)])
         nodes[i_min] = new_node
         active[j_min] = False
 
