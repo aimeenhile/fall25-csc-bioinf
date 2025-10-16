@@ -455,13 +455,13 @@ def upgma(distances: np.ndarray):
     D = distances.astype(np.float64, copy=True)
 
     # nodes: current nodes (TreeNode)
-    nodes: List["TreeNode"] = [TreeNode(index=i) for i in range(n0)]
+    nodes: list[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     # cluster sizes
-    cluster_size: List[int] = [1 for _ in range(n0)]
+    cluster_size: list[int] = [1 for _ in range(n0)]
     # node heights
-    node_heights: List[float] = [0.0 for _ in range(n0)]
+    node_heights: list[float] = [0.0 for _ in range(n0)]
     # track whether position is active
-    active: List[bool] = [True for _ in range(n0)]
+    active: list[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 1:
@@ -529,8 +529,8 @@ def neighbor_joining(distances: np.ndarray):
         raise ValueError("At least 3 nodes are required")
 
     D = distances.astype(np.float64, copy=True)
-    nodes: List["TreeNode"] = [TreeNode(index=i) for i in range(n0)]
-    active: List[bool] = [True for _ in range(n0)]
+    nodes: list[TreeNode] = [TreeNode(index=i) for i in range(n0)]
+    active: list[bool] = [True for _ in range(n0)]
     remaining = n0
 
     while remaining > 3:
@@ -596,8 +596,8 @@ def neighbor_joining(distances: np.ndarray):
 
     # final combine remaining nodes into a root
     # collect active nodes
-    final_nodes: List["TreeNode"] = []
-    final_idx: List[int] = []
+    final_nodes: list[TreeNode] = []
+    final_idx: list[int] = []
 
     for idx in range(D.shape[0]):
         if active[idx]:
