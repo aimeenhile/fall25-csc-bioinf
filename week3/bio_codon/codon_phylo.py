@@ -474,11 +474,20 @@ def upgma(distances):
         child_i = nodes[i_min]
         child_j = nodes[j_min]
 
+        if child_i is None or child_j is None:
+            raise RuntimeError(f"UPGMA failed: invalid child nodes {i_min}, {j_min}")
+        h_i = float(height - node_heights[i_min])
+        h_j = float(height - node_heights[j_min])
+        if h_i < 0 or h_j < 0:
+            raise RuntimeError(f"UPGMA failed: negative branch length {h_i}, {h_j}")
+
+        # --- Merge nodes ---
+        print(f"Merging nodes {i_min} and {j_min} with distance {dist_min}")
         new_node = TreeNode(
-        children=[child_i, child_j],
-        distances=[float(height - node_heights[i_min]),
-                   float(height - node_heights[j_min])]
+            children=[child_i, child_j],
+            distances=[h_i, h_j]
         )
+
         nodes[i_min] = new_node
         node_heights[i_min] = height
         active[j_min] = False
@@ -489,18 +498,15 @@ def upgma(distances):
         for k in range(n0):
             if k == i_min or not active[k]:
                 continue
-            mean = ((D[i_min, k] * cluster_size[i_min] +
-                 D[j_min, k] * cluster_size[j_min]) /
-                (cluster_size[i_min] + cluster_size[j_min]))
-            D[i_min, k] = mean
-            D[k, i_min] = mean
+            D[i_min, k] = (D[i_min, k] * cluster_size[i_min] + D[j_min, k] * cluster_size[j_min]) / (cluster_size[i_min] + cluster_size[j_min])
+            D[k, i_min] = D[i_min, k]
 
         # update cluster size
         cluster_size[i_min] += cluster_size[j_min]
 
     # Get the last active node to be the root
     last_active_nodes = [nodes[i] for i, act in enumerate(active) if act]
-    if len(last_active_nodes) != 1:
+    if len(last_active_nodes) != 1 or last_active_nodes[0] is None:
         raise RuntimeError(f"UPGMA failed: expected 1 active node, found {len(last_active_nodes)}")
 
     return Tree(last_active_nodes[0])
