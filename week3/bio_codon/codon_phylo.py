@@ -384,7 +384,7 @@ class Tree:
         self._root: TreeNode = root
         leaves_unsorted = self._root.get_leaves()
         leaf_count = len(leaves_unsorted)
-        indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.float64)
+        indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
         self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
         for i in range(len(indices)):
             idx = int(indices[i])
@@ -476,7 +476,7 @@ def upgma(distances: np.ndarray):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D = np.array(distances, dtype=np.float64)
+    D = pnp.array(distances, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -549,7 +549,7 @@ def neighbor_joining(distances: np.ndarray):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D = np.array(distances, dtype=np.float64)
+    D = pnp.array(distances, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
