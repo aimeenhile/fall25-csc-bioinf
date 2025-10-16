@@ -488,7 +488,7 @@ def upgma(distances: np.ndarray):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D: np.ndarray[float, 2] = np.ndarray(distances, dtype=pnp.float64)
+    D: np.ndarray[float, 2] = np.array(distances, dtype=np.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
