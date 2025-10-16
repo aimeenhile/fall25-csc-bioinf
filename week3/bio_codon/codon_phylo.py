@@ -448,7 +448,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> tuple[int, int]: #
+def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> tuple[int, int]: 
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -472,7 +472,7 @@ def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> tuple[int, i
 
 # --- UPGMA ---
 
-def upgma(distances): # type: distances: np.ndarray
+def upgma(distances: np.ndarray): 
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -488,9 +488,7 @@ def upgma(distances): # type: distances: np.ndarray
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    #D: pnp.ndarray[float, 2] = pnp.array(distances, dtype=pnp.float64)
-    data = [[float(distances[i, j]) for j in range(n0)] for i in range(n0)]
-    D = pnp.array(data, dtype=pnp.float64)
+    D: np.ndarray[float, 2] = np.ndarray(distances, dtype=pnp.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -547,7 +545,7 @@ def upgma(distances): # type: distances: np.ndarray
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances): # type: distances: pnp.ndarray
+def neighbor_joining(distances: np.ndarray): 
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
