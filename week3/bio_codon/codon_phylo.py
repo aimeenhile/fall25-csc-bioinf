@@ -40,12 +40,6 @@ class TreeNode:
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
-        _index: int
-        _distance: float
-        _is_root: bool
-        _parent: Optional[TreeNode]
-        _children: list[TreeNode]
-
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent: Optional[TreeNode] = None
@@ -270,10 +264,10 @@ class TreeNode:
                 distances.append(d)
             return TreeNode(children, distances), distance
 
-    def lowest_common_ancestor(self, node: "TreeNode"):
+    def lowest_common_ancestor(self, node: TreeNode):
         self_path = _create_path_to_root(self)
         other_path = _create_path_to_root(node)
-        lca: Optional["TreeNode"] = None
+        lca: Optional[TreeNode] = None
         min_len = min(len(self_path), len(other_path))
         for i in range(1, min_len + 1):
             if self_path[-i] is other_path[-i]:
@@ -282,7 +276,7 @@ class TreeNode:
                 break
         return lca
 
-    def distance_to(self, node: "TreeNode", topological: bool = False):
+    def distance_to(self, node: TreeNode, topological: bool = False) -> float:
         lca = self.lowest_common_ancestor(node)
         if lca is None:
             raise TreeError("The nodes do not have a common ancestor")
@@ -382,12 +376,12 @@ class Tree:
     def get_distance(self, index1: int, index2: int, topological: bool = False):
         return self._leaves[index1].distance_to(self._leaves[index2], topological)
 
-    def to_newick(self, labels: Optional[List[str]] = None, include_distance: bool = True,
+    def to_newick(self, labels: Optional[list[str]] = None, include_distance: bool = True,
                   round_distance: Optional[int] = None):
         return self._root.to_newick(labels, include_distance, round_distance) + ";"
 
     @staticmethod
-    def from_newick(newick: str, labels: Optional[List[str]] = None):
+    def from_newick(newick: str, labels: Optional[list[str]] = None):
         s = newick.strip()
         if len(s) == 0:
             raise ValueError("Newick string is empty")
@@ -412,7 +406,7 @@ class Tree:
 MAX_FLOAT = np.finfo(np.float64).max
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]):
+def _find_min_pair_triangular(mat: np.ndarray, mask: list[bool]):
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -548,7 +542,7 @@ def neighbor_joining(distances: np.ndarray):
             total[i] = s
 
         # compute Q-matrix 
-        Q = np.full(D.shape, float(MAX_FLOAT), dtype=np.float64)
+        Q = pnp.full(D.shape, float(MAX_FLOAT), dtype=pnp.float64)
         for i in range(D.shape[0]):
             if not active[i]:
                 continue
