@@ -1,4 +1,3 @@
-import numpy as np
 from typing import List, Optional
 import math
 import copy
@@ -387,7 +386,7 @@ class Tree:
         indices = pnp.array([leaf._index for leaf in leaves_unsorted], dtype=pnp.int64)
         self._leaves: Optional[List[TreeNode]] = [None for _ in range(leaf_count)]  # type: List[TreeNode]
         for i in range(len(indices)):
-            idx = int(indices[i])
+            idx = indices[i].item()
             if idx >= leaf_count or idx < 0:
                 raise TreeError("The tree's indices are out of range")
             self._leaves[idx] = leaves_unsorted[i]
@@ -436,7 +435,7 @@ class Tree:
         return hash(self._root)
 
 
-def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> tuple[int, int]: 
+def _find_min_pair_triangular(mat: pnp.ndarray, mask: List[bool]) -> tuple[int, int]: 
     """
     Finds indices (i,j) with i>j of minimum mat[i,j] among entries where mask[i] and mask[j] are True.
     """
@@ -460,7 +459,7 @@ def _find_min_pair_triangular(mat: np.ndarray, mask: List[bool]) -> tuple[int, i
 
 # --- UPGMA ---
 
-def upgma(distances: np.ndarray): 
+def upgma(distances: pnp.ndarray): 
     """
     distances: square numpy array (any dtype) -> converted to float64 inside
     Returns a Tree constructed with the UPGMA algorithm.
@@ -487,6 +486,8 @@ def upgma(distances: np.ndarray):
     while remaining > 1:
         # find min pair
         i_min, j_min = _find_min_pair_triangular(D, active)
+        i_min = int(i_min.item())
+        j_min = int(j_min.item())
         if i_min == -1 or j_min == -1:
             break
 
@@ -533,7 +534,7 @@ def upgma(distances: np.ndarray):
 
 # --- NEIGHBOUR JOINING ---
 
-def neighbor_joining(distances: np.ndarray): 
+def neighbor_joining(distances: pnp.ndarray): 
     """
     distances: square numpy array -> converted to float64 inside
     Returns a Tree constructed with the Neighbor-Joining algorithm.
