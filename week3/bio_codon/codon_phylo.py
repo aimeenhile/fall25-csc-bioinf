@@ -488,7 +488,7 @@ def upgma(distances: np.ndarray):
     if n0 < 2:
         raise ValueError("At least 2 nodes are required")
 
-    D: np.ndarray[float, 2] = np.array(distances, dtype=np.float64)
+    D = np.array(distances, dtype=np.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     cluster_size: List[int] = [1 for _ in range(n0)]
@@ -561,7 +561,7 @@ def neighbor_joining(distances: np.ndarray):
     if n0 < 3:
         raise ValueError("At least 3 nodes are required")
 
-    D: np.ndarray[float, 2] = np.array(distances, dtype=np.float64)
+    D = np.array(distances, dtype=np.float64)
 
     nodes: List[TreeNode] = [TreeNode(index=i) for i in range(n0)]
     active: List[bool] = [True for _ in range(n0)]
@@ -611,7 +611,8 @@ def neighbor_joining(distances: np.ndarray):
         # update distances for new cluster i_min 
         mask = [k for k in range(D.shape[0]) if active[k] and (k != i_min or not active[k])]
         for k in mask:
-            D[i_min, k] = D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
+            D[i_min, k] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
+            D[k, i_min] = 0.5 * (D[i_min, k] + D[j_min, k] - dist_ij)
 
         remaining -= 1
 
