@@ -249,10 +249,6 @@ class TreeNode:
 
         if len(children) != 1:
             raise ValueError("Malformed Newick string")
-        
-        # assign final distance to root (0 if none)
-        if distances:
-            root._distance = distances[0]
 
         return children[0]
 
