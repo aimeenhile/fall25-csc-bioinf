@@ -684,14 +684,14 @@ def neighbor_joining(distances):
         a, b = final_nodes
         ia, ib = final_idx
         d = D[ia, ib]
-        root = TreeNode(children=[a, b], distances=[d/2.0, d/2.0])
+        root = TreeNode(children=[a, b], distances=[float(d/2.0), float(d/2.0)])
     elif len(final_nodes) == 3:
         a, b, c = final_nodes
         ia, ib, ic = final_idx
         da = 0.5 * (D[ia, ic] + D[ia, ib] - D[ib, ic])
         db = 0.5 * (D[ib, ia] + D[ib, ic] - D[ia, ic])
         dc = 0.5 * (D[ic, ia] + D[ic, ib] - D[ia, ib])
-        root = TreeNode(children=[a, b, c], distances=[da, db, dc])
+        root = TreeNode(children=[a, b, c], distances=[float(da), float(db), float(dc)])
     else:
         raise RuntimeError("Neighbor-Joining failed")
 
