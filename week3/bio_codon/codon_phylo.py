@@ -39,14 +39,15 @@ class TreeNode:
     _is_root: bool
     _distance: float
     _parent: Optional[TreeNode]
-    _children: Optional[List[TreeNode]]
+    _children:List[TreeNode]
     _index: int
 
-    def __init__(self, children: Optional[List[TreeNode]] = None, distances: List[float] = None, index: int = None):
+    def __init__(self, children: List[TreeNode] = [], distances: List[float] = None, index: int = None):
         """
         If index is provided -> leaf node.
         Otherwise -> intermediate node, children and distances must be provided.
         """
+        self._children = []
         self._is_root: bool = False
         self._distance: float = 0.0
         self._parent = None
@@ -60,7 +61,7 @@ class TreeNode:
             if children is None or distances is None or len(children) == 0 or len(children) != len(distances):
                 raise ValueError("Internal node requires children and distances of same nonzero length")
             self._index = -1
-            self._children = children
+            self._children = [i for i in children]
             for c, d in zip(children, distances):
                 c._set_parent(self, float(d))
 
@@ -199,8 +200,8 @@ class TreeNode:
                 start = i + 1
                 if c == ")":
                     # finish current subtree
-                    parent_children = children
-                    parent_distances = distances
+                    parent_children = [i for i in children]
+                    parent_distances = [i for i in distances]
                     if stack:
                         children, distances = stack.pop()
                     else:
