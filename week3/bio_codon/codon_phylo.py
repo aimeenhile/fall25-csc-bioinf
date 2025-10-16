@@ -153,11 +153,11 @@ class TreeNode:
                 label = str(self._index)
             if include_distance:
                 if round_distance is None:
-                    return f"{label}:{self._distance}"
+                    return "{}:{}".format(label, self._distance)
                 else:
-                    return f"{label}:{self._distance:.{round_distance}f}"
+                    return "{}:{:.{}f}".format(label, self._distance, round_distance)
             else:
-                return f"{label}"
+                return "{}".format(label)
         else:
             child_strings: List[str] = [child.to_newick(labels, include_distance, round_distance)
                              for child in self._children]
