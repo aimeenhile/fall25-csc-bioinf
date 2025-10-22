@@ -30,8 +30,8 @@ def read_fasta(path, name):
 
 def read_data(path):
 
-    mt_human = read_fasta(path, "MT_human.fa")
-    mt_orang = read_fasta(path, "MT_orang.fa")
+    mt_human = read_fasta(path, "MT-human.fa")
+    mt_orang = read_fasta(path, "MT-orang.fa")
     q1 = read_fasta(path, "q1.fa")
     t1 = read_fasta(path, "t1.fa")
 
