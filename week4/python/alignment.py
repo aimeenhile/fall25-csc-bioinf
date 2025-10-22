@@ -296,4 +296,4 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             j -= 1
             current = ptr_upper[i,j+1]
 
-    return middle[n,m], align, align
+    return middle[n,m], align1, align2
