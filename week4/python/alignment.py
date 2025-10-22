@@ -204,7 +204,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
             i -= 1
             j -= 1
         elif i > 0 and P[i, j] == 1:
-            align1 = v[i-1] + align1
+            align1 = s1[i-1] + align1
             align2 = '-' + align2
             i -= 1
         else:  # P[i, j] == 2
