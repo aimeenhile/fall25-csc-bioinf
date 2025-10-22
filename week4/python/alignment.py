@@ -89,25 +89,28 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
                 P[i,j] = 2
 
     # Backtrace
-    align1 = ""
-    align2 = ""
     i = n
     j = m
+    align1_list = []
+    align2_list = []
 
     while i > 0 or j > 0:
         if P[i, j] == 0:
-            align1 = s1[i - 1] + align1
-            align2 = s2[j - 1] + align2
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
             i -= 1
             j -= 1
         elif P[i, j] == 1:
-            align1 = s1[i - 1] + align1
-            align2 = '-' + align2
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
             i -= 1
         else:
-            align1 = '-' + align1
-            align2 = s2[j - 1] + align2
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
             j -= 1
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
 
     return D[n, m], align1, align2
 
@@ -143,23 +146,26 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     # Backtrace: start from max score
     i = max_i
     j = max_j
-    align1 = ""
-    align2 = ""
+    align1_list = []
+    align2_list = []
 
     while i > 0 and j > 0 and V[i,j] != 0:
         if P[i, j] == 0:
-            align1 = s1[i-1] + align1
-            align2 = s2[j-1] + align2
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
             i -= 1
             j -= 1
         elif P[i, j] == 1:
-            align1 = s1[i-1] + align1
-            align2 = '-' + align2
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
             i -= 1
         else:
-            align1 = '-' + align1
-            align2 = s2[j-1] + align2
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
             j -= 1
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
 
     return V[max_i,max_j], align1, align2
     
@@ -197,20 +203,26 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     j = m
     align1 = ""
     align2 = ""
+    align1_list = []
+    align2_list = []
+
     while j > 0:
         if i > 0 and P[i, j] == 0:
-            align1 = s1[i-1] + align1
-            align2 = s2[j-1] + align2
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
             i -= 1
             j -= 1
         elif i > 0 and P[i, j] == 1:
-            align1 = s1[i-1] + align1
-            align2 = '-' + align2
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
             i -= 1
         else:  # P[i, j] == 2
-            align1 = '-' + align1
-            align2 = s2[j-1] + align2
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
             j -= 1
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
 
     return max_score, align1, align2
 
@@ -266,16 +278,16 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     # Traceback
     i = n
     j = m
-    align1 = ""
-    align2 = ""
+    align1_list = []
+    align2_list = []
     current = 0  # start from middle
 
     while i > 0 or j > 0:
         if current == 0:  
             # middle
             if ptr_middle[i,j] == 0:
-                align1 = s1[i-1] + align1
-                align2 = s2[j-1] + align2
+                align1_list.append(s1[i-1])
+                align2_list.append(s2[j-1])
                 i -= 1
                 j -= 1
                 current = 0
@@ -285,15 +297,18 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
                 current = 2
         elif current == 1:  
             # lower
-            align1 = s1[i-1] + align1
-            align2 = '-' + align2
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
             i -= 1
-            current = ptr_lower[i+1,j]
+            current = ptr_lower[i,j]
         elif current == 2:  
             # upper
-            align1 = '-' + align1
-            align2 = s2[j-1] + align2
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
             j -= 1
-            current = ptr_upper[i,j+1]
+            current = ptr_upper[i,j]
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
 
     return middle[n,m], align1, align2
