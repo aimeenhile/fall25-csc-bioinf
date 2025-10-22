@@ -5,7 +5,7 @@ set -euo pipefail
 cd week4
 
 # Path to data folder
-DATA_DIR="data"
+DATA_DIR="../data"
 
 # Run Python version
 echo -e "Method\tLanguage\tRuntime"
