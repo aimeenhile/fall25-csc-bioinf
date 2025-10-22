@@ -63,7 +63,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     """ Find an alignment with maximum alignment score """
     n = len(s1)
     m = len(s2)
-    D = np.zeros((n+1, m+1), dtype=int)
+    D = np.zeros((n+1, m+1), dtype=float)
     P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
 
     # Initialization
@@ -116,7 +116,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     """ Substrings of s1 and s2 whose best global alignment score is maximized """
     n = len(s1)
     m = len(s2)
-    V = np.zeros((n+1, m+1), dtype=int)
+    V = np.zeros((n+1, m+1), dtype=float)
     P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
 
     max_i = 0
