@@ -8,9 +8,6 @@ def read_fasta(path, name):
     data = []
     sequence = ""
 
-    filepath = os.path.join(path, name)
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"File not found: {filepath}")
     with open(filepath, 'r') as f:
         for line in f.readlines():
             line = line.strip()

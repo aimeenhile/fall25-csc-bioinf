@@ -199,17 +199,17 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     align2 = ""
     while j > 0:
         if i > 0 and P[i, j] == 0:
-            aligned_v = v[i-1] + aligned_v
-            aligned_w = w[j-1] + aligned_w
+            align1 = s1[i-1] + align1
+            align2 = s2[j-1] + align2
             i -= 1
             j -= 1
         elif i > 0 and P[i, j] == 1:
-            aligned_v = v[i-1] + aligned_v
-            aligned_w = '-' + aligned_w
+            align1 = v[i-1] + align1
+            align2 = '-' + align2
             i -= 1
         else:  # P[i, j] == 2
-            aligned_v = '-' + aligned_v
-            aligned_w = w[j-1] + aligned_w
+            align1 = '-' + align1
+            align2 = s2[j-1] + align2
             j -= 1
 
     return max_score, align1, align2

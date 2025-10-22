@@ -13,14 +13,15 @@ ALIGNMENTS = {
 
 if __name__ == "__main__":
     argv = sys.argv
-    mt_human, mt_orang, q1, t1 = read_data(os.path.join('./', argv[1]))
+    data_path = os.path.join(os.path.dirname(__file__), '..', argv[1])
+    mt_human, mt_orang, q1, t1 = read_data(data_path)
 
     query = q1 
     target = t1 
 
     # Datasets
     datasets = [("mt_human", mt_human, mt_orang)]
-    for i in range(len(queries)):
+    for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
     # Alignment methods
