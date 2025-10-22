@@ -43,5 +43,5 @@ if __name__ == "__main__":
             end = time.time()
             runtime_ms = int((end - start) * 1000)
 
-            print(f"{method}-{s1}\tpython\t{runtime_ms}ms")
+            print(f"{method}-{name}\tpython\t{runtime_ms}ms")
     
