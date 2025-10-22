@@ -168,7 +168,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     """ Fitting alignment of string s1 to string s2 using BWT-inspired candidate positions """
     n = len(s1)
     m = len(s2)
-    D = np.full((n+1, m+1), -np.inf, dtype=int)
+    D = np.full((n+1, m+1), -np.inf, dtype=float)
     P = np.full((n+1, m+1), -1, dtype=int)
     
     # Initialization
@@ -219,9 +219,9 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     m = len(s2)
 
     # DP matrices
-    lower = np.full((n+1, m+1), -np.inf) # insertion (gap in s2)
-    middle = np.full((n+1, m+1), -np.inf) # matches/mismatches
-    upper = np.full((n+1, m+1), -np.inf) # deletion (gap in s1)
+    lower = np.full((n+1, m+1), -np.inf, dtype=float) # insertion (gap in s2)
+    middle = np.full((n+1, m+1), -np.inf, dtype=float) # matches/mismatches
+    upper = np.full((n+1, m+1), -np.inf, dtype=float) # deletion (gap in s1)
 
     # Pointer matrices (0=middle, 1=lower, 2=upper)
     ptr_middle = np.zeros((n+1, m+1), dtype=int)
