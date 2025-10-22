@@ -13,7 +13,7 @@ ALIGNMENTS = {
 
 if __name__ == "__main__":
     argv = sys.argv
-    mt_human, mt_orang, q1, t1 = read_data(os.path.join('../', argv[1]))
+    mt_human, mt_orang, q1, t1 = read_data(os.path.join('/', argv[1]))
 
     query = q1 
     target = t1 
