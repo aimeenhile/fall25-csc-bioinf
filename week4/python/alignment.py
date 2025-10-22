@@ -18,8 +18,48 @@ def score(a: str, b: str) -> int:
     else:
         return MISMATCH
       
+def bwt(text):
+    """Return BWT string and suffix array of text"""
+    text = text + "$"
+    rotations = sorted([(text[i:] + text[:i], i) for i in range(len(text))])
+    bwt_str = "".join(rot[0][-1] for rot in rotations)
+    sa = [rot[1] for rot in rotations]
+    return bwt_str, sa
 
-def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP) -> int, str, str:
+def build_first_occurrence(bwt_str):
+    """Return first occurrence dictionary for backward search"""
+    first_col = sorted(bwt_str)
+    first_occ = {}
+    for i, c in enumerate(first_col):
+        if c not in first_occ:
+            first_occ[c] = i
+    return first_occ
+
+def build_count_matrix(bwt_str):
+    """Build count array: count[c][i] = # of c in bwt_str[0:i]"""
+    import collections
+    counts = {c: [0]*(len(bwt_str)+1) for c in set(bwt_str)}
+    for i, ch in enumerate(bwt_str):
+        for c in counts:
+            counts[c][i+1] = counts[c][i] + (1 if ch == c else 0)
+    return counts
+
+def backward_search(pattern, bwt_str, first_occ, counts):
+    """
+    Return suffix array range where pattern occurs in text.
+    """
+    l = 0
+    r = len(bwt_str)-1
+    for char in reversed(pattern):
+        if char not in counts:
+            return -1, -1
+        l = first_occ[char] + counts[char][l]
+        r = first_occ[char] + counts[char][r+1] - 1
+        if r < l:
+            return -1, -1
+    return l, r 
+
+def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Find an alignment with maximum alignment score """
     n = len(s1)
     m = len(s2)
@@ -125,26 +165,34 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
+
+    # Build BWT and helpers
+    bwt_s2, sa = bwt(s2)
+    first_oc = build_first_occurrence(bwt_s2)
+    counts = build_count_matrix(bwt_s2)
+
+    # Find candidate end positions in s2 for each prefix of s1
+    candidate_positions = set()
+    for i in range(len(s1)):
+        pattern = s1[:i+1]
+        l, r = backward_search(pattern, bwt_s2, first_oc, counts)
+        if l != -1:
+            # Collect all positions in original w where pattern matches
+            candidate_positions.update(sa[l:r+1])
+
+    # Build DP table around candidate positions
     n = len(s1)
     m = len(s2)
     D = np.full((n+1, m+1), -np.inf, dtype=int)
     P = np.full((n+1, m+1), -1, dtype=int)
 
-    # Initialize first row and column
-    for i in range(1, n+1):
-        D[i,0] = i * gap
-        P[i,0] = 1
-    # first row 0 for semi-global (allow leading gaps in s2)
-    for j in range(1, m+1):
-        D[0,j] = 0
-        P[0,j] = -1
+    D[0,:] = 0 
 
-    # Fill DP
     for i in range(1, n+1):
         for j in range(1, m+1):
-            diag = D[i-1,j-1] + score(s1[i-1], s2[j-1], match, mismatch, gap)
-            up = D[i-1,j] + gap
-            left = D[i,j-1] + gap
+            diag = D[i-1, j-1] + score(v[i-1], w[j-1])
+            up = D[i-1, j] + GAP
+            left = D[i, j-1] + GAP
             D[i,j] = max(diag, up, left)
             if D[i,j] == diag:
                 P[i,j] = 0
@@ -156,23 +204,25 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     # Traceback from last row
     i = n
     j = np.argmax(D[n,:])
-    aligned1, aligned2 = "", ""
+    score_max = D[n,j_max]
+    align1 = ""
+    align2 = ""
     while i > 0:
-        if P[i,j] == 0:
-            aligned1 = s1[i-1] + aligned1
-            aligned2 = s2[j-1] + aligned2
+        if P[i, j] == 0:
+            align1 = s1[i-1] + align1
+            align2 = s2[j-1] + align2
             i -= 1
             j -= 1
-        elif P[i,j] == 1:
-            aligned1 = s1[i-1] + aligned1
-            aligned2 = '-' + aligned2
+        elif P[i, j] == 1:
+            align1 = s1[i-1] + align1
+            align2 = '-' + align2
             i -= 1
         else:
-            aligned1 = '-' + aligned1
-            aligned2 = s2[j-1] + aligned2
+            align1 = '-' + align1
+            align2 = s2[j-1] + align2
             j -= 1
 
-    return D[n,j], aligned1, aligned2
+    return score_max, align1, align2
 
 def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap_open: int = GAP_OPEN, gap_extend: int = GAP_EXTENSION):
     n = len(s1)
