@@ -104,7 +104,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             align1 = s1[i - 1] + align1
             align2 = '-' + align2
             i -= 1
-        elif:
+        else:
             align1 = '-' + align1
             align2 = s2[j - 1] + align2
             j -= 1
@@ -165,7 +165,6 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
-
     # Build BWT and helpers
     bwt_s2, sa = bwt(s2)
     first_oc = build_first_occurrence(bwt_s2)
