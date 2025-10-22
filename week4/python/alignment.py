@@ -19,78 +19,59 @@ def score(a: str, b: str, match = MATCH, mismatch = MISMATCH) -> int:
 
 def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Find an alignment with maximum alignment score """
+    n = len(s1)
+    m = len(s2)
 
-    def nw_score(a, b):
-        """Compute last row of Needleman-Wunsch DP in linear space."""
-        n = len(a)
-        m = len(b)
-        prev = np.arange(m+1) * gap
-        for i in range(1, n+1):
-            curr = np.zeros(m+1, dtype=int)
-            curr[0] = i * gap
-            for j in range(1, m+1):
-                diag = prev[j-1] + score(a[i-1], b[j-1], match, mismatch)
-                up = prev[j] + gap
-                left = curr[j-1] + gap
-                curr[j] = max(diag, up, left)
-            prev = curr
-        return prev
+    # Only two rows at a time
+    prev = np.zeros(m+1, dtype=int)
+    curr = np.zeros(m+1, dtype=int)
+    # Pointers for traceback (store indices for backtrace)
+    trace = [ [0]*(m+1) for _ in range(n+1) ]
 
-    def hirschberg(a, b):
-        """Recursively compute global alignment."""
-        if len(a) == 0:
-            return '-'*len(b), b
-        if len(b) == 0:
-            return a, '-'*len(a)
-        if len(a) == 1 or len(b) == 1:
-            # small enough to compute full DP
-            n = len(a)
-            m = len(b)
-            D = np.zeros((n+1, m+1), dtype=int)
-            P = np.zeros((n+1, m+1), dtype=int)
-            for i in range(1, n+1):
-                D[i,0] = i*gap
-            for j in range(1, m+1):
-                D[0,j] = j*gap
-            for i in range(1, n+1):
-                for j in range(1, m+1):
-                    diag = D[i-1,j-1] + score(a[i-1], b[j-1], match, mismatch)
-                    up = D[i-1,j] + gap
-                    left = D[i,j-1] + gap
-                    D[i,j] = max(diag, up, left)
-            # Backtrace
-            i,j = n,m
-            align_a, align_b = [], []
-            while i>0 or j>0:
-                if i>0 and j>0 and D[i,j] == D[i-1,j-1] + score(a[i-1],b[j-1],match,mismatch):
-                    align_a.append(a[i-1]); align_b.append(b[j-1]); i-=1; j-=1
-                elif i>0 and D[i,j] == D[i-1,j] + gap:
-                    align_a.append(a[i-1]); align_b.append('-'); i-=1
-                else:
-                    align_a.append('-'); align_b.append(b[j-1]); j-=1
-            return ''.join(reversed(align_a)), ''.join(reversed(align_b))
+    # Initialization
+    for j in range(1, m+1):
+        prev[j] = j * gap
+        trace[0][j] = 2  # left
+    trace[0][0] = -1
+
+    for i in range(1, n+1):
+        curr[0] = i * gap
+        trace[i][0] = 1  # up
+        for j in range(1, m+1):
+            diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            up = prev[j] + gap
+            left = curr[j-1] + gap
+            best = max(diag, up, left)
+            curr[j] = best
+            if best == diag:
+                trace[i][j] = 0
+            elif best == up:
+                trace[i][j] = 1
+            else:
+                trace[i][j] = 2
+        prev, curr = curr, prev
+
+    # Traceback
+    i, j = n, m
+    align1_list, align2_list = [], []
+    while i > 0 or j > 0:
+        if trace[i][j] == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
+            i -= 1
+            j -= 1
+        elif trace[i][j] == 1:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            i -= 1
         else:
-            # Divide
-            xlen = len(a)//2
-            scoreL = nw_score(a[:xlen], b)
-            scoreR = nw_score(a[xlen:][::-1], b[::-1])
-            sums = scoreL + scoreR[::-1]
-            k = np.argmax(sums)
-            left_a, left_b = hirschberg(a[:xlen], b[:k])
-            right_a, right_b = hirschberg(a[xlen:], b[k:])
-            return left_a+right_a, left_b+right_b
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
+            j -= 1
 
-    align1, align2 = hirschberg(s1, s2)
-    
-    # Compute final score
-    final_score = 0
-    for c1, c2 in zip(align1, align2):
-        if c1 == '-' or c2 == '-':
-            final_score += gap
-        else:
-            final_score += score(c1, c2, match, mismatch)
-    
-    return final_score, align1, align2
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
+    return prev[m], align1, align2
 
 
 def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
@@ -98,54 +79,60 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n = len(s1)
     m = len(s2)
 
-    # Compute last row and find max score position
+    # Only two rows needed for DP
     prev = np.zeros(m+1, dtype=int)
     curr = np.zeros(m+1, dtype=int)
+    trace = [ [0]*(m+1) for _ in range(n+1) ]  # pointers: diag=0, up=1, left=2, start=None=-1
+
     max_score = 0
-    max_pos = (0,0)
+    max_pos = (0, 0)
 
     for i in range(1, n+1):
+        curr[0] = 0
         for j in range(1, m+1):
             diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
             up = prev[j] + gap
             left = curr[j-1] + gap
-            curr[j] = max(0, diag, up, left)
-            if curr[j] > max_score:
-                max_score = curr[j]
+            best = max(diag, up, left, 0)
+            curr[j] = best
+
+            # Trace pointer
+            if best == 0:
+                trace[i][j] = -1
+            elif best == diag:
+                trace[i][j] = 0
+            elif best == up:
+                trace[i][j] = 1
+            else:
+                trace[i][j] = 2
+
+            # Track maximum score
+            if best > max_score:
+                max_score = best
                 max_pos = (i, j)
         prev, curr = curr, prev
 
-    # Recursive Hirschberg-style traceback for local alignment
-    def traceback(si, sj):
-        """Reconstruct alignment from position si, sj backwards to first 0 score."""
-        if si == 0 or sj == 0:
-            return "", ""
-        # Recompute DP for submatrix ending at si,sj
-        sub_s1 = s1[:si]
-        sub_s2 = s2[:sj]
-        dp = np.zeros((len(sub_s1)+1, len(sub_s2)+1), dtype=int)
-        for i in range(1, len(sub_s1)+1):
-            for j in range(1, len(sub_s2)+1):
-                diag = dp[i-1,j-1] + score(sub_s1[i-1], sub_s2[j-1], match, mismatch)
-                up = dp[i-1,j] + gap
-                left = dp[i,j-1] + gap
-                dp[i,j] = max(0, diag, up, left)
-        # Start traceback
-        i,j = len(sub_s1), len(sub_s2)
-        while i>0 and j>0 and dp[i,j]>0:
-            if dp[i,j] == dp[i-1,j-1] + score(sub_s1[i-1], sub_s2[j-1], match, mismatch):
-                i-=1; j-=1
-            elif dp[i,j] == dp[i-1,j] + gap:
-                i-=1
-            else:
-                j-=1
-        # Recurse if needed
-        return traceback(i,j) + (sub_s1[i:], sub_s2[j:])
+    # Traceback from max_score
+    i, j = max_pos
+    align1_list, align2_list = [], []
 
-    # Get final alignment
-    align1, align2 = traceback(*max_pos)
-    align1 = ''.join(align1)
-    align2 = ''.join(align2)
+    while i > 0 and j > 0 and trace[i][j] != -1:
+        if trace[i][j] == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
+            i -= 1
+            j -= 1
+        elif trace[i][j] == 1:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            i -= 1
+        elif trace[i][j] == 2:
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
+            j -= 1
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
 
     return max_score, align1, align2
     
@@ -227,88 +214,75 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n = len(s1)
     m = len(s2)
 
-    # DP matrices
-    lower = np.full((n+1, m+1), -np.inf, dtype=float) # insertion (gap in s2)
-    middle = np.full((n+1, m+1), -np.inf, dtype=float) # matches/mismatches
-    upper = np.full((n+1, m+1), -np.inf, dtype=float) # deletion (gap in s1)
+    # Initialize matrices: only two rows for each
+    lower_prev = np.full(m+1, -np.inf, dtype=float)
+    lower_curr = np.full(m+1, -np.inf, dtype=float)
+    upper_prev = np.full(m+1, -np.inf, dtype=float)
+    upper_curr = np.full(m+1, -np.inf, dtype=float)
+    middle_prev = np.full(m+1, -np.inf, dtype=float)
+    middle_curr = np.full(m+1, -np.inf, dtype=float)
 
-    # Pointer matrices (0=middle, 1=lower, 2=upper)
-    ptr_middle = np.zeros((n+1, m+1), dtype=int)
-    ptr_lower = np.zeros((n+1, m+1), dtype=int)
-    ptr_upper = np.zeros((n+1, m+1), dtype=int)
+    # Trace pointers for reconstruction
+    trace = [ [0]*(m+1) for _ in range(n+1) ]
 
-    middle[0,0] = 0.0
-    lower[0,0] = 0.0
-    upper[0,0] = 0.0
+    middle_prev[0] = 0
+    lower_prev[0] = -np.inf
+    upper_prev[0] = -np.inf
+    trace[0][0] = -1
 
-    for i in range(1, n+1):
-        lower[i,0] = gap_open + (i-1)*gap_extend
-        ptr_lower[i,0] = 1  # up
+    # Fill first row
     for j in range(1, m+1):
-        upper[0,j] = gap_open + (j-1)*gap_extend
-        ptr_upper[0,j] = 2  # left
+        upper_prev[j] = gap_open + (j-1)*gap_extend
+        middle_prev[j] = upper_prev[j]
+        trace[0][j] = 2  # left
 
-    # Fill DP
     for i in range(1, n+1):
+        lower_curr[0] = gap_open + (i-1)*gap_extend
+        middle_curr[0] = lower_curr[0]
+        upper_curr[0] = -np.inf
+        trace[i][0] = 1  # up
+
         for j in range(1, m+1):
-            # Lower: gap in s2 (vertical)
-            val1 = lower[i-1,j] + gap_extend
-            val2 = middle[i-1,j] + gap_open
-            lower[i,j] = max(val1, val2)
-            ptr_lower[i,j] = 1 if lower[i,j]==val1 else 0
+            # Lower (gap in s2)
+            lower_curr[j] = max(lower_prev[j] + gap_extend, middle_prev[j] + gap_open)
+            # Upper (gap in s1)
+            upper_curr[j] = max(upper_curr[j-1] + gap_extend, middle_curr[j-1] + gap_open)
+            # Middle (match/mismatch)
+            diag = middle_prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            middle_curr[j] = max(diag, lower_curr[j], upper_curr[j])
 
-            # Upper: gap in s1 (horizontal)
-            val1 = upper[i,j-1] + gap_extend
-            val2 = middle[i,j-1] + gap_open
-            upper[i,j] = max(val1, val2)
-            ptr_upper[i,j] = 2 if upper[i,j]==val1 else 0
-
-            # Middle: match/mismatch
-            diag = middle[i-1,j-1] + score(s1[i-1], s2[j-1])
-            low = lower[i,j]
-            up = upper[i,j]
-            middle[i,j] = max(diag, low, up)
-            if middle[i,j] == diag:
-                ptr_middle[i,j] = 0
-            elif middle[i,j] == low:
-                ptr_middle[i,j] = 1
+            # Trace pointer for reconstruction
+            if middle_curr[j] == diag:
+                trace[i][j] = 0
+            elif middle_curr[j] == lower_curr[j]:
+                trace[i][j] = 1
             else:
-                ptr_middle[i,j] = 2
+                trace[i][j] = 2
 
-    # Traceback
-    i = n
-    j = m
-    align1_list = []
-    align2_list = []
-    current = 0  # start from middle
+        # Swap rows
+        lower_prev, lower_curr = lower_curr, lower_prev
+        upper_prev, upper_curr = upper_curr, upper_prev
+        middle_prev, middle_curr = middle_curr, middle_prev
 
+    # Traceback from bottom-right
+    i, j = n, m
+    align1_list, align2_list = [], []
     while i > 0 or j > 0:
-        if current == 0:  
-            # middle
-            if ptr_middle[i,j] == 0:
-                align1_list.append(s1[i-1])
-                align2_list.append(s2[j-1])
-                i -= 1
-                j -= 1
-                current = 0
-            elif ptr_middle[i,j] == 1: 
-                current = 1
-            else:
-                current = 2
-        elif current == 1:  
-            # lower
+        if trace[i][j] == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
+            i -= 1
+            j -= 1
+        elif trace[i][j] == 1:
             align1_list.append(s1[i-1])
             align2_list.append('-')
             i -= 1
-            current = ptr_lower[i,j]
-        elif current == 2:  
-            # upper
+        else:
             align1_list.append('-')
             align2_list.append(s2[j-1])
             j -= 1
-            current = ptr_upper[i,j]
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    return middle[n,m], align1, align2
+    return middle_prev[m], align1, align2
