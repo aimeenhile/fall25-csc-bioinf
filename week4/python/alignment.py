@@ -177,7 +177,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     # Fill DP table
     for i in range(1, n+1):
         for j in range(1, m+1):
-            diag = D[i-1, j-1] + score(v[i-1], w[j-1])
+            diag = D[i-1, j-1] + score(s1[i-1], s2[j-1])
             up = D[i-1, j] + GAP
             left = D[i, j-1] + GAP
             D[i,j] = max(diag, up, left)
