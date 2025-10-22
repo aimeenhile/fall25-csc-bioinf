@@ -35,13 +35,13 @@ if __name__ == "__main__":
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
         for method, align_function in methods:
-            start = time.time()
+            start = time.perf_counter()
             if method == "affine":
                 alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
             else:
                 alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
-            end = time.time()
+            end = time.perf_counter()
             runtime_ms = int((end - start) * 1000)
 
-            print(f"{method}-{name}\tpython\t{runtime_ms}ms")
+            print(f"{method}-{name}\t\tpython\t{runtime_ms}ms")
     
