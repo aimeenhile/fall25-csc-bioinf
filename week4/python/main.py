@@ -4,12 +4,12 @@ import sys
 import os
 import time
 
-ALIGNMENTS = {
-    "global": global_alignment,
-    "local": local_alignment,
-    "semi-global": fitting_alignment,
-    "affine-global": affine_alignment
-}
+# Scoring parameters
+MATCH = 3
+MISMATCH = -3
+GAP = -2
+GAP_OPEN = -5
+GAP_EXTENSION = -1
 
 if __name__ == "__main__":
     argv = sys.argv
@@ -32,23 +32,16 @@ if __name__ == "__main__":
         ("affine", affine_alignment)
     ]
 
-    # Scoring parameters
-    MATCH = 3
-    MISMATCH = -3
-    GAP = -2
-    GAP_OPEN = -5
-    gAP_EXTENSION = -1
-
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
-        for method, align in methods:
+        for method, align_function in methods:
             start = time.time()
             if method == "affine":
-                alignment = align(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=gAP_EXTENSION)
+                alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
             else:
-                alignment = align(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+                alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
             end = time.time()
             runtime_ms = int((end - start) * 1000)
 
-            print(f"{method}-{align}\tpython\t{runtime_ms}ms")
+            print(f"{method}-{s1}\tpython\t{runtime_ms}ms")
     
