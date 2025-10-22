@@ -44,6 +44,13 @@ if __name__ == "__main__":
                 alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
             end = time.perf_counter()
             runtime_ms = (end - start) * 1000  
-
+            
             print(f"{method}-{name}\tpython\t{runtime_ms:.2f}ms")
+
+            # Print score and alignment
+            print(f"Score: {score_val}")
+            print(f"Alignment 1: {align1}")
+            print(f"Alignment 2: {align2}\n")
+            
+
     
