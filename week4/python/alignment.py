@@ -97,47 +97,57 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     """ Substrings of s1 and s2 whose best global alignment score is maximized """
     n = len(s1)
     m = len(s2)
+
+    # Compute last row and find max score position
     prev = np.zeros(m+1, dtype=int)
     curr = np.zeros(m+1, dtype=int)
     max_score = 0
     max_pos = (0,0)
-    for i in range(1,n+1):
-        for j in range(1,m+1):
+
+    for i in range(1, n+1):
+        for j in range(1, m+1):
             diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
             up = prev[j] + gap
             left = curr[j-1] + gap
             curr[j] = max(0, diag, up, left)
             if curr[j] > max_score:
                 max_score = curr[j]
-                max_pos = (i,j)
+                max_pos = (i, j)
         prev, curr = curr, prev
 
-    # Backtrace from max_pos (recompute small DP if needed)
-    i,j = max_pos
-    # small DP for traceback only
-    start_i = max(0, i-50)
-    start_j = max(0, j-50)
-    V = np.zeros((i-start_i+1,j-start_j+1), dtype=int)
-    P = np.zeros((i-start_i+1,j-start_j+1), dtype=int)
-    sub_s1 = s1[start_i:i]
-    sub_s2 = s2[start_j:j]
-    for ii in range(1,len(sub_s1)+1):
-        for jj in range(1,len(sub_s2)+1):
-            diag = V[ii-1,jj-1] + score(sub_s1[ii-1], sub_s2[jj-1], match, mismatch)
-            up = V[ii-1,jj] + gap
-            left = V[ii,jj-1] + gap
-            V[ii,jj] = max(0, diag, up, left)
-            if V[ii,jj] == diag: P[ii,jj]=0
-            elif V[ii,jj] == up: P[ii,jj]=1
-            elif V[ii,jj] == left: P[ii,jj]=2
-            else: P[ii,jj]=-1
-    ii,jj = len(sub_s1),len(sub_s2)
-    align1, align2 = [], []
-    while ii>0 and jj>0 and V[ii,jj]>0:
-        if P[ii,jj]==0: align1.append(sub_s1[ii-1]); align2.append(sub_s2[jj-1]); ii-=1;jj-=1
-        elif P[ii,jj]==1: align1.append(sub_s1[ii-1]); align2.append('-'); ii-=1
-        else: align1.append('-'); align2.append(sub_s2[jj-1]); jj-=1
-    return max_score, ''.join(reversed(align1)), ''.join(reversed(align2))
+    # Recursive Hirschberg-style traceback for local alignment
+    def traceback(si, sj):
+        """Reconstruct alignment from position si, sj backwards to first 0 score."""
+        if si == 0 or sj == 0:
+            return "", ""
+        # Recompute DP for submatrix ending at si,sj
+        sub_s1 = s1[:si]
+        sub_s2 = s2[:sj]
+        dp = np.zeros((len(sub_s1)+1, len(sub_s2)+1), dtype=int)
+        for i in range(1, len(sub_s1)+1):
+            for j in range(1, len(sub_s2)+1):
+                diag = dp[i-1,j-1] + score(sub_s1[i-1], sub_s2[j-1], match, mismatch)
+                up = dp[i-1,j] + gap
+                left = dp[i,j-1] + gap
+                dp[i,j] = max(0, diag, up, left)
+        # Start traceback
+        i,j = len(sub_s1), len(sub_s2)
+        while i>0 and j>0 and dp[i,j]>0:
+            if dp[i,j] == dp[i-1,j-1] + score(sub_s1[i-1], sub_s2[j-1], match, mismatch):
+                i-=1; j-=1
+            elif dp[i,j] == dp[i-1,j] + gap:
+                i-=1
+            else:
+                j-=1
+        # Recurse if needed
+        return traceback(i,j) + (sub_s1[i:], sub_s2[j:])
+
+    # Get final alignment
+    align1, align2 = traceback(*max_pos)
+    align1 = ''.join(align1)
+    align2 = ''.join(align2)
+
+    return max_score, align1, align2
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
@@ -176,7 +186,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
             align2.append(s2[cj-1])
             cj -= 1
     return max_score, ''.join(reversed(align1)), ''.join(reversed(align2))
-    
+
 
 def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap_open: int = GAP_OPEN, gap_extend: int = GAP_EXTENSION):
     n = len(s1)
