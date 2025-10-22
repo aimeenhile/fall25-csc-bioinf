@@ -18,101 +18,138 @@ def score(a: str, b: str) -> int:
     else:
         return MISMATCH
       
-def bwt(text):
-    """Return BWT string and suffix array of text"""
-    text = text + "$"
-    rotations = sorted([(text[i:] + text[:i], i) for i in range(len(text))])
-    bwt_str = "".join(rot[0][-1] for rot in rotations)
-    sa = [rot[1] for rot in rotations]
-    return bwt_str, sa
+def _nw_score_row(s1, s2, match, mismatch, gap):
+    """Compute only the last row of DP matrix."""
+    prev = [j * gap for j in range(len(s2) + 1)]
+    for i in range(1, len(s1) + 1):
+        cur = [i * gap]
+        for j in range(1, len(s2) + 1):
+            diag = prev[j - 1] + (match if s1[i - 1] == s2[j - 1] else mismatch)
+            up = prev[j] + gap
+            left = cur[j - 1] + gap
+            cur.append(max(diag, up, left))
+        prev = cur
+    return prev
 
-def build_first_occurrence(bwt_str):
-    """Return first occurrence dictionary for backward search"""
-    first_col = sorted(bwt_str)
-    first_occ = {}
-    for i, c in enumerate(first_col):
-        if c not in first_occ:
-            first_occ[c] = i
-    return first_occ
+def _needleman_wunsch_small(s1, s2, match, mismatch, gap):
+    """Standard NW alignment for small subproblems."""
+    n, m = len(s1), len(s2)
+    D = np.zeros((n + 1, m + 1))
+    for i in range(1, n + 1):
+        D[i, 0] = i * gap
+    for j in range(1, m + 1):
+        D[0, j] = j * gap
 
-def build_count_matrix(bwt_str):
-    """Build count array: count[c][i] = # of c in bwt_str[0:i]"""
-    import collections
-    counts = {c: [0]*(len(bwt_str)+1) for c in set(bwt_str)}
-    for i, ch in enumerate(bwt_str):
-        for c in counts:
-            counts[c][i+1] = counts[c][i] + (1 if ch == c else 0)
-    return counts
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            diag = D[i - 1, j - 1] + (match if s1[i - 1] == s2[j - 1] else mismatch)
+            up = D[i - 1, j] + gap
+            left = D[i, j - 1] + gap
+            D[i, j] = max(diag, up, left)
 
-def backward_search(pattern, bwt_str, first_occ, counts):
-    """
-    Return suffix array range where pattern occurs in text.
-    """
-    l = 0
-    r = len(bwt_str)-1
-    for char in reversed(pattern):
-        if char not in counts:
-            return -1, -1
-        l = first_occ[char] + counts[char][l]
-        r = first_occ[char] + counts[char][r+1] - 1
-        if r < l:
-            return -1, -1
-    return l, r 
+    # Backtrace
+    i, j = n, m
+    a1, a2 = [], []
+    while i > 0 or j > 0:
+        if i > 0 and j > 0 and D[i, j] == D[i - 1, j - 1] + (match if s1[i - 1] == s2[j - 1] else mismatch):
+            a1.append(s1[i - 1])
+            a2.append(s2[j - 1])
+            i -= 1
+            j -= 1
+        elif i > 0 and D[i, j] == D[i - 1, j] + gap:
+            a1.append(s1[i - 1])
+            a2.append('-')
+            i -= 1
+        else:
+            a1.append('-')
+            a2.append(s2[j - 1])
+            j -= 1
+
+    return D[n, m], ''.join(reversed(a1)), ''.join(reversed(a2))
+
+
+def _hirschberg(s1, s2, match, mismatch, gap):
+    """Recursive Hirschberg divide-and-conquer global alignment."""
+    n, m = len(s1), len(s2)
+    if n == 0:
+        return '-' * m, s2
+    elif m == 0:
+        return s1, '-' * n
+    elif n == 1 or m == 1:
+        _, a1, a2 = _needleman_wunsch_small(s1, s2, match, mismatch, gap)
+        return a1, a2
+
+    mid = n // 2
+    scoreL = _nw_score_row(s1[:mid], s2, match, mismatch, gap)
+    scoreR = _nw_score_row(s1[mid:][::-1], s2[::-1], match, mismatch, gap)
+    split = max(range(len(s2) + 1), key=lambda j: scoreL[j] + scoreR[len(s2) - j])
+
+    leftA, leftB = _hirschberg(s1[:mid], s2[:split], match, mismatch, gap)
+    rightA, rightB = _hirschberg(s1[mid:], s2[split:], match, mismatch, gap)
+    return leftA + rightA, leftB + rightB
+
 
 def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Find an alignment with maximum alignment score """
     n = len(s1)
     m = len(s2)
-    D = np.zeros((n+1, m+1), dtype=float)
-    P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
 
-    # Initialization
-    for i in range(1, n+1):
-        D[i,0] = i * gap
-        P[i,0] = 1  # up
-    for j in range(1, m+1):
-        D[0,j] = j * gap
-        P[0,j] = 2  # left
+    if n * m > 100_000: 
+        a1, a2 = _hirschberg(s1, s2, match, mismatch, gap)
+        # Compute final alignment score (can reuse small NW for that)
+        score_val, _, _ = _needleman_wunsch_small(a1.replace('-', ''), a2.replace('-', ''), match, mismatch, gap)
+        return score_val, a1, a2
+    else:
+        D = np.zeros((n+1, m+1), dtype=float)
+        P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
 
-    # Fill DP
-    for i in range(1, n+1):
+        # Initialization
+        for i in range(1, n+1):
+            D[i,0] = i * gap
+            P[i,0] = 1  # up
         for j in range(1, m+1):
-            diag = D[i-1,j-1] + score(s1[i-1], s2[j-1])
-            up = D[i-1,j] + gap
-            left = D[i,j-1] + gap
-            D[i,j] = max(diag, up, left)
-            if D[i,j] == diag:
-                P[i,j] = 0
-            elif D[i,j] == up:
-                P[i,j] = 1
+            D[0,j] = j * gap
+            P[0,j] = 2  # left
+
+        # Fill DP
+        for i in range(1, n+1):
+            for j in range(1, m+1):
+                diag = D[i-1,j-1] + score(s1[i-1], s2[j-1])
+                up = D[i-1,j] + gap
+                left = D[i,j-1] + gap
+                D[i,j] = max(diag, up, left)
+                if D[i,j] == diag:
+                    P[i,j] = 0
+                elif D[i,j] == up:
+                    P[i,j] = 1
+                else:
+                    P[i,j] = 2
+
+        # Backtrace
+        i = n
+        j = m
+        align1_list = []
+        align2_list = []
+
+        while i > 0 or j > 0:
+            if P[i, j] == 0:
+                align1_list.append(s1[i-1])
+                align2_list.append(s2[j-1])
+                i -= 1
+                j -= 1
+            elif P[i, j] == 1:
+                align1_list.append(s1[i-1])
+                align2_list.append('-')
+                i -= 1
             else:
-                P[i,j] = 2
+                align1_list.append('-')
+                align2_list.append(s2[j-1])
+                j -= 1
 
-    # Backtrace
-    i = n
-    j = m
-    align1_list = []
-    align2_list = []
+        align1 = ''.join(reversed(align1_list))
+        align2 = ''.join(reversed(align2_list))
 
-    while i > 0 or j > 0:
-        if P[i, j] == 0:
-            align1_list.append(s1[i-1])
-            align2_list.append(s2[j-1])
-            i -= 1
-            j -= 1
-        elif P[i, j] == 1:
-            align1_list.append(s1[i-1])
-            align2_list.append('-')
-            i -= 1
-        else:
-            align1_list.append('-')
-            align2_list.append(s2[j-1])
-            j -= 1
-
-    align1 = ''.join(reversed(align1_list))
-    align2 = ''.join(reversed(align2_list))
-
-    return D[n, m], align1, align2
+        return D[n, m], align1, align2
 
 
 def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
