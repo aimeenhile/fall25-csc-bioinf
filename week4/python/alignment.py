@@ -154,38 +154,73 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     """ Fitting alignment of string s1 to string s2 using BWT-inspired candidate positions """
     n = len(s1)
     m = len(s2)
+
+    # Only store two rows at a time
     prev = np.zeros(m+1, dtype=int)
     curr = np.zeros(m+1, dtype=int)
+    # To remember which j in last column gives max score
+    end_i = 0
 
-    # Fill DP
-    for i in range(1,n+1):
-        for j in range(1,m+1):
-            diag = prev[j-1]+score(s1[i-1],s2[j-1],match,mismatch)
-            up = prev[j]+gap
-            left = curr[j-1]+gap
+    # Initialization: first row is all zeros (fits anywhere in s2)
+    prev[:] = 0
+
+    # Fill DP table row by row
+    for i in range(1, n+1):
+        for j in range(1, m+1):
+            diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            up = prev[j] + gap
+            left = curr[j-1] + gap
             curr[j] = max(diag, up, left)
         prev, curr = curr, prev
 
-    # Maximum in last column
-    last_col = prev
+    # Find maximum in last column (fitting alignment ends at s2[-1])
     j = m
-    i = np.argmax(last_col)
-    max_score = last_col[i]
+    i = np.argmax(prev)  # row index of max score in last column
+    max_score = prev[i]
 
-    # traceback (approximate, for memory)
-    align1, align2 = [], []
-    ci, cj = i, j
-    while cj>0:
-        if ci>0:
-            align1.append(s1[ci-1])
-            align2.append(s2[cj-1])
-            ci -= 1
-            cj -= 1
-        else:
-            align1.append('-')
-            align2.append(s2[cj-1])
-            cj -= 1
-    return max_score, ''.join(reversed(align1)), ''.join(reversed(align2))
+    # Recompute DP for traceback submatrix (small enough)
+    sub_s1 = s1[:i]
+    sub_s2 = s2
+    D = np.zeros((len(sub_s1)+1, len(sub_s2)+1), dtype=int)
+    P = np.zeros((len(sub_s1)+1, len(sub_s2)+1), dtype=int)  # diag=0, up=1, left=2
+
+    for ii in range(1, len(sub_s1)+1):
+        for jj in range(1, len(sub_s2)+1):
+            diag = D[ii-1,jj-1] + score(sub_s1[ii-1], sub_s2[jj-1], match, mismatch)
+            up = D[ii-1,jj] + gap
+            left = D[ii,jj-1] + gap
+            D[ii,jj] = max(diag, up, left)
+            if D[ii,jj] == diag:
+                P[ii,jj] = 0
+            elif D[ii,jj] == up:
+                P[ii,jj] = 1
+            else:
+                P[ii,jj] = 2
+
+    # Traceback from (i, m)
+    align1_list = []
+    align2_list = []
+    ii = len(sub_s1)
+    jj = len(sub_s2)
+    while ii > 0 and jj > 0:
+        if P[ii,jj] == 0:
+            align1_list.append(sub_s1[ii-1])
+            align2_list.append(sub_s2[jj-1])
+            ii -= 1
+            jj -= 1
+        elif P[ii,jj] == 1:
+            align1_list.append(sub_s1[ii-1])
+            align2_list.append('-')
+            ii -= 1
+        else:  # left
+            align1_list.append('-')
+            align2_list.append(sub_s2[jj-1])
+            jj -= 1
+
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
+
+    return max_score, align1, align2
 
 
 def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap_open: int = GAP_OPEN, gap_extend: int = GAP_EXTENSION):
