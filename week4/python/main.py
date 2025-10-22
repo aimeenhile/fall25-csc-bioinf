@@ -39,11 +39,16 @@ if __name__ == "__main__":
         for method, align_function in methods:
             start = time.perf_counter()
             if method == "affine":
-                alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
+                score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
             else:
-                alignment = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+                score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
             end = time.perf_counter()
             runtime_ms = (end - start) * 1000  
 
             print(f"{method}-{name}\tpython\t{runtime_ms:.2f}ms")
+
+            # Print score and alignment
+            print(f"Score: {score_val}")
+            print(f"Alignment 1: {align1}")
+            print(f"Alignment 2: {align2}\n")
     
