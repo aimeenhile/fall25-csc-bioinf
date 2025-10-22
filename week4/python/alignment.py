@@ -14,15 +14,15 @@ def score_char(a: str, b: str, match: int, mismatch: int) -> int:
     return match if a == b else mismatch
       
 def _nw_score_row(s1, s2, match, mismatch, gap):
-    """Compute only the last row of DP matrix."""
-    prev = [j * gap for j in range(len(s2) + 1)]
-    for i in range(1, len(s1) + 1):
-        cur = [i * gap]
-        for j in range(1, len(s2) + 1):
-            diag = prev[j - 1] + (match if s1[i - 1] == s2[j - 1] else mismatch)
+    prev = np.arange(len(s2)+1) * gap
+    for i in range(1, len(s1)+1):
+        cur = np.zeros(len(s2)+1)
+        cur[0] = i * gap
+        for j in range(1, len(s2)+1):
+            diag = prev[j-1] + (match if s1[i-1] == s2[j-1] else mismatch)
             up = prev[j] + gap
-            left = cur[j - 1] + gap
-            cur.append(max(diag, up, left))
+            left = cur[j-1] + gap
+            cur[j] = max(diag, up, left)
         prev = cur
     return prev
 
@@ -100,6 +100,9 @@ def _hirschberg(s1, s2, match, mismatch, gap):
 
     leftA, leftB = _hirschberg(s1[:mid], s2[:best_j], match, mismatch, gap)
     rightA, rightB = _hirschberg(s1[mid:], s2[best_j:], match, mismatch, gap)
+
+    print(f"[HIRSCHBERG] s1_len={len(s1)}, s2_len={len(s2)}")
+    
     return leftA + rightA, leftB + rightB
 
 def _score_from_aligned(a1: str, a2: str, match: int, mismatch: int, gap: int) -> float:

@@ -4,6 +4,8 @@ import sys
 import os
 import time
 
+sys.setrecursionlimit(1000000)
+
 # Scoring parameters
 MATCH = 3
 MISMATCH = -3
