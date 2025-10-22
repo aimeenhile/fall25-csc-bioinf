@@ -8,7 +8,7 @@ def read_fasta(path, name):
     data = []
     sequence = ""
 
-    with open(filepath, 'r') as f:
+    with open(os.path.join(path, name), 'r') as f:
         for line in f.readlines():
             line = line.strip()
             if line[0] == ">":
