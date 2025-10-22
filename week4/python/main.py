@@ -13,9 +13,14 @@ ALIGNMENTS = {
 
 if __name__ == "__main__":
     argv = sys.argv
-    data_path = os.path.join(os.path.dirname(__file__), '..', argv[1])
-    mt_human, mt_orang, q1, t1 = read_data(data_path)
+    base_dir = os.path.dirname(os.path.abspath(__file__))  # week4/python
+    data_path = os.path.abspath(os.path.join(base_dir, "..", argv[1]))  # week4/data
 
+    print("Looking for data in:", data_path)
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"Data folder not found: {data_path}")
+
+    mt_human, mt_orang, q1, t1 = read_data(data_path)
     query = q1 
     target = t1 
 
