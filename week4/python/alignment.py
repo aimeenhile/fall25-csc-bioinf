@@ -79,54 +79,60 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n = len(s1)
     m = len(s2)
 
-    # Only two rows needed for DP
+    # Two rows for DP
     prev = np.zeros(m+1, dtype=int)
     curr = np.zeros(m+1, dtype=int)
-    trace = [ [0]*(m+1) for _ in range(n+1) ]  # pointers: diag=0, up=1, left=2, start=None=-1
+
+    # Two rows for pointers (diag=0, up=1, left=2, start=None=-1)
+    ptr = np.full((2, m+1), -1, dtype=int)
 
     max_score = 0
     max_pos = (0, 0)
 
     for i in range(1, n+1):
         curr[0] = 0
+        ptr[i % 2][0] = -1
         for j in range(1, m+1):
             diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
             up = prev[j] + gap
             left = curr[j-1] + gap
-            best = max(diag, up, left, 0)
+            best = max(0, diag, up, left)
             curr[j] = best
 
             # Trace pointer
             if best == 0:
-                trace[i][j] = -1
+                ptr[i % 2][j] = -1
             elif best == diag:
-                trace[i][j] = 0
+                ptr[i % 2][j] = 0
             elif best == up:
-                trace[i][j] = 1
+                ptr[i % 2][j] = 1
             else:
-                trace[i][j] = 2
+                ptr[i % 2][j] = 2
 
-            # Track maximum score
             if best > max_score:
                 max_score = best
                 max_pos = (i, j)
-        prev, curr = curr, prev
+
+        prev, curr = curr, prev  # Swap rows for next iteration
 
     # Traceback from max_score
     i, j = max_pos
     align1_list, align2_list = [], []
 
-    while i > 0 and j > 0 and trace[i][j] != -1:
-        if trace[i][j] == 0:
+    while i > 0 and j > 0:
+        p = ptr[i % 2][j]
+        if p == -1:
+            break
+        if p == 0:
             align1_list.append(s1[i-1])
             align2_list.append(s2[j-1])
             i -= 1
             j -= 1
-        elif trace[i][j] == 1:
+        elif p == 1:
             align1_list.append(s1[i-1])
             align2_list.append('-')
             i -= 1
-        elif trace[i][j] == 2:
+        else:  # p == 2
             align1_list.append('-')
             align2_list.append(s2[j-1])
             j -= 1
