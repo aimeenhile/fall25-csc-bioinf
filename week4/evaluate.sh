@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")/week4"
+cd week4
 
 # Path to data folder
 DATA_DIR="data"
