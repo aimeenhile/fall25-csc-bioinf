@@ -87,9 +87,9 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     a1 = len(align1)
     a2 = len(align2)
 
-    print(f"Score: "{score})
-    print(f"    Len(a1): "{a1})
-    print(f"    Len(a2): "{a2})   
+    print(f"Score: {score}")
+    print(f"    Len(a1): {a1}")
+    print(f"    Len(a2): {a2}")   
 
     return D[n, m], align1, align2
 
@@ -155,9 +155,9 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     a1 = len(align1)
     a2 = len(align2)
 
-    print(f"Score: "{score})
-    print(f"    Len(a1): "{a1})
-    print(f"    Len(a2): "{a2})      
+    print(f"Score: {score}")
+    print(f"    Len(a1): {a1}")
+    print(f"    Len(a2): {a2}")   
 
     return V[max_i,max_j], align1, align2                  
     
@@ -221,9 +221,9 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     a1 = len(align1)
     a2 = len(align2)
 
-    print(f"Score: "{max_score})
-    print(f"    Len(a1): "{a1})
-    print(f"    Len(a2): "{a2})   
+    print(f"Score: {max_score}")
+    print(f"    Len(a1): {a1}")
+    print(f"    Len(a2): {a2}")   
 
     return max_score, align1, align2
 
@@ -332,8 +332,8 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     a1 = len(align1)
     a2 = len(align2)
 
-    print(f"Score: "{score})
-    print(f"    Len(a1): "{a1})
-    print(f"    Len(a2): "{a2})      
+    print(f"Score: {score}")
+    print(f"    Len(a1): {a1}")
+    print(f"    Len(a2): {a2}")   
 
     return middle[n,m], align1, align2
