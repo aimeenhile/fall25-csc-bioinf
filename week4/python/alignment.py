@@ -83,6 +83,14 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
+    score = D[n,m]
+    a1 = len(align1)
+    a2 = len(align2)
+
+    print(f"Score: "{score})
+    print(f"    Len(a1): "{a1})
+    print(f"    Len(a2): "{a2})   
+
     return D[n, m], align1, align2
 
 
@@ -143,7 +151,15 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    return V[max_i,max_j], align1, align2
+    score = V[max_i,max_j]
+    a1 = len(align1)
+    a2 = len(align2)
+
+    print(f"Score: "{score})
+    print(f"    Len(a1): "{a1})
+    print(f"    Len(a2): "{a2})      
+
+    return V[max_i,max_j], align1, align2                  
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
@@ -201,6 +217,13 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
+
+    a1 = len(align1)
+    a2 = len(align2)
+
+    print(f"Score: "{max_score})
+    print(f"    Len(a1): "{a1})
+    print(f"    Len(a2): "{a2})   
 
     return max_score, align1, align2
 
@@ -297,12 +320,20 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             i -= 1
         elif current == 2:  
             # upper
-            align1_list.append('-')
+            align1_list.append('-')    
             align2_list.append(s2[j-1])
             current = ptr_upper[i,j]
             j -= 1
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
+
+    score = middle[n,]
+    a1 = len(align1)
+    a2 = len(align2)
+
+    print(f"Score: "{score})
+    print(f"    Len(a1): "{a1})
+    print(f"    Len(a2): "{a2})      
 
     return middle[n,m], align1, align2
