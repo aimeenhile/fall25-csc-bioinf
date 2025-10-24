@@ -65,6 +65,6 @@ if __name__ == "__main__":
 
             # Print score and alignment
             print(f"Score: {score_val}")
-            print(f"Alignment 1: {len(align1)}")
-            print(f"Alignment 2: {len(align2)}\n")
+            print(f"Alignment 1: {align1}")
+            print(f"Alignment 2: {align2}\n")
     
