@@ -157,35 +157,20 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     n = len(s1)
     m = len(s2)
 
-    free_start_s1 = False
-    free_end_s1 = False
-    free_start_s2 = True
-    free_end_s2 = True
-
     prev = np.zeros(m + 1, dtype=int)
     curr = np.zeros(m + 1, dtype=int)
     P = np.full((n+1, m+1), -1, dtype=np.int8)
 
     # Initialization
     for j in range(m + 1):
-        if free_start_s2:
-            prev[j] = 0
-        else:
-            prev[j] = j * gap
-
-        if j > 0:
-            P[0,j] = 2 # left pointer
+        prev[j] = 0
+        P[0,j] = 2 # left pointer
 
     # Fill DP
     for i in range(1, n + 1):
         s1_i = s1[i-1]
-
-        if free_start_s1:
-            curr[0] = 0
-            P[i,0] = -1
-        else:
-            curr[0] = prev[0] + gap
-            P[i,0] = 1 # up pointer
+        curr[0] = prev[0] + gap
+        P[i,0] = 1 # up pointer
 
         for j in range(1, m + 1):
             s2_j = s2[j-1]
@@ -214,7 +199,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     align1_list = []
     align2_list = []
 
-    while i > 0:
+    while i > 0 or j > 0:
         if i > 0 and j > 0:
             pos = P[i, j]
             if pos == 0:
