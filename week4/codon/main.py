@@ -1,6 +1,4 @@
-import python
-from python import sys
-from python import os
+import sys
 from utils import read_data
 from alignment import global_alignment, local_alignment, fitting_alignment, affine_alignment
 import time 
@@ -11,6 +9,11 @@ MISMATCH = -3
 GAP = -2
 GAP_OPEN = -5
 GAP_EXTENSION = -1
+
+
+def os_path_join(*args) -> str:
+    """Simple Codon version of os.path.join."""
+    return '/'.join(args)
 
 def run_alignment(method: str, s1: str, s2: str) -> tuple[int, str, str]:
     """Run alignment based on method name."""
@@ -33,7 +36,7 @@ if __name__ == "__main__":
         sys.exit(1)
         
     argv = sys.argv
-    data_path = str(os.path.join('..', argv[1]))
+    data_path: str = os_path_join('..', argv[1])
 
     print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)
