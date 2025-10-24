@@ -1,4 +1,4 @@
-from numpy import ndarray, int8, float64
+from numpy import ndarray, int8
 
 MATCH: int = 3
 MISMATCH: int = -3
@@ -15,8 +15,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     D_prev: list[int] = [0] * (m + 1)
     D_curr: list[int] = [0] * (m + 1)
 
-    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    P.fill(-1)  
+    P: list[list[int8]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
 
     # Initialization
     for j in range(1, m+1):
