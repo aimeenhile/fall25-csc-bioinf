@@ -1,4 +1,4 @@
-import numpy as np
+from numpy import ndarray, int8, float64
 
 MATCH: int = 3
 MISMATCH: int = -3
@@ -12,15 +12,13 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n: int = len(s1)
     m: int = len(s2)
 
-    D_prev = np.ndarray[int, 1]((m + 1,))
-    D_curr = np.ndarray[int, 1]((m+1,))
-
+    D_prev = ndarray[int, 1]((m + 1,))
+    D_curr = ndarray[int, 1]((m+1,))
     for j in range(m+1):
         D_prev[j] = 0
         D_curr[j] = 0
 
-    P = np.ndarray[int, 2]((n+1, m+1)) # diag=0, up=1, left=2
-
+    P = ndarray[int8, 2]((n+1, m+1)) # diag=0, up=1, left=2
     for i in range(n+1):
         for j in range(m+1):
             P[i,j] = -1
@@ -34,42 +32,56 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     for i in range(1, n+1):
         D_curr[0] = i * gap
         P[i,0] = 1  # up
-        s1_i = s1[i-1]
+        s1_i: str = s1[i-1]
         for j in range(1, m+1):
-            s2_j = s2[j-1]
+            s2_j: str = s2[j-1]
             diag = D_prev[j-1] + (match if s1_i == s2_j else mismatch)
             up = D_prev[j] + gap
             left = D_curr[j-1] + gap
 
-            val = max(diag, up, left)
+            val = diag
+            pos = 0
+            if up > val:
+                val = up
+                pos = 1
+            if left > val:
+                val = left
+                pos = 2
+
             D_curr[j] = val
+            P[i,j] = pos
 
-            if val == diag:
-                P[i,j] = 0
-            elif val == up:
-                P[i,j] = 1
-            else:
-                P[i,j] = 2
-
-        D_prev, D_curr = D_curr, D_prev
+        tmp = D_prev
+        D_prev = D_curr
+        D_curr = tmp
 
     # Backtrace
-    i = n
-    j = m
-    align1_list = []
-    align2_list = []
+    i: int = n
+    j: int = m
+    align1_list: list[str] = []
+    align2_list: list[str] = []
 
     while i > 0 or j > 0:
-        if P[i, j] == 0:
-            align1_list.append(s1[i-1])
-            align2_list.append(s2[j-1])
-            i -= 1
-            j -= 1
-        elif P[i, j] == 1:
+        if i > 0 and j > 0:
+            pos: int = P[i,j]
+            if pos == 0:
+                align1_list.append(s1[i-1])
+                align2_list.append(s2[j-1])
+                i -= 1
+                j -= 1
+            elif pos == 1:
+                align1_list.append(s1[i-1])
+                align2_list.append('-')
+                i -= 1
+            else:
+                align1_list.append('-')
+                align2_list.append(s2[j-1])
+                j -= 1
+        elif i > 0:
             align1_list.append(s1[i-1])
             align2_list.append('-')
             i -= 1
-        else:
+        elif j > 0:
             align1_list.append('-')
             align2_list.append(s2[j-1])
             j -= 1
@@ -87,16 +99,298 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n: int = len(s1)
     m: int = len(s2)
     
-    return 0
+    V_prev = ndarray[int, 1]((m+1,))
+    V_curr = ndarray[int, 1]((m+1,))
+    for j in range(m+1):
+        V_prev[j] = 0
+        V_curr[j] = 0
+
+    P = ndarray[int8, 2]((n+1, m+1))
+    for i in range(n+1):
+        for j in range(m+1):
+            P[i,j] = -1
+
+    max_score: int = 0
+    max_i: int = 0
+    max_j: int = 0
+
+    for i in range(1, n+1):
+        V_curr[0] = 0
+        s1_i: str = s1[i-1]
+        for j in range(1, m+1):
+            s2_j: str = s2[j-1]
+            diag = V_prev[j-1] + (match if s1_i == s2_j else mismatch)
+            up = V_prev[j] + gap
+            left = V_curr[j-1] + gap
+
+            val = diag
+            pos: int = 0
+            if up > val:
+                val = up
+                pos = 1
+            if left > val:
+                val = left
+                pos = 2
+            if val < 0:
+                val = 0
+                pos = -1
+
+            V_curr[j] = val
+            P[i,j] = pos
+
+            if val > max_score:
+                max_score = val
+                max_i = i
+                max_j = j
+
+        tmp = V_prev
+        V_prev = V_curr
+        V_curr = tmp
+
+    # Backtrace
+    i = max_i
+    j = max_j
+    align1_list: list[str] = []
+    align2_list: list[str] = []
+
+    while i > 0 and j > 0 and P[i,j] != -1:
+        pos: int = P[i,j]
+        if pos == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
+            i -= 1
+            j -= 1
+        elif pos == 1:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            i -= 1
+        elif pos == 2:
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
+            j -= 1
+        else:
+            break
+
+    align1: str = ''.join(reversed(align1_list))
+    align2: str = ''.join(reversed(align2_list))
+
+    return max_score, align1, align2
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     n: int = len(s1)
     m: int = len(s2)
 
-    return 0
+    free_start_s1, free_end_s1 = False, False
+    free_start_s2, free_end_s2 = True, True
+
+    prev = ndarray[int, 1]((m+1,))
+    curr = ndarray[int, 1]((m+1,))
+    for j in range(m+1):
+        prev[j] = 0
+        curr[j] = 0
+
+    P = ndarray[int8, 2]((n+1, m+1))
+    for i in range(n+1):
+        for j in range(m+1):
+            P[i,j] = -1
+
+    # Fill DP
+    for i in range(1, n+1):
+        curr[0] = 0 if free_start_s1 else prev[0] + gap
+        P[i,0] = -1 if free_start_s1 else 1
+        s1_i: str = s1[i-1]
+        for j in range(1, m+1):
+            s2_j: str = s2[j-1]
+            diag = prev[j-1] + (match if s1_i == s2_j else mismatch)
+            up = prev[j] + gap
+            left = curr[j-1] + gap
+
+            val = diag
+            pos: int = 0
+            if up > val:
+                val = up
+                pos = 1
+            if left > val:
+                val = left
+                pos = 2
+
+            curr[j] = val
+            P[i,j] = pos
+
+        tmp = prev
+        prev = curr
+        curr = tmp
+
+    # Traceback start
+    j: int = 0
+    max_score: int = 0
+    for jj in range(m+1):
+        if prev[jj] > max_score:
+            max_score = prev[jj]
+            j = jj
+    i: int = n
+
+    # Backtrace
+    align1_list: list[str] = []
+    align2_list: list[str] = []
+
+    while i > 0:
+        if j > 0:
+            pos = P[i,j]
+            if pos == 0:
+                align1_list.append(s1[i-1])
+                align2_list.append(s2[j-1])
+                i -= 1
+                j -= 1
+            elif pos == 1:
+                align1_list.append(s1[i-1])
+                align2_list.append('-')
+                i -= 1
+            elif pos == 2:
+                align1_list.append('-')
+                align2_list.append(s2[j-1])
+                j -= 1
+            else:
+                align1_list.append('-')
+                align2_list.append(s2[j-1])
+                j -= 1
+        else:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            i -= 1
+
+    align1: str = ''.join(reversed(align1_list))
+    align2: str = ''.join(reversed(align2_list))
+
+    return max_score, align1, align2
 
 def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap_open: int = GAP_OPEN, gap_extend: int = GAP_EXTENSION):
     n: int = len(s1)
     m: int = len(s2)
 
-    return 0
+    lower_prev = ndarray[float64, 1]((m+1,))
+    lower_curr = ndarray[float64, 1]((m+1,))
+    upper_prev = ndarray[float64, 1]((m+1,))
+    upper_curr = ndarray[float64, 1]((m+1,))
+    middle_prev = ndarray[float64, 1]((m+1,))
+    middle_curr = ndarray[float64, 1]((m+1,))
+
+    for j in range(m+1):
+        lower_prev[j] = -1e9
+        lower_curr[j] = -1e9
+        upper_prev[j] = -1e9
+        upper_curr[j] = -1e9
+        middle_prev[j] = -1e9
+        middle_curr[j] = -1e9
+
+    middle_prev[0] = 0.0
+
+    trace_lower = ndarray[int8, 2]((n+1, m+1))
+    trace_upper = ndarray[int8, 2]((n+1, m+1))
+    trace_middle = ndarray[int8, 2]((n+1, m+1))
+    for i in range(n+1):
+        for j in range(m+1):
+            trace_lower[i,j] = 0
+            trace_upper[i,j] = 0
+            trace_middle[i,j] = 0
+
+    for i in range(1, n+1):
+        s1_i: str = s1[i-1]
+        lower_curr[0] = gap_open + (i-1)*gap_extend
+        middle_curr[0] = -1e9
+        upper_curr[0] = -1e9
+
+        for j in range(1, m+1):
+            s2_j: str = s2[j-1]
+
+            # lower
+            val1 = lower_prev[j] + gap_extend
+            val2 = middle_prev[j] + gap_open
+            if val1 >= val2:
+                lower_curr[j] = val1
+                trace_lower[i,j] = 1
+            else:
+                lower_curr[j] = val2
+                trace_lower[i,j] = 0
+
+            # upper
+            val1 = upper_curr[j-1] + gap_extend
+            val2 = middle_curr[j-1] + gap_open
+            if val1 >= val2:
+                upper_curr[j] = val1
+                trace_upper[i,j] = 2
+            else:
+                upper_curr[j] = val2
+                trace_upper[i,j] = 0
+
+            # middle
+            diag = middle_prev[j-1] + (match if s1_i == s2_j else mismatch)
+            low = lower_curr[j]
+            up = upper_curr[j]
+            middle_curr[j] = diag
+            current_pos: int = 0
+            if low > middle_curr[j]:
+                middle_curr[j] = low
+                current_pos = 1
+            if up > middle_curr[j]:
+                middle_curr[j] = up
+                current_pos = 2
+            trace_middle[i,j] = current_pos
+
+        # swap rows
+        lower_prev, lower_curr = lower_curr, lower_prev
+        upper_prev, upper_curr = upper_curr, upper_prev
+        middle_prev, middle_curr = middle_curr, middle_prev
+
+    # final score
+    final_score: float = max(middle_prev[m], lower_prev[m], upper_prev[m])
+    i: int = n
+    j: int = m
+    if final_score == middle_prev[m]:
+        current = 0
+    elif final_score == lower_prev[m]:
+        current = 1
+    else:
+        current = 2
+
+    align1_list: list[str] = []
+    align2_list: list[str] = []
+
+    while i > 0 or j > 0:
+        if current == 0:
+            if trace_middle[i,j] == 0:
+                align1_list.append(s1[i-1])
+                align2_list.append(s2[j-1])
+                i -= 1
+                j -= 1
+                current = 0
+            elif trace_middle[i,j] == 1:
+                current = 1
+            else:
+                current = 2
+        elif current == 1:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            current = trace_lower[i,j]
+            i -= 1
+        else:
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
+            current = trace_upper[i,j]
+            j -= 1
+
+        if i == 0 and j > 0:
+            for jj in range(j):
+                align1_list.append('-')
+                align2_list.append(s2[jj])
+            break
+        if j == 0 and i > 0:
+            for ii in range(i):
+                align1_list.append(s1[ii])
+                align2_list.append('-')
+            break
+
+    align1: str = ''.join(reversed(align1_list))
+    align2: str = ''.join(reversed(align2_list))
+
+    return final_score, align1, align2
