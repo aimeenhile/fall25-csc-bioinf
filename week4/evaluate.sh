@@ -10,6 +10,6 @@ echo "--------------------------------------"
 python python/main.py data >out.txt | while read -r line; do
     echo -e "$line"
 done
-codon run -release codon/main.py data >out.txt | while read -r line; do
-    echo -e "$line"
-done
+#codon run -release codon/main.py data >out.txt | while read -r line; do
+#    echo -e "$line"
+#done
