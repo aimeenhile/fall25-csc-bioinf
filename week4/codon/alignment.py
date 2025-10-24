@@ -1,4 +1,5 @@
-from numpy import ndarray, int8
+import numpy as np
+from numpy import ndarray, int8, float64
 
 MATCH: int = 3
 MISMATCH: int = -3
@@ -12,11 +13,17 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n: int = len(s1)
     m: int = len(s2)
 
-    D_prev: list[int] = [0] * (m + 1)
-    D_curr: list[int] = [0] * (m + 1)
+    D_prev: ndarray[int, 1] = np.ndarray((m+1,), dtype=int8, ndim=1)
+    D_curr: ndarray[int, 1] = np.ndarray((m+1,), dtype=int8, ndim=1)
+    for j in range(m+1):
+        D_prev[j] = 0
+        D_curr[j] = 0
 
-    P: list[list[int]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
-
+    P: ndarray[int8, 2] = np.ndarray((n+1, m+1), dtype=int8, ndim=2)
+    for i in range(n+1):
+        for j in range(m+1):
+            P[i, j] = -1
+            
     # Initialization
     for j in range(1, m+1):
         D_prev[j] = j * gap

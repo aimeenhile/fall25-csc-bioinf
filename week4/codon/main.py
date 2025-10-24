@@ -11,6 +11,20 @@ GAP = -2
 GAP_OPEN = -5
 GAP_EXTENSION = -1
 
+
+def global_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+    return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+
+def local_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+    return local_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+
+def fitting_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+    return fitting_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+
+def affine_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+    return affine_alignment(s1, s2, match=match, mismatch=mismatch, gap_open=gap_open, gap_extend=gap_extend)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: codon main.py <data_directory_path>")
@@ -32,10 +46,10 @@ if __name__ == "__main__":
 
     # Alignment methods
     methods = [
-        ("global", global_alignment),
-        ("local", local_alignment),
-        ("semi_global", fitting_alignment),
-        ("affine", affine_alignment)
+        ("global", global_wrapper),
+        ("local", local_wrapper),
+        ("semi_global", fitting_wrapper),
+        ("affine", affine_wrapper)
     ]
 
     # Run all methods on all datasets and measure runtime
