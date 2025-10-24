@@ -13,16 +13,14 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n: int = len(s1)
     m: int = len(s2)
 
-    D_prev: ndarray[int, 1] = np.ndarray((m+1,), dtype=int8, ndim=1)
-    D_curr: ndarray[int, 1] = np.ndarray((m+1,), dtype=int8, ndim=1)
-    for j in range(m+1):
-        D_prev[j] = 0
-        D_curr[j] = 0
+    D_prev: np.ndarray[int, 1] = np.ndarray([m + 1], dtype=int, ndim=1)
+    D_prev.fill(0)
 
-    P: ndarray[int8, 2] = np.ndarray((n+1, m+1), dtype=int8, ndim=2)
-    for i in range(n+1):
-        for j in range(m+1):
-            P[i, j] = -1
+    D_curr: np.ndarray[int, 1] = np.ndarray([m + 1], dtype=int, ndim=1)
+    D_curr.fill(0)
+
+    P: np.ndarray[int8, 2] = np.ndarray([n + 1, m + 1], dtype=np.int8, ndim=2)
+    P.fill(-1)
 
     # Initialization
     for j in range(1, m+1):
