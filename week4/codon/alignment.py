@@ -1,5 +1,4 @@
 import numpy as np
-from numpy import ndarray, int8, float64
 
 MATCH: int = 3
 MISMATCH: int = -3

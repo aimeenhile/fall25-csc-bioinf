@@ -52,10 +52,6 @@ if __name__ == "__main__":
     for name, s1, s2 in datasets:
         for method in methods:
             start = time.perf_counter()
-            score_val: int = 0
-            align1: str = ""
-            align2: str = ""
-
             try:
                 score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
