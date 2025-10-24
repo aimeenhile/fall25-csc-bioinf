@@ -63,7 +63,8 @@ if __name__ == "__main__":
 
             print(f"{method}-{name}\tcodon\t{runtime_ms}ms")
 
+
             # Print score and alignment
             print(f"Score: {score_val}  Length s1:{len(align1)} s2:{len(align2)}")
-            print(f"Alignment 1: {align1}")
-            print(f"Alignment 2: {align2}\n")
+            print(f"Alignment 1: {str(align1)}")
+            print(f"Alignment 2: {str(align2)}\n")
