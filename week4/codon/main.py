@@ -1,7 +1,8 @@
-from utils import read_data
-from alignment import global_alignment, local_alignment, fitting_alignment, affine_alignment
+import python
 from python import sys
 from python import os
+from utils import read_data
+from alignment import global_alignment, local_alignment, fitting_alignment, affine_alignment
 import time 
 
 # Scoring parameters

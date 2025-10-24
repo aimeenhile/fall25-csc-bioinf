@@ -1,5 +1,9 @@
 from python import os
 
+def os_path_join(*args):
+    return '/' .join(args)
+with open(str(os.path.join(path, name)), 'r') as f: ...
+
 def read_fasta(path: str, name: str) -> list[str]:
     """
     Reads a FASTA file and returns a list of sequences (strings).
