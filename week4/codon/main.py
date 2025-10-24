@@ -3,6 +3,7 @@ from alignment import global_alignment, local_alignment, fitting_alignment, affi
 from python import sys
 from python import os
 import time 
+from typing import Callable, List, Tuple
 
 # Scoring parameters
 MATCH = 3
@@ -12,16 +13,16 @@ GAP_OPEN = -5
 GAP_EXTENSION = -1
 
 
-def global_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+def global_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
     return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def local_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+def local_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
     return local_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def fitting_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=None, gap_extend=None):
+def fitting_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
     return fitting_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def affine_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+def affine_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION) -> tuple[int, str, str]:
     return affine_alignment(s1, s2, match=match, mismatch=mismatch, gap_open=gap_open, gap_extend=gap_extend)
 
 
@@ -44,13 +45,16 @@ if __name__ == "__main__":
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
+    # Define a unified function type
+    AlignFunction = Callable[[str, str], Tuple[int, str, str]]
+
     # Alignment methods
-    methods = [
-        ("global", global_wrapper),
-        ("local", local_wrapper),
-        ("semi_global", fitting_wrapper),
-        ("affine", affine_wrapper)
-    ]
+    methods: List[Tuple[str, AlignFunction]] = [
+    ("global", global_wrapper),
+    ("local", local_wrapper),
+    ("semi_global", fitting_wrapper),
+    ("affine", affine_wrapper)
+]
 
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
