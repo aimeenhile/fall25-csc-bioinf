@@ -20,12 +20,12 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     # Initialization
     for j in range(1, m+1):
         D_prev[j] = j * gap
-        P[0,j] = 2  # left
+        P[0][j] = 2  # left
 
     # Fill DP
     for i in range(1, n+1):
         D_curr[0] = i * gap
-        P[i,0] = 1  # up
+        P[i][0] = 1  # up
         s1_i: str = s1[i-1]
         for j in range(1, m+1):
             s2_j: str = s2[j-1]
@@ -43,7 +43,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
                 pos = 2
 
             D_curr[j] = val
-            P[i,j] = pos
+            P[i][j] = pos
 
         tmp = D_prev
         D_prev = D_curr
@@ -57,7 +57,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
 
     while i > 0 or j > 0:
         if i > 0 and j > 0:
-            pos: int = P[i,j]
+            pos: int = P[i][j]
             if pos == 0:
                 align1_list.append(s1[i-1])
                 align2_list.append(s2[j-1])
@@ -126,7 +126,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
                 pos = -1
 
             V_curr[j] = val
-            P[i,j] = pos
+            P[i][j] = pos
 
             if val > max_score:
                 max_score = val
@@ -144,7 +144,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align2_list: list[str] = []
 
     while i > 0 and j > 0 and P[i,j] != -1:
-        pos: int = P[i,j]
+        pos: int = P[i][j]
         if pos == 0:
             align1_list.append(s1[i-1])
             align2_list.append(s2[j-1])
@@ -181,7 +181,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     for i in range(1, n + 1):
         s1_i: str = s1[i-1]
         curr[0] = prev[0] + gap
-        P[i,0] = 1 # up pointer
+        P[i][0] = 1 # up pointer
 
         for j in range(1, m + 1):
             s2_j: str = s2[j-1]
@@ -199,7 +199,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
                 pos = 2
 
             curr[j] = val
-            P[i,j] = pos
+            P[i][j] = pos
 
         tmp = prev
         prev = curr
@@ -220,7 +220,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     while i > 0 or j > 0:
         if i > 0 and j > 0:
-            pos: int = P[i,j]
+            pos: int = P[i][j]
             if pos == 0:
                 align1_list.append(s1[i-1])
                 align2_list.append(s2[j-1])
@@ -286,20 +286,20 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             val2 = middle_prev[j] + gap_open
             if val1 >= val2:
                 lower_curr[j] = val1
-                trace_lower[i,j] = 1
+                trace_lower[i][j] = 1
             else:
                 lower_curr[j] = val2
-                trace_lower[i,j] = 0
+                trace_lower[i][j] = 0
 
             # upper
             val1 = upper_curr[j-1] + gap_extend
             val2 = middle_curr[j-1] + gap_open
             if val1 >= val2:
                 upper_curr[j] = val1
-                trace_upper[i,j] = 2
+                trace_upper[i][j] = 2
             else:
                 upper_curr[j] = val2
-                trace_upper[i,j] = 0
+                trace_upper[i][j] = 0
 
             # middle
             diag = middle_prev[j-1] + (match if s1_i == s2_j else mismatch)
@@ -314,7 +314,7 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
                 best = up
                 pos = 2
             middle_curr[j] = best
-            trace_middle[i, j] = pos
+            trace_middle[i][j] = pos
 
         tmp = lower_prev
         lower_prev = lower_curr
@@ -346,7 +346,7 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
 
     while i > 0 or j > 0:
         if current == 0:
-            tm = int(trace_middle[i, j])
+            tm = int(trace_middle[i][j])
             if tm == 0:
                 align1_list.append(s1[i-1])
                 align2_list.append(s2[j-1])
@@ -360,12 +360,12 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
         elif current == 1:
             align1_list.append(s1[i-1])
             align2_list.append('-')
-            current = int(trace_lower[i, j])
+            current = trace_lower[i][j]
             i -= 1
         else:
             align1_list.append('-')
             align2_list.append(s2[j-1])
-            current = int(trace_lower[i, j])
+            current = trace_upper[i][j]
             j -= 1
 
         if i == 0 and j > 0:
