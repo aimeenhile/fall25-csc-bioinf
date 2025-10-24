@@ -3,7 +3,7 @@ from alignment import global_alignment, local_alignment, fitting_alignment, affi
 from python import sys
 from python import os
 import time 
-#from typing import List, Tuple
+from typing import List, Tuple
 
 # Scoring parameters
 MATCH = 3
@@ -12,7 +12,7 @@ GAP = -2
 GAP_OPEN = -5
 GAP_EXTENSION = -1
 
-def run_alignment(method: str, s1: str, s2: str) -> tuple[int, str, str]:
+def run_alignment(method: str, s1: str, s2: str) -> Tuple[int, str, str]:
     """Dispatch alignment based on method name."""
     if method == "global":
         return global_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
@@ -42,12 +42,12 @@ if __name__ == "__main__":
     target = t1 
 
     # Datasets
-    datasets: list[tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
+    datasets: List[Tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
     # Alignment methods
-    methods: list[str] = ["global", "local", "semi_global", "affine"]
+    methods: List[str] = ["global", "local", "semi_global", "affine"]
 
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
@@ -60,8 +60,9 @@ if __name__ == "__main__":
             try:
                 score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
-                print(f"Error running {method} on {name}: {e}")
-                continue
+                import traceback
+                traceback.print_exc()  # prints Python-side error
+                raise e 
 
             end = time.perf_counter()
             runtime_ms: int = int((end - start) * 1000)  
