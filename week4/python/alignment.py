@@ -161,61 +161,62 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     prev = np.zeros(m + 1, dtype=np.float32)
     curr = np.zeros(m + 1, dtype=np.float32)
+    P = np.full((n+1, m+1), -1, dtype=np.int8)
 
     # Initialize first row
-    for j in range(1, m + 1):
-        prev[j] = j * gap
+    for j in range(m + 1):
+        prev[j] = 0
+        P[0,j] = -1
 
     # Fill DP
     for i in range(1, n + 1):
         curr[0] = i * gap
+        P[i,0] = 1
         s1_i = s1[i-1]
         for j in range(1, m + 1):
             s2_j = s2[j-1]
             diag = prev[j-1] + (match if s1_i == s2_j else mismatch)
             up = prev[j] + gap
             left = curr[j-1] + gap
-            curr[j] = max(diag, up, left)
+
+            val = max(diag, up, left)
+            curr[j] = val
+
+            if val == diag:
+                P[i,j] = 0
+            elif val == up:
+                P[i,j] = 1
+            else:
+                P[i,j] = 2
+
         prev, curr = curr, prev
 
-    # Maximum score is at the last row (fitting alignment)
+    # Maximum score is at the last row (
     j = int(np.argmax(prev))
     max_score = prev[j]
     i = n
 
-    # Small traceback: recompute DP values for this path
+    # Traceback
     align1_list = []
     align2_list = []
 
-    while i > 0 and j > 0:
-        s1_i = s1[i-1]
-        s2_j = s2[j-1]
-        diag = (match if s1_i == s2_j else mismatch) + prev[j-1]  # approximate, using last row
-        up = prev[j] + gap
-        left = prev[j-1] + gap  # small approximation
-        # Choose move that leads to current max_score
-        if i > 0 and j > 0 and max_score == diag:
-            align1_list.append(s1_i)
-            align2_list.append(s2_j)
+    while i > 0:
+        if P[i, j] == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
             i -= 1
             j -= 1
-            max_score -= (match if s1_i == s2_j else mismatch)
-        elif i > 0 and max_score == up:
-            align1_list.append(s1_i)
+        elif P[i, j] == 1:
+            align1_list.append(s1[i-1])
             align2_list.append('-')
             i -= 1
-            max_score -= gap
-        else:
+        elif P[i, j] == 2:
             align1_list.append('-')
-            align2_list.append(s2_j)
+            align2_list.append(s2[j-1])
             j -= 1
-            max_score -= gap
-
-    # Prepend remaining unaligned prefix if any
-    while i > 0:
-        align1_list.append(s1[i-1])
-        align2_list.append('-')
-        i -= 1
+        else:
+            break
+        
     while j > 0:
         align1_list.append('-')
         align2_list.append(s2[j-1])
@@ -223,8 +224,6 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
-
-    max_score = prev[int(np.argmax(prev))]
 
     return max_score, align1, align2
 

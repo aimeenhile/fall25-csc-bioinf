@@ -1,6 +1,6 @@
 from utils import read_data
 from alignment import global_alignment, local_alignment, fitting_alignment, affine_alignment
-import sys
+from python import sys
 from python import os
 import time 
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     target = t1 
 
     # Datasets
-    datasets = [("mt_human", mt_human[0], mt_orang[0])]
+    datasets = [("mt_human", mt_orang[0], mt_human[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
