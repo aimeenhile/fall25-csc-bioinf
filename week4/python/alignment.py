@@ -86,6 +86,9 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
 
 def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Substrings of s1 and s2 whose best global alignment score is maximized """
+    n = len(s1)
+    m = len (s2)
+
     V_prev = np.zeros(m + 1, dtype=np.float32)
     V_curr = np.zeros(m + 1, dtype=np.float32)
     P = np.full((n+1, m+1), -1, dtype=np.int8) # diag=0, up=1, left=2
@@ -303,7 +306,7 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     lower_prev = np.full(m+1, -np.inf, dtype=float)
     lower_curr = np.full(m+1, -np.inf, dtype=float)
     upper_prev = np.full(m+1, -np.inf, dtype=float)
-    
+
     upper_curr = np.full(m+1, -np.inf, dtype=float)
     middle_prev = np.full(m+1, -np.inf, dtype=float)
     middle_curr = np.full(m+1, -np.inf, dtype=float)
