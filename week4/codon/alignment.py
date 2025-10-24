@@ -15,7 +15,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     D_prev: list[int] = [0] * (m + 1)
     D_curr: list[int] = [0] * (m + 1)
 
-    P: list[list[int8]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
+    P: list[list[int]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
 
     # Initialization
     for j in range(1, m+1):
@@ -98,8 +98,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     V_prev: list[int] = [0] * (m + 1)
     V_curr: list[int] = [0] * (m + 1)
 
-    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    P.fill(-1)  
+    P: list[list[int]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
 
     max_score: int = 0
     max_i: int = 0
@@ -139,8 +138,8 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
         V_curr = tmp
 
     # Backtrace
-    i = max_i
-    j = max_j
+    i: int = max_i
+    j: int = max_j
     align1_list: list[str] = []
     align2_list: list[str] = []
 
@@ -176,8 +175,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     prev: list[int] = [0] * (m + 1)
     curr: list[int] = [0] * (m + 1)
 
-    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    P.fill(-1) 
+    P: list[list[int]] = [[-1 for _ in range(m+1)] for _ in range(n+1)]
 
     # Fill DP
     for i in range(1, n + 1):
@@ -269,12 +267,9 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     for j in range(1, m + 1):
         upper_prev[j] = gap_open + (j - 1) * gap_extend
 
-    trace_lower: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    trace_upper: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    trace_middle: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
-    trace_lower.fill(0)
-    trace_upper.fill(0)
-    trace_middle.fill(0)
+    trace_lower: list[list[int]] = [[0 for _ in range(m+1)] for _ in range(n+1)]
+    trace_upper: list[list[int]] = [[0 for _ in range(m+1)] for _ in range(n+1)]
+    trace_middle: list[list[int]] = [[0 for _ in range(m+1)] for _ in range(n+1)]
 
     # fill DP
     for i in range(1, n+1):
