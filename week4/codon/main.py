@@ -12,9 +12,7 @@ GAP_OPEN = -5
 GAP_EXTENSION = -1
 
 def run_alignment(method: str, s1: str, s2: str) -> tuple[int, str, str]:
-    """Dispatch alignment based on method name."""
-    s1 = str(s1)
-    s2 = str(s2)
+    """Run alignment based on method name."""
     if method == "global":
         return global_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
     elif method == "local":
@@ -39,16 +37,11 @@ if __name__ == "__main__":
     print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)
 
-    mt_human_cod: list[str] = [str(s) for s in mt_human]
-    mt_orang_cod: list[str] = [str(s) for s in mt_orang]
-    q1_cod: list[str] = [str(s) for s in q1]
-    t1_cod: list[str] = [str(s) for s in t1]
-
-    query = q1_cod 
-    target = t1_cod
+    query = q1
+    target = t1
 
     # Datasets
-    datasets: list[tuple[str, str, str]] = [("mt_human", mt_orang_cod[0], mt_human_cod[0])]
+    datasets: list[tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
@@ -65,8 +58,6 @@ if __name__ == "__main__":
 
             try:
                 score_val, align1, align2 = run_alignment(method, s1, s2)
-                align1 = str(align1) 
-                align2 = str(align2)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
                 raise e

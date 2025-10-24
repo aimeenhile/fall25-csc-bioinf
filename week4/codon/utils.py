@@ -1,16 +1,16 @@
 from python import os
 
-def read_fasta(path, name):
+def read_fasta(path: str, name: str) -> list[str]:
     """
     Reads a FASTA file and returns a list of sequences (strings).
     Each sequence corresponds to one FASTA entry.
     """
-    data = []
-    sequence = ""
+    data: list[str] = []
+    sequence: str = ""
 
     with open(str(os.path.join(path, name)), 'r') as f:
         for line in f:
-            line = line.strip()
+            line = str(line.strip())
             if line[0] == ">":
                 if sequence:
                     data.append(sequence)
