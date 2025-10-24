@@ -12,6 +12,7 @@ GAP = -2
 GAP_OPEN = -5
 GAP_EXTENSION = -1
 
+AlignFunction = Callable[[str, str, int, int, int, int, int], Tuple[int, str, str]]
 
 def global_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
     return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
@@ -41,12 +42,12 @@ if __name__ == "__main__":
     target = t1 
 
     # Datasets
-    datasets = [("mt_human", mt_orang[0], mt_human[0])]
+    datasets: List[Tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
     # Alignment methods
-    methods: list = [
+    methods: list[Tuple[str, AlignFunction]] = [
         ("global", global_wrap),
         ("local", local_wrap),
         ("semi_global", fitting_wrap),
@@ -62,10 +63,7 @@ if __name__ == "__main__":
             align2: str = ""
 
             try:
-                if method == "affine":
-                    score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
-                else:
-                    score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+                score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
                 continue
