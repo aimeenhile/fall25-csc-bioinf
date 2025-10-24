@@ -88,6 +88,79 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     """ Substrings of s1 and s2 whose best global alignment score is maximized """
     n = len(s1)
     m = len(s2)
+
+    prev = np.zeros(m+1, dtype=int)
+    curr = np.zeros(m+1, dtype=int)
+
+    max_score = 0
+    max_pos = (0, 0)
+
+    for i in range(1, n+1):
+        curr[0] = 0
+        for j in range(1, m+1):
+            diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            up = prev[j] + gap
+            left = curr[j-1] + gap
+            curr[j] = max(0, diag, up, left)
+            
+            if curr[j] > max_score:
+                max_score = curr[j]
+                max_pos = (i, j)
+        
+        prev, curr = curr, prev  
+
+    i_max, j_max = max_pos
+    i, j = i_max, j_max
+
+    traceback = np.zeros((i_max+1, j_max+1), dtype=np.int8)
+    dp = np.zeros((i_max+1, j_max+1), dtype=int)
+    
+    for ii in range(i_max+1):
+        dp[ii,0] = 0
+    for jj in range(j_max+1):
+        dp[0,jj] = 0
+    
+    for ii in range(1, i_max+1):
+        for jj in range(1, j_max+1):
+            diag = dp[ii-1,jj-1] + score(s1[ii-1], s2[jj-1], match, mismatch)
+            up = dp[ii-1,jj] + gap
+            left = dp[ii,jj-1] + gap
+            dp[ii,jj] = max(0, diag, up, left)
+            
+            if dp[ii,jj] == 0:
+                traceback[ii,jj] = -1
+            elif dp[ii,jj] == diag:
+                traceback[ii,jj] = 0
+            elif dp[ii,jj] == up:
+                traceback[ii,jj] = 1
+            else:
+                traceback[ii,jj] = 2
+    
+    align1_list = []
+    align2_list = []
+    
+    i, j = i_max, j_max
+    while i > 0 and j > 0 and traceback[i,j] != -1:
+        if traceback[i,j] == 0:
+            align1_list.append(s1[i-1])
+            align2_list.append(s2[j-1])
+            i -= 1
+            j -= 1
+        elif traceback[i,j] == 1:
+            align1_list.append(s1[i-1])
+            align2_list.append('-')
+            i -= 1
+        elif traceback[i,j] == 2:
+            align1_list.append('-')
+            align2_list.append(s2[j-1])
+            j -= 1
+    
+    align1 = ''.join(reversed(align1_list))
+    align2 = ''.join(reversed(align2_list))
+    
+    return max_score, align1, align2
+
+    """
     V_prev = np.zeros(m + 1, dtype=float)
     V_curr = np.zeros(m + 1, dtype=float)
     P = np.full((n+1, m+1), -1, dtype=np.int8) # diag=0, up=1, left=2
@@ -150,7 +223,9 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    return max_score, align1, align2                  
+    return max_score, align1, align2          
+    """
+        
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
