@@ -25,7 +25,7 @@ def run_alignment(method: str, s1: str, s2: str) -> Tuple[int, str, str]:
             s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION
         )
     else:
-        raise ValueError(f"Unknown alignment method: {method}")
+        raise Exception(f"Unknown alignment method: {method}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
