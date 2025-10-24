@@ -13,17 +13,17 @@ GAP_OPEN = -5
 GAP_EXTENSION = -1
 
 
-def global_wrap(s1: str, s2: str):
-    return global_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+def global_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+    return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def local_wrap(s1: str, s2: str):
-    return local_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+def local_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+    return local_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def fitting_wrap(s1: str, s2: str):
-    return fitting_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+def fitting_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+    return fitting_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
 
-def affine_wrap(s1: str, s2: str):
-    return affine_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
+def affine_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
+    return affine_alignment(s1, s2, match=match, mismatch=mismatch, gap_open=gap_open, gap_extend=gap_extend)
 
 
 if __name__ == "__main__":
