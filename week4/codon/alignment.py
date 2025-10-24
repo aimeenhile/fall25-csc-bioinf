@@ -143,7 +143,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align1_list: list[str] = []
     align2_list: list[str] = []
 
-    while i > 0 and j > 0 and P[i,j] != -1:
+    while i > 0 and j > 0 and P[i][j] != -1:
         pos: int = P[i][j]
         if pos == 0:
             align1_list.append(s1[i-1])
