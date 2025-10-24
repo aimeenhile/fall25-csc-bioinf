@@ -17,7 +17,7 @@ if __name__ == "__main__":
         sys.exit(1)
         
     argv = sys.argv
-    data_path = str(os.path.join(os.path.dirname(__file__), '..', argv[1]))
+    data_path = str(os.path.join('..', argv[1]))
 
     print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)

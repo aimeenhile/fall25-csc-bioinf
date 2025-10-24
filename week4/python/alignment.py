@@ -151,7 +151,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     curr = np.zeros(m + 1, dtype=np.float32)
     P = np.full((n+1, m+1), -1, dtype=np.int8)
 
-    # Initialize first row
+    # Initialization
     for j in range(m + 1):
         prev[j] = 0
 
@@ -178,7 +178,7 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
         prev, curr = curr, prev
 
-    # Maximum score is at the last row (
+    # Maximum score is at the last row 
     j = int(np.argmax(prev))
     max_score = prev[j]
     i = n
@@ -334,12 +334,12 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             diag = middle_prev[j-1] + (match if s1_i == s2_j else mismatch)
             low = lower_curr[j]
             up = upper_curr[j]
-            middle_curr[j] = max(diag, low, up)
+            mid_curr = max(diag, low, up)
+            middle_curr[j] = mid_curr
 
-            # store pointer for traceback
-            if middle_curr[j] == diag:
+            if mid_curr == diag:
                 trace_middle[i,j] = 0
-            elif middle_curr[j] == low:
+            elif mid_curr == low:
                 trace_middle[i,j] = 1
             else:
                 trace_middle[i,j] = 2
@@ -352,14 +352,18 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     # final score
     final_score = max(middle_prev[m], lower_prev[m], upper_prev[m])
 
-    # TRACEBACK (recompute small DP window)
-    i, j = n, m
-    # determine starting state
+    # Traceback
+    i = n
+    j = m
+    # Starting state for traceback 
     if final_score == middle_prev[m]:
+        # middle
         current = 0
     elif final_score == lower_prev[m]:
+        # lower
         current = 1
     else:
+        # upper
         current = 2
 
     align1_list = []
