@@ -156,11 +156,6 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Fitting alignment of string s1 to string s2 """
-    swapped = False
-    if len(s1) > len(s2):
-        s1, s2 = s2, s1
-        swapped = True
-    
     n = len(s1)
     m = len(s2)
 
@@ -228,10 +223,6 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
-
-    # Restore original order if swapped
-    if swapped:
-        align1, align2 = align2, align1
 
     max_score = prev[int(np.argmax(prev))]
 
