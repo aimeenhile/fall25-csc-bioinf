@@ -13,17 +13,17 @@ GAP_OPEN = -5
 GAP_EXTENSION = -1
 
 
-def global_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
-    return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+def global_wrap(s1: str, s2: str):
+    return global_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
 
-def local_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
-    return local_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+def local_wrap(s1: str, s2: str):
+    return local_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
 
-def fitting_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP) -> tuple[int, str, str]:
-    return fitting_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
+def fitting_wrap(s1: str, s2: str):
+    return fitting_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
 
-def affine_wrapper(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION) -> tuple[int, str, str]:
-    return affine_alignment(s1, s2, match=match, mismatch=mismatch, gap_open=gap_open, gap_extend=gap_extend)
+def affine_wrap(s1: str, s2: str):
+    return affine_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
 
 
 if __name__ == "__main__":
@@ -49,18 +49,20 @@ if __name__ == "__main__":
     AlignFunction = Callable[[str, str], Tuple[int, str, str]]
 
     # Alignment methods
-    methods: List[Tuple[str, AlignFunction]] = [
-    ("global", global_wrapper),
-    ("local", local_wrapper),
-    ("semi_global", fitting_wrapper),
-    ("affine", affine_wrapper)
-]
+    methods: list = [
+        ("global", global_wrap),
+        ("local", local_wrap),
+        ("semi_global", fitting_wrap),
+        ("affine", affine_wrap)
+    ]
 
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
         for method, align_function in methods:
             start = time.perf_counter()
-            score_val, align1, align2 = (0, "", "")
+            score_val: int = 0
+            align1: str = ""
+            align2: str = ""
 
             try:
                 if method == "affine":
@@ -69,17 +71,14 @@ if __name__ == "__main__":
                     score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
-                # Print stack trace for debugging
-                import traceback
-                traceback.print_exc()
                 continue
 
             end = time.perf_counter()
-            runtime_ms = int((end - start) * 1000)  
+            runtime_ms: int = int((end - start) * 1000)  
 
             print(f"{method}-{name}\tcodon\t{runtime_ms}ms")
 
             # Print score and alignment
-            print(f"Score: {score_val}")
+            print(f"Score: {score_val}  Length s1:{len(align1)} s2:{len(align2)}")
             print(f"Alignment 1: {align1}")
             print(f"Alignment 2: {align2}\n")

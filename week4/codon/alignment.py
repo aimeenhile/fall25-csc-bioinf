@@ -23,7 +23,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     for i in range(n+1):
         for j in range(m+1):
             P[i, j] = -1
-            
+
     # Initialization
     for j in range(1, m+1):
         D_prev[j] = j * gap
@@ -390,5 +390,7 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     align2_list.reverse()
     align1: str = ''.join(align1_list)
     align2: str = ''.join(align2_list)
+
+    final_score = int(final_score)
 
     return final_score, align1, align2
