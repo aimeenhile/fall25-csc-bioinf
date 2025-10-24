@@ -38,16 +38,21 @@ if __name__ == "__main__":
     print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)
 
-    query = q1 
-    target = t1 
+    mt_human_cod: list[str] = list(mt_human)
+    mt_orang_cod: list[str] = list(mt_orang)
+    q1_cod: list[str] = list(q1)
+    t1_cod: list[str] = list(t1)
+
+    query = q1_cod 
+    target = t1_cod
 
     # Datasets
-    datasets: List[Tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
+    datasets: list[tuple[str, str, str]] = [("mt_human", mt_orang_cod[0], mt_human_cod[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
     # Alignment methods
-    methods: List[str] = ["global", "local", "semi_global", "affine"]
+    methods: list[str] = ["global", "local", "semi_global", "affine"]
 
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
@@ -61,7 +66,7 @@ if __name__ == "__main__":
                 score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
-                continue
+                raise e
             
             end = time.perf_counter()
             runtime_ms: int = int((end - start) * 1000)  
