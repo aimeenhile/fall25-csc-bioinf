@@ -89,8 +89,8 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n = len(s1)
     m = len(s2)
     V_prev = np.zeros(m + 1, dtype=float)
-    V_curr = np.full(m + 1, -1, dtype=float)
-    P = np.zeros((n+1, m+1), dtype=np.int8) # diag=0, up=1, left=2
+    V_curr = np.zeros(m + 1, dtype=float)
+    P = np.full((n+1, m+1), -1, dtype=np.int8) # diag=0, up=1, left=2
 
     max_score = 0.0
     max_i = 0
@@ -107,8 +107,6 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
             left = V_curr[j-1] + gap
 
             val = max(diag, up, left, 0)
-            if val < 0.0:
-                val = 0.0
             V_curr[j] = val
             if val == 0.0:
                 P[i, j] = -1
