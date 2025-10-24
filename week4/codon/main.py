@@ -45,9 +45,6 @@ if __name__ == "__main__":
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
-    # Define a unified function type
-    AlignFunction = Callable[[str, str], Tuple[int, str, str]]
-
     # Alignment methods
     methods: list = [
         ("global", global_wrap),
