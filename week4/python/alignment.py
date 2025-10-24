@@ -12,8 +12,8 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     """ Find an alignment with maximum alignment score """
     n = len(s1)
     m = len(s2)
-    D_prev = np.zeros(m+1, dtype=np.int32)
-    D_curr = np.zeros(m+1, dtype=np.int32)
+    D_prev = np.zeros(m+1, dtype=int)
+    D_curr = np.zeros(m+1, dtype=int)
     P = np.zeros((n+1, m+1), dtype=np.int8) # diag=0, up=1, left=2
 
     # Initialization
@@ -78,8 +78,8 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n = len(s1)
     m = len (s2)
 
-    V_prev = np.zeros(m + 1, dtype=np.int32)
-    V_curr = np.zeros(m + 1, dtype=np.int32)
+    V_prev = np.zeros(m + 1, dtype=int)
+    V_curr = np.zeros(m + 1, dtype=int)
     P = np.full((n+1, m+1), -1, dtype=np.int8) # diag=0, up=1, left=2
 
     max_score = 0
@@ -154,14 +154,15 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
         free_start_s1, free_end_s1 = False, False
         free_start_s2, free_end_s2 = True, True
     else:  # n == m
-        free_start_s1 = True
-        free_end_s1 = True
-        free_start_s2 = True
-        free_end_s2 = True
+        free_start_s1, free_end_s1 = True, True
+        free_start_s2, free_end_s2 = True, True
         
-    prev = np.zeros(m + 1, dtype=np.int32)
-    curr = np.zeros(m + 1, dtype=np.int32)
+    prev = np.zeros(m + 1, dtype=int)
+    curr = np.zeros(m + 1, dtype=int)
     P = np.full((n+1, m+1), -1, dtype=np.int8)
+
+    if free_end_s1:
+        last_col = np.zeros(n + 1, dtype=int)
 
     # Initialization
     for j in range(m + 1):
@@ -169,13 +170,9 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
             prev[j] = 0
         else:
             prev[j] = j * gap
-    for i in range(1, n + 1):
-        if free_start_s2:
-            curr[0] = 0
-            P[1,0] = -1
-        else:
-            curr[0] = i * gap
-            P[1,0] = 1 # up pointer
+
+        if j > 0 and not free_start_s1:
+            P[0,j] = 2 # left pointer
 
     # Fill DP
     for i in range(1, n + 1):
@@ -183,12 +180,10 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
         if free_start_s2:
             curr[0] = 0
+            P[i,0] = -1
         else:
             curr[0] = prev[0] + gap
-            P[i, 0] = 1
-
-        if not free_start_s2:
-            P[i, 0] = 1
+            P[i,0] = 1 # up pointer
 
         for j in range(1, m + 1):
             s2_j = s2[j-1]
@@ -206,6 +201,9 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
             else:
                 P[i,j] = 2
 
+        if free_end_s1:
+            last_col[i] = curr[m]
+
         prev, curr = curr, prev
 
     # Traceback start pos
@@ -214,15 +212,9 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
         i = n
         max_score = prev[j]
     elif free_end_s1:
-        col_vals = np.zeros(n + 1, dtype=np.int32)
-        for k in range(n + 1):
-            if k == n:
-                col_vals[k] = prev[m]
-            else:
-                col_vals[k] = P[k,m]
-        i = int(np.argmax(col_vals))
+        i = int(np.argmax(last_col))
         j = m
-        max_score = col_vals[i]
+        max_score = last_col[i]
     else:
         i = n
         j = m
