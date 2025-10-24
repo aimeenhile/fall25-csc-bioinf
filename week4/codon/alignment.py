@@ -12,16 +12,11 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n: int = len(s1)
     m: int = len(s2)
 
-    D_prev = ndarray[int, 1]((m + 1,))
-    D_curr = ndarray[int, 1]((m+1,))
-    for j in range(m+1):
-        D_prev[j] = 0
-        D_curr[j] = 0
+    D_prev: list[int] = [0] * (m + 1)
+    D_curr: list[int] = [0] * (m + 1)
 
-    P = ndarray[int8, 2]((n+1, m+1)) # diag=0, up=1, left=2
-    for i in range(n+1):
-        for j in range(m+1):
-            P[i,j] = -1
+    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    P.fill(-1)  
 
     # Initialization
     for j in range(1, m+1):
@@ -40,7 +35,7 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             left = D_curr[j-1] + gap
 
             val = diag
-            pos = 0
+            pos: int = 0
             if up > val:
                 val = up
                 pos = 1
@@ -101,16 +96,11 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     n: int = len(s1)
     m: int = len(s2)
     
-    V_prev = ndarray[int, 1]((m+1,))
-    V_curr = ndarray[int, 1]((m+1,))
-    for j in range(m+1):
-        V_prev[j] = 0
-        V_curr[j] = 0
+    V_prev: list[int] = [0] * (m + 1)
+    V_curr: list[int] = [0] * (m + 1)
 
-    P = ndarray[int8, 2]((n+1, m+1))
-    for i in range(n+1):
-        for j in range(m+1):
-            P[i,j] = -1
+    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    P.fill(-1)  
 
     max_score: int = 0
     max_i: int = 0
@@ -184,16 +174,11 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     n: int = len(s1)
     m: int = len(s2)
 
-    prev = ndarray[int, 1]((m+1,))
-    curr = ndarray[int, 1]((m+1,))
-    for j in range(m+1):
-        prev[j] = 0
-        curr[j] = 0
+    prev: list[int] = [0] * (m + 1)
+    curr: list[int] = [0] * (m + 1)
 
-    P = ndarray[int8, 2]((n+1, m+1))
-    for i in range(n+1):
-        for j in range(m+1):
-            P[i,j] = -1
+    P: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    P.fill(-1) 
 
     # Fill DP
     for i in range(1, n + 1):
@@ -272,38 +257,27 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     n: int = len(s1)
     m: int = len(s2)
 
-    NEG_INF = -1e9
+    NEG_INF: float = -1e9
 
-    lower_prev = ndarray[float64, 1]((m+1,))
-    lower_curr = ndarray[float64, 1]((m+1,))
-    upper_prev = ndarray[float64, 1]((m+1,))
-    upper_curr = ndarray[float64, 1]((m+1,))
-    middle_prev = ndarray[float64, 1]((m+1,))
-    middle_curr = ndarray[float64, 1]((m+1,))
-
-    for j in range(m+1):
-        lower_prev[j] = NEG_INF
-        lower_curr[j] = NEG_INF
-        upper_prev[j] = NEG_INF
-        upper_curr[j] = NEG_INF
-        middle_prev[j] = NEG_INF
-        middle_curr[j] = NEG_INF
+    lower_prev: list[float] = [NEG_INF] * (m + 1)
+    lower_curr: list[float] = [NEG_INF] * (m + 1)
+    upper_prev: list[float] = [NEG_INF] * (m + 1)
+    upper_curr: list[float] = [NEG_INF] * (m + 1)
+    middle_prev: list[float] = [NEG_INF] * (m + 1)
+    middle_curr: list[float] = [NEG_INF] * (m + 1)
 
     middle_prev[0] = 0.0
     for j in range(1, m + 1):
         upper_prev[j] = gap_open + (j - 1) * gap_extend
-        middle_prev[j] = NEG_INF
-        lower_prev[j] = NEG_INF
 
-    trace_lower = ndarray[int8, 2]((n+1, m+1))
-    trace_upper = ndarray[int8, 2]((n+1, m+1))
-    trace_middle = ndarray[int8, 2]((n+1, m+1))
-    for i in range(n+1):
-        for j in range(m+1):
-            trace_lower[i,j] = 0
-            trace_upper[i,j] = 0
-            trace_middle[i,j] = 0
+    trace_lower: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    trace_upper: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    trace_middle: ndarray[int8, 2] = ndarray[int8, 2]((n + 1, m + 1))
+    trace_lower.fill(0)
+    trace_upper.fill(0)
+    trace_middle.fill(0)
 
+    # fill DP
     for i in range(1, n+1):
         s1_i: str = s1[i-1]
         lower_curr[0] = gap_open + (i-1)*gap_extend
@@ -364,17 +338,12 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     final_score: float = middle_prev[m]
     if lower_prev[m] > final_score:
         final_score = lower_prev[m]
+        current = 1
     if upper_prev[m] > final_score:
         final_score = upper_prev[m]
-
-
-    # traceback
-    if final_score == middle_prev[m]:
-        current = 0
-    elif final_score == lower_prev[m]:
-        current = 1
-    else:
         current = 2
+    else:
+        current = 0
 
     i: int = n
     j: int = m
