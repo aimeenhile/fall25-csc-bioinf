@@ -9,7 +9,7 @@ def read_fasta(path, name):
     sequence = ""
 
     with open(str(os.path.join(path, name)), 'r') as f:
-        for line in f():
+        for line in f:
             line = line.strip()
             if line[0] == ">":
                 if sequence:
