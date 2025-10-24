@@ -8,43 +8,39 @@ GAP_OPEN = -5
 GAP_EXTENSION = -1
 
 
-# Helper functions
-def score(a: str, b: str, match = MATCH, mismatch = MISMATCH) -> int:
-    """ Calculate alignment score """
-    if a == b:
-        return MATCH
-    else:
-        return MISMATCH
-
-
 def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Find an alignment with maximum alignment score """
     n = len(s1)
     m = len(s2)
-    D = np.zeros((n+1, m+1), dtype=float)
-    P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
+    D_prev = np.zeros(m+1, dtype=float)
+    D_curr = np.zeros(m+1, dtype=float)
+    P = np.zeros((n+1, m+1), dtype=np.int8) # diag=0, up=1, left=2
 
     # Initialization
-    for i in range(1, n+1):
-        D[i,0] = i * gap
-        P[i,0] = 1  # up
     for j in range(1, m+1):
-        D[0,j] = j * gap
+        D_prev[j] = j * gap
         P[0,j] = 2  # left
 
     # Fill DP
     for i in range(1, n+1):
+        D_curr[0] = i * gap
+        P[i,0] = 1  # up
+        s1_i = s1[i-1]
         for j in range(1, m+1):
-            diag = D[i-1,j-1] + score(s1[i-1], s2[j-1], match, mismatch)
-            up = D[i-1,j] + gap
-            left = D[i,j-1] + gap
-            D[i,j] = max(diag, up, left)
-            if D[i,j] == diag:
+            s2_j = s2[j-1]
+            diag = D_prev[j-1] + (match if s1_i == s2_j else mismatch)
+            up = D_prev[j] + gap
+            left = D_curr[j-1] + gap
+            D_curr[j] = max(diag, up, left)
+
+            if D_curr[j] == diag:
                 P[i,j] = 0
-            elif D[i,j] == up:
+            elif D_curr[j] == up:
                 P[i,j] = 1
             else:
                 P[i,j] = 2
+
+        D_prev, D_curr = D_curr, D_prev
 
     # Backtrace
     i = n
@@ -83,23 +79,18 @@ def global_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    score = D[n,m]
-    a1 = len(align1)
-    a2 = len(align2)
+    score = D_prev[m]
 
-    print(f"Score: {score}")
-    print(f"    Len(a1): {a1}")
-    print(f"    Len(a2): {a2}")   
-
-    return D[n, m], align1, align2
+    return score, align1, align2
 
 
 def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Substrings of s1 and s2 whose best global alignment score is maximized """
     n = len(s1)
     m = len(s2)
-    V = np.zeros((n+1, m+1), dtype=float)
-    P = np.zeros((n+1, m+1), dtype=int) # diag=0, up=1, left=2
+    V_prev = np.zeros(m + 1, dtype=float)
+    V_curr = np.full(m + 1, -1, dtype=float)
+    P = np.zeros((n+1, m+1), dtype=np.int8) # diag=0, up=1, left=2
 
     max_score = 0.0
     max_i = 0
@@ -107,23 +98,33 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
 
     # Fill DP
     for i in range(1, n+1):
+        V_curr[0] = 0.0
+        s1_i = s1[i-1]
         for j in range(1, m+1):
-            diag = V[i-1,j-1] + score(s1[i-1], s2[j-1], match, mismatch)
-            up = V[i-1,j] + gap
-            left = V[i,j-1] + gap
-            V[i,j] = max(diag, up, left, 0)
-            if V[i,j] == diag:
-                P[i,j] = 0
-            elif V[i,j] == up:
-                P[i,j] = 1
-            elif V[i,j] == left:
-                P[i,j] = 2
-            else:
-                P[i,j] = -1 
+            s2_j = s2[j-1]
+            diag = V_prev[j-1] + (match if s1_i == s2_j else mismatch)
+            up = V_prev[j] + gap
+            left = V_curr[j-1] + gap
 
-            if V[i,j] > max_score:
-                max_score = V[i,j]
+            val = max(diag, up, left, 0)
+            if val < 0.0:
+                val = 0.0
+            V_curr[j] = val
+            if val == 0.0:
+                P[i, j] = -1
+            else:
+                if val == diag:
+                    P[i,j] = 0
+                elif val == up:
+                    P[i,j] = 1
+                else:
+                    P[i,j] = 2
+
+            if val > max_score:
+                max_score = val
                 max_i, max_j = i, j
+
+        V_prev, V_curr = V_curr, V_prev
 
     # Backtrace: start from max score
     i = max_i
@@ -131,7 +132,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align1_list = []
     align2_list = []
 
-    while i > 0 and j > 0 and V[i,j] != 0:
+    while i > 0 and j > 0 and P[i,j] != -1:
         if P[i, j] == 0:
             align1_list.append(s1[i-1])
             align2_list.append(s2[j-1])
@@ -151,15 +152,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    score = V[max_i,max_j]
-    a1 = len(align1)
-    a2 = len(align2)
-
-    print(f"Score: {score}")
-    print(f"    Len(a1): {a1}")
-    print(f"    Len(a2): {a2}")   
-
-    return V[max_i,max_j], align1, align2                  
+    return max_score, align1, align2                  
     
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
@@ -177,7 +170,9 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     # Fill DP table
     for i in range(1, n+1):
         for j in range(1, m+1):
-            diag = D[i-1, j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            s1_i = s1[i-1]
+            s2_j = s2[j-1]
+            diag = D[i-1, j-1] + (match if s1_i == s2_j else mismatch)
             up = D[i-1, j] + gap
             left = D[i, j-1] + gap
             D[i,j] = max(diag, up, left)
@@ -217,13 +212,6 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
-
-    a1 = len(align1)
-    a2 = len(align2)
-
-    print(f"Score: {max_score}")
-    print(f"    Len(a1): {a1}")
-    print(f"    Len(a2): {a2}")   
 
     return max_score, align1, align2
 
@@ -267,7 +255,9 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
             ptr_upper[i,j] = 2 if upper[i,j] == val1 else 0
 
             # Middle: match/mismatch
-            diag = middle[i-1,j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            s1_i = s1[i-1]
+            s2_j = s2[j-1]
+            diag = D[i-1, j-1] + (match if s1_i == s2_j else mismatch)
             low = lower[i,j]
             up = upper[i,j]
 
@@ -327,13 +317,5 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
-
-    score = middle[n,]
-    a1 = len(align1)
-    a2 = len(align2)
-
-    print(f"Score: {score}")
-    print(f"    Len(a1): {a1}")
-    print(f"    Len(a2): {a2}")   
 
     return middle[n,m], align1, align2
