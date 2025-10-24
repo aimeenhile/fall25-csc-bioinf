@@ -24,8 +24,6 @@ def read_fasta(path: str, name: str) -> list[str]:
         if sequence:  # save last sequence
             data.append(sequence)
 
-    print(name, len(data), [len(s) for s in data])
-
     return data
 
 

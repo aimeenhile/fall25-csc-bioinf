@@ -55,19 +55,14 @@ if __name__ == "__main__":
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
         for method in methods:
-            start = time.perf_counter()
+            start = time.time()
             try:
                 score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
                 raise e
             
-            end = time.perf_counter()
+            end = time.time()
             runtime_ms: int = int((end - start) * 1000)  
 
             print(f"{method}-{name}\tcodon\t{runtime_ms}ms")
-
-            # Print score and alignment
-            print(f"Score: {score_val}  Length s1:{len(align1)} s2:{len(align2)}")
-            print(f"Alignment 1: {str(align1)}")
-            print(f"Alignment 2: {str(align2)}\n")

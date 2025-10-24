@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
         for method, align_function in methods:
-            start = time.perf_counter()
+            start = time.time()
             score_val, align1, align2 = (0, "", "")
 
             try:
@@ -58,13 +58,7 @@ if __name__ == "__main__":
                 traceback.print_exc()
                 continue
 
-            end = time.perf_counter()
+            end = time.time()
             runtime_ms = int((end - start) * 1000)  
 
             print(f"{method}-{name}\tpython\t{runtime_ms}ms")
-
-            # Print score and alignment
-            print(f"Score: {score_val}  Length s1:{len(align1)} s2:{len(align2)}")
-            print(f"Alignment 1: {align1}")
-            print(f"Alignment 2: {align2}\n")
-    
