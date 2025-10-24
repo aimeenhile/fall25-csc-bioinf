@@ -3,7 +3,7 @@ from alignment import global_alignment, local_alignment, fitting_alignment, affi
 from python import sys
 from python import os
 import time 
-from typing import Callable, List, Tuple
+#from typing import List, Tuple
 
 # Scoring parameters
 MATCH = 3
@@ -12,20 +12,20 @@ GAP = -2
 GAP_OPEN = -5
 GAP_EXTENSION = -1
 
-AlignFunction = Callable[[str, str, int, int, int, int, int], Tuple[int, str, str]]
-
-def global_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
-    return global_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
-
-def local_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
-    return local_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
-
-def fitting_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
-    return fitting_alignment(s1, s2, match=match, mismatch=mismatch, gap=gap)
-
-def affine_wrap(s1: str, s2: str, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION):
-    return affine_alignment(s1, s2, match=match, mismatch=mismatch, gap_open=gap_open, gap_extend=gap_extend)
-
+def run_alignment(method: str, s1: str, s2: str) -> tuple[int, str, str]:
+    """Dispatch alignment based on method name."""
+    if method == "global":
+        return global_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+    elif method == "local":
+        return local_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+    elif method == "semi_global":
+        return fitting_alignment(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP)
+    elif method == "affine":
+        return affine_alignment(
+            s1, s2, match=MATCH, mismatch=MISMATCH, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION
+        )
+    else:
+        raise ValueError(f"Unknown alignment method: {method}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -42,28 +42,23 @@ if __name__ == "__main__":
     target = t1 
 
     # Datasets
-    datasets: List[Tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
+    datasets: list[tuple[str, str, str]] = [("mt_human", mt_orang[0], mt_human[0])]
     for i in range(len(query)):
         datasets.append((f"q{i+1}", query[i], target[i]))
 
     # Alignment methods
-    methods: list[Tuple[str, AlignFunction]] = [
-        ("global", global_wrap),
-        ("local", local_wrap),
-        ("semi_global", fitting_wrap),
-        ("affine", affine_wrap)
-    ]
+    methods: list[str] = ["global", "local", "semi_global", "affine"]
 
     # Run all methods on all datasets and measure runtime
     for name, s1, s2 in datasets:
-        for method, align_function in methods:
+        for method in methods:
             start = time.perf_counter()
             score_val: int = 0
             align1: str = ""
             align2: str = ""
 
             try:
-                score_val, align1, align2 = align_function(s1, s2, match=MATCH, mismatch=MISMATCH, gap=GAP, gap_open=GAP_OPEN, gap_extend=GAP_EXTENSION)
+                score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
                 print(f"Error running {method} on {name}: {e}")
                 continue
