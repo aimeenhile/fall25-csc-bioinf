@@ -1,5 +1,6 @@
-import python
-from python import os
+def os_path_join(*args) -> str:
+    """Simple Codon version of os.path.join."""
+    return '/'.join(args)
 
 def read_fasta(path: str, name: str) -> list[str]:
     """
@@ -9,7 +10,9 @@ def read_fasta(path: str, name: str) -> list[str]:
     data: list[str] = []
     sequence: str = ""
 
-    with open(str(os.path.join(path, name)), 'r') as f:
+    file_path: str = os_path_join(path, name)
+
+    with open(file_path, 'r') as f:
         for line in f:
             line = str(line.strip())
             if line[0] == ">":
