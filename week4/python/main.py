@@ -64,7 +64,7 @@ if __name__ == "__main__":
             print(f"{method}-{name}\tpython\t{runtime_ms}ms")
 
             # Print score and alignment
-            print(f"Score: {score_val}")
+            print(f"Score: {score_val}  Length s1:{len(align1)} s2:{len(align2)}")
             print(f"Alignment 1: {align1}")
             print(f"Alignment 2: {align2}\n")
     
