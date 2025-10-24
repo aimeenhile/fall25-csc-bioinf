@@ -147,38 +147,28 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
     n = len(s1)
     m = len(s2)
 
-    if n < m:
-        free_start_s1, free_end_s1 = True, True
-        free_start_s2, free_end_s2 = False, False
-    elif n > m:
-        free_start_s1, free_end_s1 = False, False
-        free_start_s2, free_end_s2 = True, True
-    else:  # n == m
-        free_start_s1, free_end_s1 = True, True
-        free_start_s2, free_end_s2 = True, True
-        
+    free_start_s1, free_end_s1 = False, False  
+    free_start_s2, free_end_s2 = True, True    
+
     prev = np.zeros(m + 1, dtype=int)
     curr = np.zeros(m + 1, dtype=int)
     P = np.full((n+1, m+1), -1, dtype=np.int8)
 
-    if free_end_s1:
-        last_col = np.zeros(n + 1, dtype=int)
-
     # Initialization
     for j in range(m + 1):
-        if free_start_s1:
+        if free_start_s2:
             prev[j] = 0
         else:
             prev[j] = j * gap
 
-        if j > 0 and not free_start_s1:
+        if j > 0 and not free_start_s2:
             P[0,j] = 2 # left pointer
 
     # Fill DP
     for i in range(1, n + 1):
         s1_i = s1[i-1]
 
-        if free_start_s2:
+        if free_start_s1:
             curr[0] = 0
             P[i,0] = -1
         else:
@@ -201,31 +191,19 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
             else:
                 P[i,j] = 2
 
-        if free_end_s1:
-            last_col[i] = curr[m]
-
         prev, curr = curr, prev
 
     # Traceback start pos
-    if free_end_s2:
-        j = int(np.argmax(prev))
-        i = n
-        max_score = prev[j]
-    elif free_end_s1:
-        i = int(np.argmax(last_col))
-        j = m
-        max_score = last_col[i]
-    else:
-        i = n
-        j = m
-        max_score = prev[m]
+    j = int(np.argmax(prev))
+    i = n
+    max_score = prev[j]
 
     # Traceback
     align1_list = []
     align2_list = []
 
-    while i > 0 or j > 0:
-        if i > 0 and j > 0:
+    while i > 0:
+        if j > 0:
             pos = P[i,j]
             if pos == 0:
                 align1_list.append(s1[i-1])
@@ -241,17 +219,14 @@ def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISM
                 align2_list.append(s2[j-1])
                 j -= 1
             else:
-                break
-        elif i > 0 and free_start_s1:
-            align1_list.append(s1[i-1])
+                align1_list.append('-')
+                align2_list.append(s2[j - 1])
+                j -= 1
+        else:
+            # add remaining s1
+            align1_list.append(s1[i - 1])
             align2_list.append('-')
             i -= 1
-        elif j > 0 and free_start_s2:
-            align1_list.append('-')
-            align2_list.append(s2[j-1])
-            j -= 1
-        else:
-            break
 
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
@@ -388,4 +363,4 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
     align1 = ''.join(reversed(align1_list))
     align2 = ''.join(reversed(align2_list))
 
-    return int(final_score), align1, align2
+    return final_score, align1, align2
