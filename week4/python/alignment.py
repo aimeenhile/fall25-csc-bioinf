@@ -98,7 +98,9 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     for i in range(1, n+1):
         curr[0] = 0
         for j in range(1, m+1):
-            diag = prev[j-1] + score(s1[i-1], s2[j-1], match, mismatch)
+            s1_i = s1[i-1]
+            s2_j = s2[j-1]
+            diag = prev[j-1] + (match if s1_i == s2_j else mismatch)
             up = prev[j] + gap
             left = curr[j-1] + gap
             curr[j] = max(0, diag, up, left)
@@ -122,7 +124,9 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
     
     for ii in range(1, i_max+1):
         for jj in range(1, j_max+1):
-            diag = dp[ii-1,jj-1] + score(s1[ii-1], s2[jj-1], match, mismatch)
+            s1_ii = s1[ii-1]
+            s2_jj = s2[jj-1]
+            diag = dp[ii-1,jj-1] + (match if s1_ii == s2_jj else mismatch)
             up = dp[ii-1,jj] + gap
             left = dp[ii,jj-1] + gap
             dp[ii,jj] = max(0, diag, up, left)
