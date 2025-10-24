@@ -144,7 +144,7 @@ def local_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMAT
 
 def fitting_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMATCH, gap: int = GAP):
     """ Fitting alignment of string s1 to string s2 """
-    n = len(s1)
+    n = len(s1) 
     m = len(s2)
 
     if n <= m:
@@ -359,7 +359,7 @@ def affine_alignment(s1: str, s2: str, match: int = MATCH, mismatch: int = MISMA
 
     aligned_s1, aligned_s2 = divide_and_conquer(s1, s2)
     score = affine_forward(s1, s2)[-1]
-    
+
     return score, aligned_s1, aligned_s2
 
 """
