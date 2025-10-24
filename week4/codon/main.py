@@ -60,10 +60,9 @@ if __name__ == "__main__":
             try:
                 score_val, align1, align2 = run_alignment(method, s1, s2)
             except Exception as e:
-                import traceback
-                traceback.print_exc()  # prints Python-side error
-                raise e 
-
+                print(f"Error running {method} on {name}: {e}")
+                continue
+            
             end = time.perf_counter()
             runtime_ms: int = int((end - start) * 1000)  
 
