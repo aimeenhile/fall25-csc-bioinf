@@ -6,7 +6,7 @@ cd week4
 
 # Run Python version
 echo -e "Method\t\t\tLanguage\tRuntime"
-echo "---------------------------------------------"
+echo "-------------------------------------------------"
 python python/main.py data | while read -r line; do
     echo -e "$line"
 done
