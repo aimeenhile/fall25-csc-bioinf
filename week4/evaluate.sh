@@ -5,7 +5,7 @@ set -euo pipefail
 cd week4
 
 # Run Python version
-echo -e "Method\t\t\tLanguage\tRuntime"
+echo f"{'Method':<25}{'Language':<12}{'Runtime'}"
 echo "-------------------------------------------------"
 codon run -release codon/main.py data | while read -r line; do
     echo -e "$line"
