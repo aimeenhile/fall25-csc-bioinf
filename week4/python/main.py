@@ -21,7 +21,6 @@ if __name__ == "__main__":
     argv = sys.argv
     data_path = os.path.join(os.path.dirname(__file__), '..', argv[1])
 
-    print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)
 
     query = q1 
@@ -61,4 +60,4 @@ if __name__ == "__main__":
             end = time.time()
             runtime_ms = int((end - start) * 1000)  
 
-            print(f"{method}-{name}\tpython\t{runtime_ms}ms")
+            print(f"{method}-{name}\t\t\tpython\t{runtime_ms}ms")

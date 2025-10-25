@@ -38,7 +38,6 @@ if __name__ == "__main__":
     argv = sys.argv
     data_path: str = os_path_join(argv[1])
 
-    print(f"Loading data from: {data_path}")
     mt_human, mt_orang, q1, t1 = read_data(data_path)
 
     query = q1
@@ -65,4 +64,4 @@ if __name__ == "__main__":
             end = time.time()
             runtime_ms: int = int((end - start) * 1000)  
 
-            print(f"{method}-{name}\tcodon\t{runtime_ms}ms")
+            print(f"{method}-{name}\t\t\tcodon\t{runtime_ms}ms")
