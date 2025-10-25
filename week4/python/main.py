@@ -60,4 +60,4 @@ if __name__ == "__main__":
             end = time.time()
             runtime_ms = int((end - start) * 1000)  
 
-            print(f"{method}-{name}\t\t\tpython\t{runtime_ms}ms")
+            print(f"{method+'-'+name:<25}{'python':<10}{runtime_ms}ms")

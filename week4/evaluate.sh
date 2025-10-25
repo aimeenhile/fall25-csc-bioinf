@@ -5,11 +5,11 @@ set -euo pipefail
 cd week4
 
 # Run Python version
-echo -e "Method\t\t\tLanguage\tRuntime"
+echo -e "Method\t\t\tLanguage\t\tRuntime"
 echo "-------------------------------------------------"
-python python/main.py data | while read -r line; do
+codon run -release codon/main.py data | while read -r line; do
     echo -e "$line"
 done
-codon run -release codon/main.py data | while read -r line; do
+python python/main.py data | while read -r line; do
     echo -e "$line"
 done
