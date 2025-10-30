@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install biopython pysam jupyter nbconvert
-          conda install -y -c bioconda samtools minimap2 bcftools
+          conda install -y -c bioconda minimap2 bcftools
 
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
