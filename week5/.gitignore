@@ -1,9 +1,0 @@
-# Ignore all data in week5/data
-week5/data/*
-
-# But allow the notebook itself
-!week5/week5.ipynb
-
-# Ignore Python cache
-__pycache__/
-*.pyc
