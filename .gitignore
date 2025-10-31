@@ -13,3 +13,4 @@ week5/data/pacbio.sorted.bam
 week5/data/pacbio.sorted.bam.bai
 week5/data/reference_genome.fa
 week5/data/reference_genome.mmi
+week5/data/reference_genome.fa.fai
