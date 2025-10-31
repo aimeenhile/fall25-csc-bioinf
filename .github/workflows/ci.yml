@@ -10,16 +10,19 @@ jobs:
 
       - name: Check out repository code
         uses: actions/checkout@v5
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install biopython pysam jupyter 
-          conda config --add channels conda-forge
+          pip install biopython jupyter nbconvert
+          
           conda config --add channels bioconda
-          conda install -y minimap2 bcftools freebayes
+          conda config --add channels conda-forge
+          conda install -y pysam samtools minimap2 bcftools freebayes htslib hapcut2 
           
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."

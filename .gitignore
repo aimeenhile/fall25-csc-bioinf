@@ -20,3 +20,5 @@ week5/data/pacbio.vcf.gz
 week5/data/pacbio.vcf.gz.csi
 week5/data/illumina.vcf
 week5/data/pacbio.vcf
+week5/data/illumina.bam
+week5/data/pacbio.bam
