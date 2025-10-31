@@ -5,3 +5,11 @@ week5/data/CYP2C_rough.fa
 week5/data/chr10.fa.fai
 week5/data/reference_genes.fa
 week5/data/CYP2C.fa
+week5/data/illumina.sam
+week5/data/illumina.sorted.bam
+week5/data/illumina.sorted.bam.bai
+week5/data/pacbio.sam
+week5/data/pacbio.sorted.bam
+week5/data/pacbio.sorted.bam.bai
+week5/data/reference_genome.fa
+week5/data/reference_genome.mmi
