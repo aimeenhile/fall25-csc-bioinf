@@ -14,3 +14,9 @@ week5/data/pacbio.sorted.bam.bai
 week5/data/reference_genome.fa
 week5/data/reference_genome.mmi
 week5/data/reference_genome.fa.fai
+week5/data/illumina.vcf.gz
+week5/data/illumina.vcf.gz.csi
+week5/data/pacbio.vcf.gz
+week5/data/pacbio.vcf.gz.csi
+week5/data/illumina.vcf
+week5/data/pacbio.vcf

@@ -15,10 +15,12 @@ jobs:
           python-version: '3.13'
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install biopython pysam jupyter 
-          sudo apt update
-          sudo apt install -y bcftools minimap2 samtools
-
+          conda config --add channels conda-forge
+          conda config --add channels bioconda
+          conda install -y minimap2 bcftools freebayes
+          
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Week 5 & 6
