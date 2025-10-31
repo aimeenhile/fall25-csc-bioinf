@@ -15,16 +15,39 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: bioinfo
+          python-version: 3.13
+          channels: conda-forge, bioconda
+
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install biopython jupyter nbconvert
+          conda create -y -n bioinfo python=3.13
+          conda activate bioinfo
           
           conda config --add channels bioconda
           conda config --add channels conda-forge
-          conda install -y pysam samtools minimap2 bcftools freebayes htslib hapcut2 
+
+          conda install -y \ 
+              biopython \
+              jupyer \
+              pysam \
+              samtools \
+              minimap2 \
+              bcftools \
+              freebayes \
+              htslib \
+              hapcut2 \
+              ipykernel
+
+          python -m ipykernel install --user --name bioinfo --display-name "Python (bioinfo)"
           
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Week 5 & 6
-        run: jupyter execute week5/week5.ipynb
+        run: 
+          source activate bioinfo
+          jupyter execute week5/week5.ipynb
