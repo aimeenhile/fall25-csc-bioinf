@@ -46,11 +46,11 @@ jobs:
       - name: Commit executed notebook
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mv executed_week5.ipynb week5/executed_week5.ipynb
+
           git add week5/executed_week5.ipynb
           git commit -m "Executed notebook [skip ci]" || echo "No changes to commit"
-
-      - name: Push notebook back to week5/
-        run: |
           git push
 
