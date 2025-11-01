@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install -y samtools minimap2 bcftools freebayes htslib hapcut2 
+          conda install -y samtools minimap2 bcftools htslib hapcut2 
           pip install --upgrade pip
           pip install biopython pysam jupyter nbconvert
           
@@ -34,7 +34,7 @@ jobs:
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Week 5 & 6
         run: 
-          conda run -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb
+          conda run --no-capture-output -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb
       - uses: actions/upload-artifact@v4
         with:
           name: executed-notebook
