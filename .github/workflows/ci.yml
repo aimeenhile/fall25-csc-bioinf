@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install -y biopython pysam samtools minimap2 bcftools htslib hapcut2 
+          conda install -y biopython pysam samtools minimap2 bcftools htslib hapcut2 cyvcf2
           pip install --upgrade pip
           pip install jupyter nbconvert
           
