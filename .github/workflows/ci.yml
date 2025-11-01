@@ -41,7 +41,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: executed-notebook
-          path: week5/executed_week5.ipynb
+          path: week5/week5.ipynb
           
       - name: Commit executed notebook
         run: |
