@@ -21,8 +21,6 @@ jobs:
           auto-update-conda: true
           activate-environment: bioinfo
           python-version: 3.13
-          channels: conda-forge, bioconda
-          conda-remove-defaults: true
 
       - name: Install dependencies
         run: |
@@ -33,8 +31,11 @@ jobs:
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Week 5 & 6
+        shell: bash -l {0}  # login shell
         run: 
-          conda run --no-capture-output -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb
+          conda init bash
+          conda activate bioinfo
+          jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb
       - uses: actions/upload-artifact@v4
         with:
           name: executed-notebook
