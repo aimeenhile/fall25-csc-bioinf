@@ -22,3 +22,14 @@ week5/data/illumina.vcf
 week5/data/pacbio.vcf
 week5/data/illumina.bam
 week5/data/pacbio.bam
+week5/data/chr10.fa.gz
+week5/data/illumina_fb.vcf
+week5/data/illumina.fq.bz2
+week5/data/illumina.fragments
+week5/data/illumina.hapcut
+week5/data/illumina.hapcut.phased.VCF
+week5/data/pacbio_fb.vcf
+week5/data/pacbio.fq.bz2
+week5/data/pacbio.fragments
+week5/data/pacbio.hapcut
+week5/data/pacbio.hapcut.phased.VCF
