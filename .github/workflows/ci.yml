@@ -43,13 +43,16 @@ jobs:
       - name: Week 5 & 6
         shell: bash -l {0}
         run: 
-          conda run -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --inplace --ExecutePreprocessor.kernel_name=python3
+          conda run -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb --output-dir week5 --ExecutePreprocessor.kernel_name=python3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: executed-notebook
+          path: week5/executed_week5.ipynb
           
       - name: Commit and push executed notebook
         uses: stefanzweifel/git-auto-commit-action@v7
         with: 
           commit_message: Executed notebook
           branch: week5
-
-
 
