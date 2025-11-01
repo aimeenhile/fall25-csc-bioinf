@@ -33,3 +33,7 @@ week5/data/pacbio.fq.bz2
 week5/data/pacbio.fragments
 week5/data/pacbio.hapcut
 week5/data/pacbio.hapcut.phased.VCF
+week5/data/illumina_fb.fragments
+week5/data/illumina_fb.hapcut
+week5/data/illumina_fb.hapcut.phased.VCF
+week5/data/pacbioz-fb.fragments

@@ -34,3 +34,8 @@ jobs:
       - name: Week 5 & 6
         run: 
           conda run -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output executed_week5.ipynb
+      - uses: actions/upload-artifact@v3
+        with:
+          name: executed-notebook
+          path: week5/executed_week5.ipynb
+
