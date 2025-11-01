@@ -27,19 +27,33 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install -y samtools minimap2 bcftools freebayes htslib hapcut2 
+          conda install -y biopython pysam samtools minimap2 bcftools htslib hapcut2 
           pip install --upgrade pip
-          pip install biopython pysam jupyter nbconvert
+          pip install jupyter nbconvert
           
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Week 5 & 6
         shell: bash -l {0}
         run: 
-          conda activate bioinfo
-          jupyter nbconvert --to notebook --execute week5/week5.ipynb --output week5.ipynb --ExecutePreprocessor.kernel_name=python3
+          conda run -n bioinfo jupyter nbconvert --to notebook --execute week5/week5.ipynb --output week5.ipynb --ExecutePreprocessor.kernel_name=python3
+
       - uses: actions/upload-artifact@v4
         with:
           name: executed-notebook
-          path: week5/week5.ipynb
+          path: week5/executed_week5.ipynb
+          
+      - name: Commit executed notebook
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add week5/week5.ipynb
+          git commit -m "Executed notebook [skip ci]" || echo "No changes to commit"
+
+      - name: Push notebook back to week5/
+        run: |
+          git fetch origin
+          git checkout week5 || git checkout -b week5
+          git merge --no-edit ${{ github.ref_name }} || echo "Already up to date"
+          git push origin week5
 
