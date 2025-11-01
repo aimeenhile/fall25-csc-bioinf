@@ -57,6 +57,8 @@ jobs:
 
           git add week5/executed_week5.ipynb
           git commit -m "Executed notebook [skip ci]" || echo "No changes to commit"
-
-          git push origin week5
+          
+          git fetch origin
+          git branch -M week5
+          git push -u origin week5
 
