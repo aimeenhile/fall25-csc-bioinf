@@ -524,3 +524,18 @@ jobs:
           git merge --no-edit ${{ github.ref_name }} || echo "Already up to date"
           git push origin week5
 ```
+🧠 What happens now
+
+The workflow executes on your main branch (or whichever branch triggered it).
+
+After execution:
+
+It switches (or creates) a branch named week5
+
+Merges your current changes into it
+
+Commits the executed notebook
+
+Pushes that notebook to week5 branch
+
+week5/week5.ipynb on GitHub will now be the executed version.
