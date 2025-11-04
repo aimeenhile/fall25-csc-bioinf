@@ -43,4 +43,4 @@ jobs:
       - name: Week 5 & 6
         shell: bash -l {0}
         run: 
-          conda run -n bioinfo jupyter nbconvert --execute --clear-output week5/week5.ipynb 
+          conda run -n bioinfo jupyter nbconvert --execute --clear-output week5/week5.ipynb  --stdout 
