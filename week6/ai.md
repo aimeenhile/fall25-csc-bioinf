@@ -510,3 +510,151 @@ Whitelist semantics: make sure -u usage is correct for your simpleaf version (so
 USA mode: if you use U/S/A, be deliberate about which counts you analyze (S only for mature mRNA, U for intronic, total for sensitivity).
 
 File locations: outputs are in simpleaf_quant/af_quant/alevin/ or alevin_fry_quant/alevin/ depending on path; inspect metrics files if something looks off.
+
+# Prompt 2:
+
+my goal is to run this notebook automatically in github actions. How do i prepare alevin-fry home in jupyter notebook or actions ci to do that? Please note that I do not want to change the structure and the content of my current CI. I only want to add the alevin-fry home where possible.
+```yaml
+my .github/workflows/ci.yml:
+name: Week 6 Deliverable
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: bioinfo
+          python-version: 3.12
+          channels: conda-forge,bioconda
+          conda-remove-defaults: true
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda install -c conda-forge openjdk=21
+          conda install -y -c bioconda simpleaf biopython pysam samtools minimap2 bcftools htslib hapcut2 igv pandas
+          pip install --upgrade pip
+          pip install cyvcf2 igv-notebook jupyter nbconvert
+          
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+
+      - name: Week 6
+        shell: bash -l {0}
+        run: 
+          conda run -n bioinfo jupyter nbconvert --to notebook --execute week6/week6.ipynb  
+```
+
+# Answer 2: 
+
+Perfect — this is a great and realistic automation question 🔬
+
+You already have an excellent CI skeleton (it sets up Conda, installs simpleaf, runs Jupyter automatically, etc.).
+To make alevin-fry and simpleaf work non-interactively inside GitHub Actions or Jupyter, you just need to ensure one thing:
+
+✅ The environment variable ALEVIN_FRY_HOME exists and points to a writable directory before you call simpleaf.
+
+Below I’ll show you exactly where and how to set that up — both in your notebook and in your CI YAML — without breaking or restructuring anything.
+
+🧩 1. What ALEVIN_FRY_HOME is
+
+simpleaf needs a directory where it can store:
+
+its config file (config.json),
+
+cached binary paths to salmon, alevin-fry, and pyroe,
+
+and sometimes the permit list or temp files.
+
+If the variable isn’t defined, simpleaf set-paths will fail or hang asking for user input.
+
+So you must create a directory (e.g., ~/.alevin_fry_home or alevin_fry_home) and export it before running simpleaf.
+
+🧠 2. Minimal setup — inside your Jupyter Notebook
+
+Add this at the very top of your week6.ipynb, before any call to simpleaf.
+```python
+# --- Alevin-fry setup ---
+import os, subprocess
+
+# Define the home directory for alevin-fry (can be inside the notebook workspace)
+os.makedirs("alevin_fry_home", exist_ok=True)
+os.environ["ALEVIN_FRY_HOME"] = os.path.abspath("alevin_fry_home")
+
+# Optional: verify
+print("ALEVIN_FRY_HOME =", os.environ["ALEVIN_FRY_HOME"])
+
+# Run once to initialize the configuration (non-interactive)
+subprocess.run(["simpleaf", "set-paths"], check=True)
+```
+
+✅ This ensures that even when CI executes Jupyter automatically,
+ALEVIN_FRY_HOME exists and simpleaf knows where to find its tools.
+
+⚙️ 3. Setting it up in your GitHub Actions (recommended safety)
+
+You can add just one line to your existing CI YAML under the “Week 6” step, so that the environment is already prepared before the notebook runs.
+
+Add this:
+```yaml
+      - name: Week 6
+        shell: bash -l {0}
+        env:
+          ALEVIN_FRY_HOME: ${{ github.workspace }}/alevin_fry_home
+        run: |
+          mkdir -p $ALEVIN_FRY_HOME
+          conda run -n bioinfo jupyter nbconvert --to notebook --execute week6/week6.ipynb
+```
+Explanation:
+
+| Line                        | Meaning                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `env:`                      | Sets environment variables visible to the notebook and `simpleaf`              |
+| `ALEVIN_FRY_HOME:`          | Creates a per-run home directory for alevin-fry in your repository’s workspace |
+| `mkdir -p $ALEVIN_FRY_HOME` | Makes sure the folder exists before executing the notebook                     |
+| `conda run ...`             | Runs your existing notebook execution, unchanged                               |
+
+✅ This keeps your CI structure intact.
+✅ You do not need to modify Conda setup or install dependencies sections.
+
+🧰 4. (Optional) Testing locally
+
+You can test this exact setup in your terminal or inside a Jupyter cell:
+```bash
+export ALEVIN_FRY_HOME=$(pwd)/alevin_fry_home
+mkdir -p $ALEVIN_FRY_HOME
+simpleaf set-paths
+```
+Then check:
+```bash
+ls $ALEVIN_FRY_HOME
+# should contain config.json and tool paths
+```
+✅ Summary
+
+| Where                       | Add                                                             | Purpose                                               |
+| --------------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| **Notebook (top)**          | Python cell creating and exporting `ALEVIN_FRY_HOME`            | Works in local + CI execution                         |
+| **CI YAML (`Week 6` step)** | `env: ALEVIN_FRY_HOME: ${{ github.workspace }}/alevin_fry_home` | Ensures environment var is defined when notebook runs |
+| **No structural change**    | You keep all other steps exactly as before                      | Seamless addition                                     |
+

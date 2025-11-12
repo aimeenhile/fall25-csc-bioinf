@@ -43,5 +43,7 @@ jobs:
 
       - name: Week 6
         shell: bash -l {0}
+        env: 
+          ALEVIN_FRY_HOME: ${{ github.workspace }}/alevin_fry_home
         run: 
           conda run -n bioinfo jupyter nbconvert --to notebook --execute week6/week6.ipynb  
