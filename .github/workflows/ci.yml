@@ -34,7 +34,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda install -c conda-forge openjdk=21
-          conda install -y biopython pysam samtools minimap2 bcftools htslib hapcut2 igv pandas
+          conda install -y -c bioconda simpleaf biopython pysam samtools minimap2 bcftools htslib hapcut2 igv pandas
           pip install --upgrade pip
           pip install cyvcf2 igv-notebook jupyter nbconvert
           

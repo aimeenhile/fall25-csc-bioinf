@@ -68,3 +68,8 @@ week5/data/pacbio.norm.splitted.vcf
 week5/data/pacbio.norm.splitted.vcf.gz
 week5/data/pacbio.norm.splitted.vcf.gz.csi
 week5/data/pharmvar/CYP2C19_allele_definition_table.xlsx
+week6/data/toy_human_ref/fasta/genome.fa
+week6/data/toy_human_ref/genes/genes.gtf
+week6/data/toy_read_fastq/selected_R1_reads.fastq
+week6/data/toy_read_fastq/selected_R2_reads.fastq
+week6/data/3M-february-2018.txt
