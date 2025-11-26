@@ -34,8 +34,8 @@ def compute_spearman_corr(df: pd.DataFrame) -> pd.DataFrame:
 
     return CN
 
-def clean_table(CN: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Clean up table and extract metadata"""
+def clean_names(CN: pd.DataFrame) -> pd.DataFrame:
+    """Clean up row and column names"""
 
     # Rename "Hippocampus" -> "HIPP" & "VisCortex" -> "VIS"
     rename = (CN.index
@@ -47,10 +47,13 @@ def clean_table(CN: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     CN.index = rename
     CN.columns = rename
 
-    # Extract sample names into 3 columns: Age - Region - Type
-    cnn = pd.DataFrame({"CT": CN.index})
-    cnn[["Age", "Region", "Type"]] = cnn["CT"].str.split("_", expand=True)
+    return CN
 
-    return CN, cnn
+def spearman_corr_labels(CN: pd.DataFrame) -> pd.DataFrame:
+    """Extract metadata to create labels for Fig.4a"""
+    labels = pd.DataFrame({"CT": CN.index})
+    labels[["Age", "Region", "Type"]] = cnn["CT"].str.split("_", expand=True)
+
+    return labels
 
 
