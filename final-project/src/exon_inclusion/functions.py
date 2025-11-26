@@ -9,27 +9,22 @@ from typing import Tuple, Dict
 
 REGIONS = ["VIS", "HIPP"]
 
-def load_exon_usage(path: str | Path):
+def load_type_neurons(path: str | Path):
     """Load altExonUsage_devel_type.gz and preprocess fields"""
 
     path = Path(path)
     df = pd.read_csv(path, sep="\t", compression="infer")
 
-    # Filter only neuron columns
-    neuron_cols = [c for c in df.columns if 'Neuron' in c]
-    df_neurons = df[['Exon', 'Gene'] + neuron_cols].copy()
+    # Filter column with "Neuron"
+    neurons = [col for col in df.columns if "Neuron" in col]
+    type_neurons = df[["Exon", "Gene"] + neurons].copy()
 
-    # Combine Exon and Gene into a single row identifier
-    df_neurons['Exon_Gene'] = df_neurons['Exon'] + '::' + df_neurons['Gene']
-    df_neurons = df_neurons.drop(columns=['Exon', 'Gene'])
+    # Combine Exon + Gene into GE
+    type_neurons["GE"] = type_neurons["Exon"] + "::" + type_neurons["Gene"]
+    type_neurons = type_neurons.set_index("GE")
+    type_neurons = type_neurons.drop(columns=["Exon", "Gene"])
 
-    # Set combined identifier as index
-    df_neurons.set_index('Exon_Gene', inplace=True)
+    return type_neurons
 
-    # Clean column names
-    new_cols = df_neurons.columns.str.replace('Neuron', '', regex=False)
-    new_cols = new_cols.str.replace('Hippocampus', 'HIPP', regex=False)
-    new_cols = new_cols.str.replace('VisCortex', 'VIS', regex=False)
-    df_neurons.columns = new_cols
-
-    return df_neurons
+def get_correlation():
+    """ """
