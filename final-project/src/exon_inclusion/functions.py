@@ -7,8 +7,6 @@ from scipy.stats import spearmanr
 from pathlib import Path
 from typing import Tuple, Dict
 
-REGIONS = ["VIS", "HIPP"]
-
 def load_type_neurons(path: str | Path) -> pd.DataFrame:
     """Load altExonUsage_devel_type.gz and preprocess fields"""
 
@@ -27,15 +25,10 @@ def load_type_neurons(path: str | Path) -> pd.DataFrame:
     return type_neurons
 
 def compute_spearman_corr(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute Spearman correlation matrix"""
+    """Compute Spearman correlation matrix & Clean up row and column names"""
 
     corr, _ = spearmanr(df, axis=0, nan_policy='omit')
     CN = pd.DataFrame(corr, index=df.columns, columns=df.columns)
-
-    return CN
-
-def clean_names(CN: pd.DataFrame) -> pd.DataFrame:
-    """Clean up row and column names"""
 
     # Rename "Hippocampus" -> "HIPP" & "VisCortex" -> "VIS"
     rename = (CN.index
@@ -55,5 +48,8 @@ def spearman_corr_labels(CN: pd.DataFrame) -> pd.DataFrame:
     labels[["Age", "Region", "Type"]] = labels["CT"].str.split("_", expand=True)
 
     return labels
+
+def sort_excite_inhib(labels: pd.DataFrame):
+    return 0
 
 
