@@ -52,7 +52,7 @@ def clean_names(CN: pd.DataFrame) -> pd.DataFrame:
 def spearman_corr_labels(CN: pd.DataFrame) -> pd.DataFrame:
     """Extract metadata to create labels for Fig.4a"""
     labels = pd.DataFrame({"CT": CN.index})
-    labels[["Age", "Region", "Type"]] = cnn["CT"].str.split("_", expand=True)
+    labels[["Age", "Region", "Type"]] = labels["CT"].str.split("_", expand=True)
 
     return labels
 
