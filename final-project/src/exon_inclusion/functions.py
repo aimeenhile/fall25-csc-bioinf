@@ -5,9 +5,9 @@ import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
-def load_type_neurons(path: str | Path) -> pd.DataFrame:
+def load_type_data(path: str | Path) -> pd.DataFrame:
     """Load altExonUsage_devel_type.gz and preprocess fields"""
 
     path = Path(path)
@@ -22,16 +22,20 @@ def load_type_neurons(path: str | Path) -> pd.DataFrame:
     type_neurons = type_neurons.set_index("GE")
     type_neurons = type_neurons.drop(columns=["Exon", "Gene"])
 
+    type_neurons = type_neurons.dropna(axis=0, how='any')
+
     return type_neurons
 
 def compute_spearman_corr(df: pd.DataFrame) -> pd.DataFrame:
     """Compute Spearman correlation matrix & Clean up row and column names"""
     
-    df_mod= df.dropna(axis=0, how='any')
-    corr, p = spearmanr(df_mod, axis=0, nan_policy='omit')
-    CN = pd.DataFrame(corr, index=df_mod.columns, columns=df_mod.columns)
+    corr, p = spearmanr(df, axis=0, nan_policy='omit')
+    CN = pd.DataFrame(corr, index=df.columns, columns=df.columns)
 
-    # Rename "Hippocampus" -> "HIPP" & "VisCortex" -> "VIS"
+    return CN
+
+def preprocess_type(CN: pd.DataFrame) -> pd.DataFrame:
+    """Rename "Hippocampus" -> "HIPP" & "VisCortex" -> "VIS" """
     rename = (CN.index
         .str.replace("Neuron", "", regex=False)
         .str.replace("Hippocampus", "HIPP", regex=False)
@@ -50,3 +54,30 @@ def spearman_corr_labels(CN: pd.DataFrame) -> pd.DataFrame:
 
     return labels
 
+def load_subtype_data(path: str | Path) -> pd.DataFrame:
+    """Load altExonUsage_devel_subtype.gz and preprocess fields"""
+
+    path = Path(path)
+    df = pd.read_csv(path, sep="\t", compression="infer")
+
+    # Filter column with "Inh","Excite","Granule","NIPC"
+    patterns = ["Inh", "Excite", "Granule", "NIPC"]
+    df_cols = [c for c in df.columns if any(p in c for p in patterns)]
+    subtype = df[["Exon", "Gene"] + df_cols].copy()
+
+    # Combine Exon + Gene into GE (Exon::Gene)
+    subtype["GE"] = subtype["Exon"] + "::" + subtype["Gene"]
+    subtype = subtype.set_index("GE")
+    subtype = subtype.drop(columns=["Exon", "Gene"])
+
+    return subtype
+
+def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
+    """ """
+    threshold = 0.95
+
+    # Filter missing data
+    df = df.loc[:, df.isna().mean() <= threshold]
+    df = df.loc[df.isna().mean(axis=1) <= threshold, :]
+
+    return df
