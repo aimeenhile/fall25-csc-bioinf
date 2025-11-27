@@ -3,9 +3,10 @@
 from __future__ import annotations
 import pandas as pd
 import numpy as np
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, norm
 from pathlib import Path
 from typing import Tuple, Dict, List
+import math
 
 def load_type_data(path: str | Path) -> pd.DataFrame:
     """Load altExonUsage_devel_type.gz and preprocess fields"""
@@ -102,3 +103,23 @@ def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
     df["Type"] = pd.Categorical(df["Type"], categories=["Excite","Inh_wCR","Inhib"], ordered=True)
 
     return df
+
+def compute_spearman_ci(x, y):
+    """Compute Spearman correlation and confidence interval"""
+    alpha = 0.05
+    r, p = spearmanr(x, y, nan_policy="omit")
+    n = np.sum(~(np.isnan(x) | np.isnan(y)))
+
+    if n <= 3:
+        return r, np.nan, np.nan
+    
+    z = np.arctanh(r)
+    se = 1 / np.sqrt(n - 3)
+    z_crit = norm.ppf(1 - alpha/2)
+    low = np.tanh(z - z_crit * se)
+    high = ow = np.tanh(z + z_crit * se)
+
+    return r, low, high
+
+
+
