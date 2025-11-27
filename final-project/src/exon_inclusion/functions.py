@@ -78,8 +78,9 @@ def load_subtype_data(path: str | Path) -> pd.DataFrame:
 
 def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
     """Extract upper triangule matrix and assign subtype labels"""
-    def get_upper_tri(patterns):
-        """Get upper triangle matrix"""
+    
+    def get_upper_tri(patterns: List[str]) -> np.array:
+        """Get upper triangle matrix for selected patterns"""
         cols = [c for c in df.columns if any(p in c for p in patterns)]
         rows = [r for r in df.index if any(p in r for p in patterns)]
         ut_mat = df.loc[rows, cols]
@@ -88,13 +89,13 @@ def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
     
     # Separate out Excite, Inhib, and Inh
     CE = get_upper_tri(["Excite", "Granule"])
-    CI = get_upper_tri(["Inhib"])
     CR = get_upper_tri(["Inh"])
+    CI = get_upper_tri(["Inhib"])
 
     # Combine into one dataframe
     df = pd.DataFrame({
-        "CorValue": np.concatenate([CE, CI, CR]),
-        "Type": ["Excite"]*len(CE) + ["Inhib"]*len(CI) + ["Inh_wCR"]*len(CR)
+        "CorValue": np.concatenate([CE, CR, CI]),
+        "Type": ["Excite"]*len(CE) + ["Inh_wCR"]*len(CR) + ["Inhib"]*len(CI)
     })
 
     # Set order
