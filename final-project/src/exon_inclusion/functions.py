@@ -30,22 +30,22 @@ def compute_spearman_corr(df: pd.DataFrame) -> pd.DataFrame:
     """Compute Spearman correlation matrix & Clean up row and column names"""
     
     corr, p = spearmanr(df, axis=0, nan_policy='omit')
-    CN = pd.DataFrame(corr, index=df.columns, columns=df.columns)
+    df = pd.DataFrame(corr, index=df.columns, columns=df.columns)
 
-    return CN
+    return df
 
-def preprocess_type(CN: pd.DataFrame) -> pd.DataFrame:
+def preprocess_type(df: pd.DataFrame) -> pd.DataFrame:
     """Rename "Hippocampus" -> "HIPP" & "VisCortex" -> "VIS" """
-    rename = (CN.index
+    rename = (df.index
         .str.replace("Neuron", "", regex=False)
         .str.replace("Hippocampus", "HIPP", regex=False)
         .str.replace("VisCortex", "VIS", regex=False)
     )
 
-    CN.index = rename
-    CN.columns = rename
+    df.index = rename
+    df.columns = rename
 
-    return CN
+    return df
 
 def spearman_corr_labels(CN: pd.DataFrame) -> pd.DataFrame:
     """Extract metadata to create labels for Fig.4a"""
@@ -70,14 +70,34 @@ def load_subtype_data(path: str | Path) -> pd.DataFrame:
     subtype = subtype.set_index("GE")
     subtype = subtype.drop(columns=["Exon", "Gene"])
 
+    threshold = 0.95
+    subtype = subtype.loc[:, subtype.isna().mean() < threshold]  # filter columns
+    subtype = subtype.loc[subtype.isna().mean(axis=1) <= threshold, :]  # filter rows
+
     return subtype
 
 def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
-    """ """
-    threshold = 0.95
+    """Extract upper triangule matrix and assign subtype labels"""
+    def get_upper_tri(patterns):
+        """Get upper triangle matrix"""
+        cols = [c for c in df.columns if any(p in c for p in patterns)]
+        rows = [r for r in df.index if any(p in r for p in patterns)]
+        ut_mat = df.loc[rows, cols]
 
-    # Filter missing data
-    df = df.loc[:, df.isna().mean() <= threshold]
-    df = df.loc[df.isna().mean(axis=1) <= threshold, :]
+        return ut_mat.values[np.triu_indices_from(ut_mat, k =1)]
+    
+    # Separate out Excite, Inhib, and Inh
+    CE = get_upper_tri(["Excite", "Granule"])
+    CI = get_upper_tri(["Inhib"])
+    CR = get_upper_tri(["Inh"])
+
+    # Combine into one dataframe
+    df = pd.DataFrame({
+        "CorValue": np.concatenate([CE, CI, CR]),
+        "Type": ["Excite"]*len(CE) + ["Inhib"]*len(CI) + ["Inh_wCR"]*len(CR)
+    })
+
+    # Set order
+    df["Type"] = pd.Categorical(df["Type"], categories=["Excite","Inh_wCR","Inhib"], ordered=True)
 
     return df
