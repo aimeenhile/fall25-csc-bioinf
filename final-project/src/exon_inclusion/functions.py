@@ -104,9 +104,8 @@ def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def compute_spearman_ci(x, y):
-    """Compute Spearman correlation and confidence interval"""
-    alpha = 0.05
+def compute_spearman_ci(x, y, alpha=0.05):
+    """Compute Spearman correlation and 95% confidence interval"""
     r, p = spearmanr(x, y, nan_policy="omit")
     n = np.sum(~(np.isnan(x) | np.isnan(y)))
 
@@ -117,7 +116,7 @@ def compute_spearman_ci(x, y):
     se = 1 / np.sqrt(n - 3)
     z_crit = norm.ppf(1 - alpha/2)
     low = np.tanh(z - z_crit * se)
-    high = ow = np.tanh(z + z_crit * se)
+    high = np.tanh(z + z_crit * se)
 
     return r, low, high
 
