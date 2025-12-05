@@ -75,6 +75,8 @@ def load_subtype_data(path: str | Path) -> pd.DataFrame:
     subtype = subtype.loc[:, subtype.isna().mean() < threshold]  # filter columns
     subtype = subtype.loc[subtype.isna().mean(axis=1) <= threshold, :]  # filter rows
 
+    subtype = subtype.dropna(axis=0, how='any')
+
     return subtype
 
 def preprocess_subtype(df: pd.DataFrame) -> pd.DataFrame:
